@@ -35,8 +35,10 @@ data class Capability(
     val roadmapPhase: RoadmapPhase,
     val destructiveRisk: DestructiveRisk = DestructiveRisk.NONE,
     val requiresBrowserHandoff: Boolean = false,
-    /** Only set for [CapabilityStatus.IMPLEMENTED] zone-scoped capabilities with a real screen. */
-    val zoneRoute: ((zoneId: String) -> String)? = null,
+    /** Only set for [CapabilityStatus.IMPLEMENTED] zone-scoped capabilities with a real screen.
+     *  Takes the zone name too (not just its id) so every zone-scoped screen can name its
+     *  target in destructive confirmations (PRD §49, §93). */
+    val zoneRoute: ((zoneId: String, zoneName: String) -> String)? = null,
     /** True for capabilities Cloudflare itself considers legacy (PRD §18, §79). */
     val deprecated: Boolean = false,
     val migrationHint: String? = null

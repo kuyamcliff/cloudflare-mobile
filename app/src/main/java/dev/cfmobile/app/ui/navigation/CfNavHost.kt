@@ -48,7 +48,7 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
         }
 
         composable(Routes.ZONES) {
-            val vm = viewModel<ZonesViewModel>(factory = factoryOf { ZonesViewModel(container.zonesRepository) })
+            val vm = viewModel<ZonesViewModel>(factory = factoryOf { ZonesViewModel(container.zonesRepository, container.authRepository) })
             ZonesScreen(
                 vm,
                 onZoneClick = { zone: CfZone -> navController.navigate(Routes.zoneMenu(zone.id, zone.name)) },
@@ -91,40 +91,48 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
             )
         }
 
-        composable(Routes.DNS, arguments = listOf(navArgument("zoneId") { type = NavType.StringType })) { backStackEntry ->
+        val zoneScopedArgs = listOf(navArgument("zoneId") { type = NavType.StringType }, navArgument("zoneName") { type = NavType.StringType })
+
+        composable(Routes.DNS, arguments = zoneScopedArgs) { backStackEntry ->
             val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
             val vm = viewModel<DnsViewModel>(factory = factoryOf { DnsViewModel(zoneId, container.dnsRepository) })
-            DnsScreen(vm, onBack = { navController.popBackStack() })
+            DnsScreen(vm, zoneName = zoneName, onBack = { navController.popBackStack() })
         }
 
-        composable(Routes.SSL, arguments = listOf(navArgument("zoneId") { type = NavType.StringType })) { backStackEntry ->
+        composable(Routes.SSL, arguments = zoneScopedArgs) { backStackEntry ->
             val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
             val vm = viewModel<SslViewModel>(factory = factoryOf { SslViewModel(zoneId, container.zoneSettingsRepository) })
-            SslScreen(vm, onBack = { navController.popBackStack() })
+            SslScreen(vm, zoneName = zoneName, onBack = { navController.popBackStack() })
         }
 
-        composable(Routes.FIREWALL, arguments = listOf(navArgument("zoneId") { type = NavType.StringType })) { backStackEntry ->
+        composable(Routes.FIREWALL, arguments = zoneScopedArgs) { backStackEntry ->
             val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
             val vm = viewModel<FirewallViewModel>(factory = factoryOf { FirewallViewModel(zoneId, container.firewallRepository) })
-            FirewallScreen(vm, onBack = { navController.popBackStack() })
+            FirewallScreen(vm, zoneName = zoneName, onBack = { navController.popBackStack() })
         }
 
-        composable(Routes.PAGE_RULES, arguments = listOf(navArgument("zoneId") { type = NavType.StringType })) { backStackEntry ->
+        composable(Routes.PAGE_RULES, arguments = zoneScopedArgs) { backStackEntry ->
             val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
             val vm = viewModel<PageRulesViewModel>(factory = factoryOf { PageRulesViewModel(zoneId, container.pageRulesRepository) })
-            PageRulesScreen(vm, onBack = { navController.popBackStack() })
+            PageRulesScreen(vm, zoneName = zoneName, onBack = { navController.popBackStack() })
         }
 
-        composable(Routes.CACHING, arguments = listOf(navArgument("zoneId") { type = NavType.StringType })) { backStackEntry ->
+        composable(Routes.CACHING, arguments = zoneScopedArgs) { backStackEntry ->
             val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
             val vm = viewModel<CachingViewModel>(factory = factoryOf { CachingViewModel(zoneId, container.zoneSettingsRepository) })
-            CachingScreen(vm, onBack = { navController.popBackStack() })
+            CachingScreen(vm, zoneName = zoneName, onBack = { navController.popBackStack() })
         }
 
-        composable(Routes.ANALYTICS, arguments = listOf(navArgument("zoneId") { type = NavType.StringType })) { backStackEntry ->
+        composable(Routes.ANALYTICS, arguments = zoneScopedArgs) { backStackEntry ->
             val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
             val vm = viewModel<AnalyticsViewModel>(factory = factoryOf { AnalyticsViewModel(zoneId, container.analyticsRepository) })
-            AnalyticsScreen(vm, onBack = { navController.popBackStack() })
+            AnalyticsScreen(vm, zoneName = zoneName, onBack = { navController.popBackStack() })
         }
     }
 }

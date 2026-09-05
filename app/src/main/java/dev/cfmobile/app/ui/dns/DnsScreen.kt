@@ -48,16 +48,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.cfmobile.app.data.remote.dto.DnsRecord
 import dev.cfmobile.app.ui.common.EmptyState
 import dev.cfmobile.app.ui.common.StateContent
+import dev.cfmobile.app.ui.common.ZoneScopedTitle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DnsScreen(viewModel: DnsViewModel, onBack: () -> Unit) {
+fun DnsScreen(viewModel: DnsViewModel, zoneName: String, onBack: () -> Unit) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("DNS Records") },
+                title = { ZoneScopedTitle("DNS Records", zoneName) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") } }
             )
         },
@@ -75,6 +76,7 @@ fun DnsScreen(viewModel: DnsViewModel, onBack: () -> Unit) {
                     items(records, key = { it.id }) { record ->
                         DnsRecordRow(
                             record = record,
+                            zoneName = zoneName,
                             isDeleting = uiState.deletingId == record.id,
                             onClick = { viewModel.openEditForm(record) },
                             onDelete = { viewModel.delete(record) }
@@ -97,7 +99,7 @@ fun DnsScreen(viewModel: DnsViewModel, onBack: () -> Unit) {
 }
 
 @Composable
-private fun DnsRecordRow(record: DnsRecord, isDeleting: Boolean, onClick: () -> Unit, onDelete: () -> Unit) {
+private fun DnsRecordRow(record: DnsRecord, zoneName: String, isDeleting: Boolean, onClick: () -> Unit, onDelete: () -> Unit) {
     var confirmDelete by remember { mutableStateOf(false) }
 
     Row(
@@ -134,7 +136,7 @@ private fun DnsRecordRow(record: DnsRecord, isDeleting: Boolean, onClick: () -> 
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text("Delete record?") },
-            text = { Text("${record.type} record for ${record.name} will be removed immediately.") },
+            text = { Text("${record.type} record for ${record.name} on $zoneName will be removed immediately.") },
             confirmButton = {
                 TextButton(onClick = { confirmDelete = false; onDelete() }) { Text("Delete") }
             },

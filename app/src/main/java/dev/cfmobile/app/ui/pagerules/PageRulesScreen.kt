@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -42,16 +43,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.cfmobile.app.data.remote.dto.PageRule
 import dev.cfmobile.app.ui.common.EmptyState
 import dev.cfmobile.app.ui.common.StateContent
+import dev.cfmobile.app.ui.common.ZoneScopedTitle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PageRulesScreen(viewModel: PageRulesViewModel, onBack: () -> Unit) {
+fun PageRulesScreen(viewModel: PageRulesViewModel, zoneName: String, onBack: () -> Unit) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Page Rules") },
+                title = { ZoneScopedTitle("Page Rules", zoneName) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") } }
             )
         },
@@ -65,7 +67,7 @@ fun PageRulesScreen(viewModel: PageRulesViewModel, onBack: () -> Unit) {
             } else {
                 LazyColumn(Modifier.padding(padding), contentPadding = PaddingValues(bottom = 96.dp)) {
                     items(rules, key = { it.id }) { rule ->
-                        PageRuleRow(rule, onToggle = { viewModel.toggleActive(rule) }, onDelete = { viewModel.delete(rule) })
+                        PageRuleRow(rule, zoneName = zoneName, onToggle = { viewModel.toggleActive(rule) }, onDelete = { viewModel.delete(rule) })
                         HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                     }
                 }
@@ -79,7 +81,9 @@ fun PageRulesScreen(viewModel: PageRulesViewModel, onBack: () -> Unit) {
 }
 
 @Composable
-private fun PageRuleRow(rule: PageRule, onToggle: () -> Unit, onDelete: () -> Unit) {
+private fun PageRuleRow(rule: PageRule, zoneName: String, onToggle: () -> Unit, onDelete: () -> Unit) {
+    var confirmDelete by remember { mutableStateOf(false) }
+
     Row(Modifier.fillMaxWidth().padding(16.dp, 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Column(Modifier.weight(1f)) {
             Text(rule.targets.firstOrNull()?.constraint?.value ?: "", style = MaterialTheme.typography.bodyLarge, fontFamily = FontFamily.Monospace, maxLines = 1)
@@ -90,7 +94,17 @@ private fun PageRuleRow(rule: PageRule, onToggle: () -> Unit, onDelete: () -> Un
             )
         }
         Switch(checked = rule.status == "active", onCheckedChange = { onToggle() })
-        IconButton(onClick = onDelete) { Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error) }
+        IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error) }
+    }
+
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text("Delete page rule?") },
+            text = { Text("This override for ${rule.targets.firstOrNull()?.constraint?.value ?: "this URL pattern"} on $zoneName will stop applying immediately.") },
+            confirmButton = { TextButton(onClick = { confirmDelete = false; onDelete() }) { Text("Delete") } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } }
+        )
     }
 }
 

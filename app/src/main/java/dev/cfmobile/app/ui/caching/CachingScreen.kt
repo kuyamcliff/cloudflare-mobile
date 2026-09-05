@@ -31,18 +31,19 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.cfmobile.app.ui.common.OptionRow
 import dev.cfmobile.app.ui.common.StateContent
 import dev.cfmobile.app.ui.common.ToggleRow
+import dev.cfmobile.app.ui.common.ZoneScopedTitle
 import dev.cfmobile.app.ui.theme.StatusRed
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CachingScreen(viewModel: CachingViewModel, onBack: () -> Unit) {
+fun CachingScreen(viewModel: CachingViewModel, zoneName: String, onBack: () -> Unit) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var confirmPurge by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Caching") },
+                title = { ZoneScopedTitle("Caching", zoneName) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") } }
             )
         }
@@ -113,7 +114,7 @@ fun CachingScreen(viewModel: CachingViewModel, onBack: () -> Unit) {
         AlertDialog(
             onDismissRequest = { confirmPurge = false },
             title = { Text("Purge everything?") },
-            text = { Text("All cached files for this domain will be removed from Cloudflare's edge network right away.") },
+            text = { Text("All cached files for $zoneName will be removed from Cloudflare's edge network right away.") },
             confirmButton = {
                 TextButton(onClick = { confirmPurge = false; viewModel.purgeEverything() }) { Text("Purge") }
             },

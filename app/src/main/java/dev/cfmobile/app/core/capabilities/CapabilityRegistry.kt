@@ -24,7 +24,7 @@ object CapabilityRegistry {
             status = CapabilityStatus.IMPLEMENTED,
             roadmapPhase = RoadmapPhase.P0,
             destructiveRisk = DestructiveRisk.MEDIUM,
-            zoneRoute = { Routes.dns(it) }
+            zoneRoute = { id, name -> Routes.dns(id, name) }
         ),
         Capability(
             id = "ssl.tls",
@@ -35,7 +35,7 @@ object CapabilityRegistry {
             status = CapabilityStatus.IMPLEMENTED,
             roadmapPhase = RoadmapPhase.P0,
             destructiveRisk = DestructiveRisk.MEDIUM,
-            zoneRoute = { Routes.ssl(it) }
+            zoneRoute = { id, name -> Routes.ssl(id, name) }
         ),
         Capability(
             id = "firewall.legacy",
@@ -46,7 +46,7 @@ object CapabilityRegistry {
             status = CapabilityStatus.IMPLEMENTED,
             roadmapPhase = RoadmapPhase.P0,
             destructiveRisk = DestructiveRisk.HIGH,
-            zoneRoute = { Routes.firewall(it) }
+            zoneRoute = { id, name -> Routes.firewall(id, name) }
         ),
         Capability(
             id = "waf.rulesets",
@@ -87,7 +87,7 @@ object CapabilityRegistry {
             status = CapabilityStatus.IMPLEMENTED,
             roadmapPhase = RoadmapPhase.P0,
             destructiveRisk = DestructiveRisk.MEDIUM,
-            zoneRoute = { Routes.pageRules(it) },
+            zoneRoute = { id, name -> Routes.pageRules(id, name) },
             deprecated = true,
             migrationHint = "Page Rules are a legacy configuration surface. For new configuration, consider Rules, Redirects, Origin Rules, or Transform Rules."
         ),
@@ -100,7 +100,7 @@ object CapabilityRegistry {
             status = CapabilityStatus.IMPLEMENTED,
             roadmapPhase = RoadmapPhase.P0,
             destructiveRisk = DestructiveRisk.MEDIUM,
-            zoneRoute = { Routes.caching(it) }
+            zoneRoute = { id, name -> Routes.caching(id, name) }
         ),
         Capability(
             id = "analytics",
@@ -110,7 +110,7 @@ object CapabilityRegistry {
             scope = CapabilityScope.ZONE,
             status = CapabilityStatus.IMPLEMENTED,
             roadmapPhase = RoadmapPhase.P0,
-            zoneRoute = { Routes.analytics(it) }
+            zoneRoute = { id, name -> Routes.analytics(id, name) }
         ),
         Capability(
             id = "security_events",

@@ -33,6 +33,16 @@ fun <T> StateContent(
     }
 }
 
+/** Every zone-scoped screen's app bar title, so the target zone is always visible - not just
+ *  in destructive confirmations but as ambient context while browsing (PRD §49). */
+@Composable
+fun ZoneScopedTitle(title: String, zoneName: String) {
+    Column {
+        Text(title, style = MaterialTheme.typography.titleMedium)
+        Text(zoneName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
 @Composable
 fun FullScreenLoading() {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

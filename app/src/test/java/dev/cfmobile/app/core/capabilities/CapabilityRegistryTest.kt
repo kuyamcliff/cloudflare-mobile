@@ -17,7 +17,9 @@ class CapabilityRegistryTest {
             .filter { it.scope == CapabilityScope.ZONE }
             .forEach { capability ->
                 assertThat(capability.zoneRoute).isNotNull()
-                assertThat(capability.zoneRoute!!("zone123")).contains("zone123")
+                val route = capability.zoneRoute!!("zone123", "example.com")
+                assertThat(route).contains("zone123")
+                assertThat(route).contains("example.com")
             }
     }
 

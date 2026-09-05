@@ -74,7 +74,7 @@ fun ZoneMenuScreen(
                 LazyColumn {
                     items(CapabilityRegistry.implemented(), key = { it.id }) { capability ->
                         CapabilityRow(capability, implemented = true) {
-                            capability.zoneRoute?.let { route -> onFeatureClick(route(zone.id)) }
+                            capability.zoneRoute?.let { route -> onFeatureClick(route(zone.id, zone.name)) }
                         }
                         HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                     }
