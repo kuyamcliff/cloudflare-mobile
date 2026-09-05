@@ -54,7 +54,7 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
         }
 
         composable(Routes.ZONES) {
-            val vm = viewModel<ZonesViewModel>(factory = factoryOf { ZonesViewModel(container.zonesRepository, container.authRepository) })
+            val vm = viewModel<ZonesViewModel>(factory = factoryOf { ZonesViewModel(container.zonesRepository, container.authRepository, container.zonesCache) })
             ZonesScreen(
                 vm,
                 onZoneClick = { zone: CfZone -> navController.navigate(Routes.zoneMenu(zone.id, zone.name)) },

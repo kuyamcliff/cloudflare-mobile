@@ -4,6 +4,8 @@ import android.content.Context
 import dev.cfmobile.app.core.security.AppLockPreferences
 import dev.cfmobile.app.core.security.AppLockState
 import dev.cfmobile.app.data.local.AccountStore
+import dev.cfmobile.app.data.local.db.CfDatabase
+import dev.cfmobile.app.data.local.db.ZonesCache
 import dev.cfmobile.app.data.remote.NetworkModule
 import dev.cfmobile.app.data.repository.AccountsRepository
 import dev.cfmobile.app.data.repository.AnalyticsRepository
@@ -22,6 +24,7 @@ import dev.cfmobile.app.data.repository.ZonesRepository
 class AppContainer(context: Context) {
     val accountStore = AccountStore.create(context.applicationContext)
     val appLockState = AppLockState(AppLockPreferences.create(context.applicationContext))
+    private val database = CfDatabase.create(context.applicationContext)
 
     private val api = NetworkModule.createApi { accountStore.getActiveToken() }
     private val verifierApi = NetworkModule.createVerifierApi()
@@ -29,6 +32,7 @@ class AppContainer(context: Context) {
     val authRepository = AuthRepository(verifierApi, accountStore)
     val accountsRepository = AccountsRepository(api)
     val zonesRepository = ZonesRepository(api)
+    val zonesCache = ZonesCache(database.zoneDao())
     val dnsRepository = DnsRepository(api)
     val zoneSettingsRepository = ZoneSettingsRepository(api)
     val firewallRepository = FirewallRepository(api)

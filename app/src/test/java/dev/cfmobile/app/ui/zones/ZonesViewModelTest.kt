@@ -1,12 +1,15 @@
 package dev.cfmobile.app.ui.zones
 
 import android.app.Application
+import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import dev.cfmobile.app.MainDispatcherRule
 import dev.cfmobile.app.data.local.AccountMetadataStore
 import dev.cfmobile.app.data.local.AccountStore
 import dev.cfmobile.app.data.local.CredentialStore
+import dev.cfmobile.app.data.local.db.CfDatabase
+import dev.cfmobile.app.data.local.db.ZonesCache
 import dev.cfmobile.app.data.remote.testApi
 import dev.cfmobile.app.data.remote.testVerifierApi
 import dev.cfmobile.app.data.repository.AuthRepository
@@ -35,6 +38,8 @@ class ZonesViewModelTest {
     private lateinit var server: MockWebServer
     private lateinit var accountStore: AccountStore
     private lateinit var authRepository: AuthRepository
+    private lateinit var database: CfDatabase
+    private lateinit var zonesCache: ZonesCache
 
     @Before
     fun setUp() {
@@ -46,10 +51,15 @@ class ZonesViewModelTest {
         val metadata = AccountMetadataStore(context.getSharedPreferences("test_zones_metadata", android.content.Context.MODE_PRIVATE))
         accountStore = AccountStore(credentials, metadata)
         authRepository = AuthRepository(testVerifierApi(server), accountStore)
+        database = Room.inMemoryDatabaseBuilder(context, CfDatabase::class.java).build()
+        zonesCache = ZonesCache(database.zoneDao())
     }
 
     @After
-    fun tearDown() = server.shutdown()
+    fun tearDown() {
+        server.shutdown()
+        database.close()
+    }
 
     private val zonesJson = """
         {"success":true,"errors":[],"result":[
@@ -68,7 +78,7 @@ class ZonesViewModelTest {
     @Test
     fun `loads zones on init`() = runTest {
         server.enqueue(MockResponse().setBody(zonesJson))
-        val viewModel = ZonesViewModel(ZonesRepository(testApi(server)), authRepository)
+        val viewModel = ZonesViewModel(ZonesRepository(testApi(server)), authRepository, zonesCache)
 
         val state = viewModel.awaitLoaded()
 
@@ -79,7 +89,7 @@ class ZonesViewModelTest {
     @Test
     fun `records when zones were last successfully loaded`() = runTest {
         server.enqueue(MockResponse().setBody(zonesJson))
-        val viewModel = ZonesViewModel(ZonesRepository(testApi(server)), authRepository)
+        val viewModel = ZonesViewModel(ZonesRepository(testApi(server)), authRepository, zonesCache)
 
         viewModel.awaitLoaded()
 
@@ -92,7 +102,7 @@ class ZonesViewModelTest {
             MockResponse().setResponseCode(403)
                 .setBody("""{"success":false,"errors":[{"code":9109,"message":"Invalid API token"}],"result":null}""")
         )
-        val viewModel = ZonesViewModel(ZonesRepository(testApi(server)), authRepository)
+        val viewModel = ZonesViewModel(ZonesRepository(testApi(server)), authRepository, zonesCache)
 
         viewModel.awaitLoaded()
 
@@ -102,7 +112,7 @@ class ZonesViewModelTest {
     @Test
     fun `query filters by domain name substring, case-insensitively`() = runTest {
         server.enqueue(MockResponse().setBody(zonesJson))
-        val viewModel = ZonesViewModel(ZonesRepository(testApi(server)), authRepository)
+        val viewModel = ZonesViewModel(ZonesRepository(testApi(server)), authRepository, zonesCache)
         viewModel.awaitLoaded()
 
         viewModel.onQueryChange("EXAMPLE")
@@ -117,7 +127,7 @@ class ZonesViewModelTest {
             MockResponse().setResponseCode(403)
                 .setBody("""{"success":false,"errors":[{"code":9109,"message":"Invalid API token"}],"result":null}""")
         )
-        val viewModel = ZonesViewModel(ZonesRepository(testApi(server)), authRepository)
+        val viewModel = ZonesViewModel(ZonesRepository(testApi(server)), authRepository, zonesCache)
 
         val state = viewModel.awaitLoaded()
 
@@ -132,7 +142,7 @@ class ZonesViewModelTest {
         accountStore.setActive(accountA.id)
 
         server.enqueue(MockResponse().setBody(zonesJson)) // initial load for account A
-        val viewModel = ZonesViewModel(ZonesRepository(testApi(server)), authRepository)
+        val viewModel = ZonesViewModel(ZonesRepository(testApi(server)), authRepository, zonesCache)
         viewModel.awaitLoaded()
         viewModel.onQueryChange("example")
 
@@ -150,7 +160,7 @@ class ZonesViewModelTest {
         val accountA = accountStore.add(label = "Personal", token = "tokA")
 
         server.enqueue(MockResponse().setBody(zonesJson))
-        val viewModel = ZonesViewModel(ZonesRepository(testApi(server)), authRepository)
+        val viewModel = ZonesViewModel(ZonesRepository(testApi(server)), authRepository, zonesCache)
         viewModel.awaitLoaded()
 
         viewModel.switchAccount(accountA.id)
@@ -158,5 +168,54 @@ class ZonesViewModelTest {
         // No second request was made - switching to the account that's already active
         // shouldn't trigger a redundant reload.
         assertThat(server.requestCount).isEqualTo(1)
+    }
+
+    @Test
+    fun `a previously cached zone list for this account shows immediately, before the network responds`() = runTest {
+        val account = accountStore.add(label = "Personal", token = "tokA")
+        accountStore.setActive(account.id)
+        zonesCache.save(
+            account.id,
+            listOf(dev.cfmobile.app.data.remote.dto.CfZone(id = "cached-1", name = "cached.example.com", status = "active")),
+            fetchedAt = 123456789L
+        )
+
+        // Never resolves during this test - the point is that cached data appears without it.
+        server.enqueue(MockResponse().setBody(zonesJson).setBodyDelay(1, java.util.concurrent.TimeUnit.DAYS))
+        val viewModel = ZonesViewModel(ZonesRepository(testApi(server)), authRepository, zonesCache)
+        val state = viewModel.state.first { it is UiState.Data }
+
+        assertThat((state as UiState.Data).value.map { it.name }).containsExactly("cached.example.com")
+        assertThat(viewModel.lastUpdatedAt.value).isEqualTo(123456789L)
+    }
+
+    @Test
+    fun `a successful live fetch overwrites the cache for this account`() = runTest {
+        val account = accountStore.add(label = "Personal", token = "tokA")
+        accountStore.setActive(account.id)
+
+        server.enqueue(MockResponse().setBody(zonesJson))
+        val viewModel = ZonesViewModel(ZonesRepository(testApi(server)), authRepository, zonesCache)
+        viewModel.awaitLoaded()
+
+        val cached = zonesCache.get(account.id)
+        assertThat(cached.zones.map { it.name }).containsExactly("example.com", "test.dev", "another-example.net")
+    }
+
+    @Test
+    fun `a background refresh failure keeps showing the already-cached data instead of an error`() = runTest {
+        val account = accountStore.add(label = "Personal", token = "tokA")
+        accountStore.setActive(account.id)
+        zonesCache.save(
+            account.id,
+            listOf(dev.cfmobile.app.data.remote.dto.CfZone(id = "cached-1", name = "cached.example.com", status = "active")),
+            fetchedAt = 1L
+        )
+
+        server.enqueue(MockResponse().setResponseCode(500).setBody("""{"success":false,"errors":[],"result":null}"""))
+        val viewModel = ZonesViewModel(ZonesRepository(testApi(server)), authRepository, zonesCache)
+        val state = viewModel.state.first { it is UiState.Data }
+
+        assertThat((state as UiState.Data).value.map { it.name }).containsExactly("cached.example.com")
     }
 }
