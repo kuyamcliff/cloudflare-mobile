@@ -22,6 +22,17 @@ interface CloudflareApi {
         @Header("Authorization") authorization: String
     ): Response<CfEnvelope<TokenVerifyResult>>
 
+    /** Fallback validity check for account-owned API tokens (the `cfat_`-prefixed kind
+     *  created under Account > API Tokens rather than a user's own profile). Those tokens
+     *  aren't tied to a user identity at all, so `/user/tokens/verify` always rejects them
+     *  with "Invalid API Token" even when the token works fine - listing zones is something
+     *  every token this app can use needs to be able to do anyway. */
+    @GET("zones")
+    suspend fun listZonesWithAuth(
+        @Header("Authorization") authorization: String,
+        @Query("per_page") perPage: Int = 1
+    ): Response<CfEnvelope<List<CfZone>>>
+
     @GET("user")
     suspend fun getUser(): Response<CfEnvelope<CfUser>>
 

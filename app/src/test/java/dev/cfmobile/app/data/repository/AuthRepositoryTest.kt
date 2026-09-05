@@ -54,16 +54,34 @@ class AuthRepositoryTest {
     }
 
     @Test
-    fun `addToken does not persist anything when Cloudflare rejects it`() = runBlocking {
-        server.enqueue(
-            MockResponse().setResponseCode(401)
-                .setBody("""{"success":false,"errors":[{"code":1000,"message":"Invalid API Token"}],"result":null}""")
-        )
+    fun `addToken does not persist anything when Cloudflare rejects it on every check`() = runBlocking {
+        val invalidTokenResponse = MockResponse().setResponseCode(401)
+            .setBody("""{"success":false,"errors":[{"code":1000,"message":"Invalid API Token"}],"result":null}""")
+        server.enqueue(invalidTokenResponse) // /user/tokens/verify
+        server.enqueue(invalidTokenResponse) // /zones fallback
 
         val result = repository.addToken("Bad token", "not-a-real-token")
 
         assertThat(result).isInstanceOf(ApiResult.Failure::class.java)
         assertThat(tokenStore.getAll()).isEmpty()
+    }
+
+    @Test
+    fun `account-owned tokens save via the zones fallback when tokens-verify rejects them`() = runBlocking {
+        // Account-owned tokens (the cfat_ prefix) aren't tied to a user, so
+        // /user/tokens/verify always answers Invalid API Token for them even when the
+        // token genuinely works - confirmed directly against Cloudflare's API. The zones
+        // call is what should catch that the token is actually fine.
+        server.enqueue(
+            MockResponse().setResponseCode(401)
+                .setBody("""{"success":false,"errors":[{"code":1000,"message":"Invalid API Token"}],"result":null}""")
+        )
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[{"id":"z1","name":"example.com","status":"active"}]}"""))
+
+        val result = repository.addToken("Account token", "cfat_realtoken")
+
+        assertThat(result).isInstanceOf(ApiResult.Success::class.java)
+        assertThat(tokenStore.getActive()?.token).isEqualTo("cfat_realtoken")
     }
 
     @Test
