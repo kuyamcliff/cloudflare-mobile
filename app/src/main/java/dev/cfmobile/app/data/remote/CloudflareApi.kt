@@ -339,4 +339,21 @@ interface CloudflareApi {
         @Path("accountId") accountId: String,
         @Path("bucketName") bucketName: String
     ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Workers KV (namespace management only - no per-key browsing/editing) ----
+
+    @GET("accounts/{accountId}/storage/kv/namespaces")
+    suspend fun listKvNamespaces(@Path("accountId") accountId: String): Response<CfEnvelope<List<KvNamespace>>>
+
+    @POST("accounts/{accountId}/storage/kv/namespaces")
+    suspend fun createKvNamespace(
+        @Path("accountId") accountId: String,
+        @Body namespace: KvNamespaceCreate
+    ): Response<CfEnvelope<KvNamespace>>
+
+    @DELETE("accounts/{accountId}/storage/kv/namespaces/{namespaceId}")
+    suspend fun deleteKvNamespace(
+        @Path("accountId") accountId: String,
+        @Path("namespaceId") namespaceId: String
+    ): Response<CfEnvelope<Map<String, String>>>
 }

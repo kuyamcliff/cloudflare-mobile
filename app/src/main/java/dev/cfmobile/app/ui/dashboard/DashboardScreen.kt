@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Security
@@ -66,6 +67,7 @@ fun DashboardScreen(
     onAuditLogsClick: (accountId: String) -> Unit,
     onLoadBalancingClick: (accountId: String) -> Unit,
     onR2Click: (accountId: String) -> Unit,
+    onKvClick: (accountId: String) -> Unit,
     onSecurityClick: () -> Unit,
     onManageAccountsClick: () -> Unit
 ) {
@@ -116,6 +118,11 @@ fun DashboardScreen(
                     "R2 Storage", "Object storage buckets",
                     Icons.Filled.Inventory2, enabled = hasAccountAccess,
                     onClick = { primaryAccountId?.let(onR2Click) }
+                ),
+                DashboardMenuItem(
+                    "Workers KV", "Key-value namespaces for Workers",
+                    Icons.Filled.Key, enabled = hasAccountAccess,
+                    onClick = { primaryAccountId?.let(onKvClick) }
                 )
             )
         ),

@@ -467,3 +467,14 @@ data class R2BucketListResult(
 data class R2BucketCreate(
     val name: String
 )
+
+@JsonClass(generateAdapter = true)
+data class KvNamespace(
+    val id: String = "",
+    val title: String = ""
+)
+
+@JsonClass(generateAdapter = true)
+data class KvNamespaceCreate(
+    val title: String
+)

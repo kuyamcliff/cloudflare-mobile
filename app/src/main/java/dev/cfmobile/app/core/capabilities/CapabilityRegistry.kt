@@ -223,8 +223,11 @@ object CapabilityRegistry {
             displayName = "KV",
             description = "Key-value storage for Workers",
             scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P1
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.kv(accountId) },
+            migrationHint = "Namespace management only (create/list/delete) - browsing or editing individual keys isn't implemented, that's a separate larger surface. Not verified against a live API call."
         ),
         Capability(
             id = "d1",

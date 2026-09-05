@@ -91,36 +91,43 @@ class LoadBalancingViewModel(
     private val _uiState = MutableStateFlow(LoadBalancingUiState())
     val uiState: StateFlow<LoadBalancingUiState> = _uiState.asStateFlow()
 
+    // Pools and zones/load-balancers are loaded sequentially in one coroutine rather than two
+    // independently-launched ones - both would otherwise fire real, concurrent HTTP requests
+    // whose actual arrival order at the server is a genuine race (not something the coroutine
+    // dispatcher controls), which is both pointless to parallelize here and made the load
+    // sequence non-deterministic.
     init {
-        refreshPools()
-        loadZones()
-    }
-
-    fun refreshPools() {
-        _uiState.update { it.copy(pools = UiState.Loading) }
         viewModelScope.launch {
-            when (val result = repository.listPools(accountId)) {
-                is ApiResult.Success -> _uiState.update { it.copy(pools = UiState.Data(result.data)) }
-                is ApiResult.Failure -> _uiState.update { it.copy(pools = UiState.Error(ErrorClassifier.classify(result))) }
-            }
+            loadPools()
+            loadZonesThenLoadBalancers()
         }
     }
 
-    private fun loadZones() {
-        viewModelScope.launch {
-            when (val result = zonesRepository.listZones()) {
-                is ApiResult.Success -> {
-                    _uiState.update { state -> state.copy(zones = result.data, selectedZoneId = state.selectedZoneId ?: result.data.firstOrNull()?.id) }
-                    if (result.data.isEmpty()) {
-                        // No zone to pick means there's nothing to fetch load balancers for -
-                        // resolve to an empty list rather than leaving this tab spinning forever.
-                        _uiState.update { it.copy(loadBalancers = UiState.Data(emptyList())) }
-                    } else {
-                        refreshLoadBalancers()
-                    }
+    fun refreshPools() {
+        viewModelScope.launch { loadPools() }
+    }
+
+    private suspend fun loadPools() {
+        _uiState.update { it.copy(pools = UiState.Loading) }
+        when (val result = repository.listPools(accountId)) {
+            is ApiResult.Success -> _uiState.update { it.copy(pools = UiState.Data(result.data)) }
+            is ApiResult.Failure -> _uiState.update { it.copy(pools = UiState.Error(ErrorClassifier.classify(result))) }
+        }
+    }
+
+    private suspend fun loadZonesThenLoadBalancers() {
+        when (val result = zonesRepository.listZones()) {
+            is ApiResult.Success -> {
+                _uiState.update { state -> state.copy(zones = result.data, selectedZoneId = state.selectedZoneId ?: result.data.firstOrNull()?.id) }
+                if (result.data.isEmpty()) {
+                    // No zone to pick means there's nothing to fetch load balancers for -
+                    // resolve to an empty list rather than leaving this tab spinning forever.
+                    _uiState.update { it.copy(loadBalancers = UiState.Data(emptyList())) }
+                } else {
+                    loadLoadBalancersForSelectedZone()
                 }
-                is ApiResult.Failure -> _uiState.update { it.copy(loadBalancers = UiState.Error(ErrorClassifier.classify(result))) }
             }
+            is ApiResult.Failure -> _uiState.update { it.copy(loadBalancers = UiState.Error(ErrorClassifier.classify(result))) }
         }
     }
 
@@ -131,13 +138,15 @@ class LoadBalancingViewModel(
     }
 
     fun refreshLoadBalancers() {
+        viewModelScope.launch { loadLoadBalancersForSelectedZone() }
+    }
+
+    private suspend fun loadLoadBalancersForSelectedZone() {
         val zoneId = _uiState.value.selectedZoneId ?: return
         _uiState.update { it.copy(loadBalancers = UiState.Loading) }
-        viewModelScope.launch {
-            when (val result = repository.listLoadBalancers(zoneId)) {
-                is ApiResult.Success -> _uiState.update { it.copy(loadBalancers = UiState.Data(result.data)) }
-                is ApiResult.Failure -> _uiState.update { it.copy(loadBalancers = UiState.Error(ErrorClassifier.classify(result))) }
-            }
+        when (val result = repository.listLoadBalancers(zoneId)) {
+            is ApiResult.Success -> _uiState.update { it.copy(loadBalancers = UiState.Data(result.data)) }
+            is ApiResult.Failure -> _uiState.update { it.copy(loadBalancers = UiState.Error(ErrorClassifier.classify(result))) }
         }
     }
 
