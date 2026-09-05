@@ -92,4 +92,13 @@ class CapabilityRegistryTest {
         assertThat(auditLogs.accountRoute!!("acct1")).isEqualTo("account/acct1/auditlogs")
         assertThat(auditLogs.migrationHint).isNotNull()
     }
+
+    @Test
+    fun `load balancing is implemented and discloses its monitor and single-pool gaps`() {
+        val loadBalancing = CapabilityRegistry.byId("load_balancing")!!
+        assertThat(loadBalancing.status).isEqualTo(CapabilityStatus.IMPLEMENTED)
+        assertThat(loadBalancing.accountRoute).isNotNull()
+        assertThat(loadBalancing.accountRoute!!("acct1")).isEqualTo("account/acct1/loadbalancing")
+        assertThat(loadBalancing.migrationHint).isNotNull()
+    }
 }

@@ -398,3 +398,54 @@ data class AuditLogEntry(
     @Json(name = "newValue") val newValue: String? = null,
     @Json(name = "oldValue") val oldValue: String? = null
 )
+
+@JsonClass(generateAdapter = true)
+data class LoadBalancerOrigin(
+    val name: String = "",
+    val address: String = "",
+    val enabled: Boolean = true,
+    val weight: Double = 1.0
+)
+
+/** Pools and their origins are account-level, shared across every zone's load balancers -
+ *  unlike [LoadBalancer] itself, which is zone-scoped. Health check monitors aren't modeled
+ *  here (see LoadBalancingRepository); a pool works without one, just with no automatic
+ *  failover based on health. */
+@JsonClass(generateAdapter = true)
+data class LoadBalancerPool(
+    val id: String = "",
+    val name: String = "",
+    val enabled: Boolean = true,
+    val monitor: String? = null,
+    val origins: List<LoadBalancerOrigin> = emptyList(),
+    @Json(name = "minimum_origins") val minimumOrigins: Int = 1
+)
+
+@JsonClass(generateAdapter = true)
+data class LoadBalancerPoolWrite(
+    val name: String,
+    val enabled: Boolean = true,
+    val origins: List<LoadBalancerOrigin>,
+    @Json(name = "minimum_origins") val minimumOrigins: Int = 1
+)
+
+@JsonClass(generateAdapter = true)
+data class LoadBalancer(
+    val id: String = "",
+    val name: String = "",
+    val enabled: Boolean = true,
+    val proxied: Boolean = true,
+    @Json(name = "default_pools") val defaultPools: List<String> = emptyList(),
+    @Json(name = "fallback_pool") val fallbackPool: String? = null,
+    val ttl: Int? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class LoadBalancerWrite(
+    val name: String,
+    val enabled: Boolean = true,
+    val proxied: Boolean = true,
+    @Json(name = "default_pools") val defaultPools: List<String>,
+    @Json(name = "fallback_pool") val fallbackPool: String,
+    val ttl: Int = 30
+)

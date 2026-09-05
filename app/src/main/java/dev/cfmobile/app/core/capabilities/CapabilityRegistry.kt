@@ -141,10 +141,13 @@ object CapabilityRegistry {
             id = "load_balancing",
             product = "Traffic",
             displayName = "Load Balancing & Health Checks",
-            description = "Load balancers, monitors, pools, origins",
+            description = "Load balancers, pools, origins",
             scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P1
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.loadBalancing(accountId) },
+            migrationHint = "Health check monitors aren't implemented - pools work without one, just without automatic origin failover. Each load balancer form only supports a single pool (no multi-pool steering/priority or geo-steering). Not verified against a live API call."
         ),
         Capability(
             id = "page_shield",

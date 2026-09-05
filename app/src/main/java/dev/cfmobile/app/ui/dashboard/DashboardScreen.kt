@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CallSplit
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.History
@@ -62,6 +63,7 @@ fun DashboardScreen(
     onDomainsClick: () -> Unit,
     onAccountMembersClick: (accountId: String) -> Unit,
     onAuditLogsClick: (accountId: String) -> Unit,
+    onLoadBalancingClick: (accountId: String) -> Unit,
     onSecurityClick: () -> Unit,
     onManageAccountsClick: () -> Unit
 ) {
@@ -92,6 +94,16 @@ fun DashboardScreen(
                     "Audit Logs", "Who changed what, and when",
                     Icons.Filled.History, enabled = hasAccountAccess,
                     onClick = { primaryAccountId?.let(onAuditLogsClick) }
+                )
+            )
+        ),
+        DashboardSection(
+            title = "Traffic",
+            items = listOf(
+                DashboardMenuItem(
+                    "Load Balancing", "Pools, origins, and load balancers across your zones",
+                    Icons.Filled.CallSplit, enabled = hasAccountAccess,
+                    onClick = { primaryAccountId?.let(onLoadBalancingClick) }
                 )
             )
         ),

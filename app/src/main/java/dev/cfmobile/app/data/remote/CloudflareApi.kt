@@ -290,4 +290,36 @@ interface CloudflareApi {
         @Query("page") page: Int = 1,
         @Query("per_page") perPage: Int = 50
     ): Response<CfEnvelope<List<AuditLogEntry>>>
+
+    // ---- Load Balancing: pools (account-level) and load balancers (zone-level) ----
+
+    @GET("accounts/{accountId}/load_balancers/pools")
+    suspend fun listLoadBalancerPools(@Path("accountId") accountId: String): Response<CfEnvelope<List<LoadBalancerPool>>>
+
+    @POST("accounts/{accountId}/load_balancers/pools")
+    suspend fun createLoadBalancerPool(
+        @Path("accountId") accountId: String,
+        @Body pool: LoadBalancerPoolWrite
+    ): Response<CfEnvelope<LoadBalancerPool>>
+
+    @DELETE("accounts/{accountId}/load_balancers/pools/{poolId}")
+    suspend fun deleteLoadBalancerPool(
+        @Path("accountId") accountId: String,
+        @Path("poolId") poolId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    @GET("zones/{zoneId}/load_balancers")
+    suspend fun listLoadBalancers(@Path("zoneId") zoneId: String): Response<CfEnvelope<List<LoadBalancer>>>
+
+    @POST("zones/{zoneId}/load_balancers")
+    suspend fun createLoadBalancer(
+        @Path("zoneId") zoneId: String,
+        @Body loadBalancer: LoadBalancerWrite
+    ): Response<CfEnvelope<LoadBalancer>>
+
+    @DELETE("zones/{zoneId}/load_balancers/{loadBalancerId}")
+    suspend fun deleteLoadBalancer(
+        @Path("zoneId") zoneId: String,
+        @Path("loadBalancerId") loadBalancerId: String
+    ): Response<CfEnvelope<Map<String, String>>>
 }
