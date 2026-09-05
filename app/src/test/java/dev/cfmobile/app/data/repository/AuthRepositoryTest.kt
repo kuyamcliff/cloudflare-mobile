@@ -18,8 +18,9 @@ import org.robolectric.annotation.Config
 
 // Uses the plain android.app.Application instead of CfApplication so Robolectric never
 // constructs the real AppContainer (which builds an Android-Keystore-backed
-// EncryptedSharedPreferences that Robolectric's JVM can't provide).
-@Config(application = Application::class)
+// EncryptedSharedPreferences that Robolectric's JVM can't provide). Pinned to sdk=36
+// because Robolectric doesn't yet ship shadows for the app's targetSdk (37).
+@Config(application = Application::class, sdk = [36])
 @RunWith(RobolectricTestRunner::class)
 class AuthRepositoryTest {
 

@@ -10,12 +10,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Http
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Rule
+import androidx.compose.material.icons.automirrored.filled.Rule
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -41,7 +41,7 @@ private val features = listOf(
     FeatureEntry("DNS Records", "A, CNAME, MX, TXT and more", Icons.Filled.Dns) { dev.cfmobile.app.ui.navigation.Routes.dns(it) },
     FeatureEntry("SSL/TLS", "Encryption mode, HTTPS, TLS version", Icons.Filled.Lock) { dev.cfmobile.app.ui.navigation.Routes.ssl(it) },
     FeatureEntry("Firewall", "Firewall rules and IP access rules", Icons.Filled.Shield) { dev.cfmobile.app.ui.navigation.Routes.firewall(it) },
-    FeatureEntry("Page Rules", "URL-based configuration overrides", Icons.Filled.Rule) { dev.cfmobile.app.ui.navigation.Routes.pageRules(it) },
+    FeatureEntry("Page Rules", "URL-based configuration overrides", Icons.AutoMirrored.Filled.Rule) { dev.cfmobile.app.ui.navigation.Routes.pageRules(it) },
     FeatureEntry("Caching", "Cache level, dev mode, purge cache", Icons.Filled.Http) { dev.cfmobile.app.ui.navigation.Routes.caching(it) },
     FeatureEntry("Analytics", "Requests, bandwidth, threats", Icons.Filled.Analytics) { dev.cfmobile.app.ui.navigation.Routes.analytics(it) }
 )
@@ -62,7 +62,7 @@ fun ZoneMenuScreen(
                 title = { Text(zoneName) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
