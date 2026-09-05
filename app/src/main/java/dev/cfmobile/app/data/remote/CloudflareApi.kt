@@ -373,4 +373,15 @@ interface CloudflareApi {
         @Path("accountId") accountId: String,
         @Path("databaseId") databaseId: String
     ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Workers (script list/view/delete only - no code editing/deployment) ----
+
+    @GET("accounts/{accountId}/workers/scripts")
+    suspend fun listWorkerScripts(@Path("accountId") accountId: String): Response<CfEnvelope<List<WorkerScript>>>
+
+    @DELETE("accounts/{accountId}/workers/scripts/{scriptName}")
+    suspend fun deleteWorkerScript(
+        @Path("accountId") accountId: String,
+        @Path("scriptName") scriptName: String
+    ): Response<CfEnvelope<Map<String, String>>>
 }

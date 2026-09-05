@@ -45,6 +45,8 @@ import dev.cfmobile.app.ui.kv.KvScreen
 import dev.cfmobile.app.ui.kv.KvViewModel
 import dev.cfmobile.app.ui.d1.D1Screen
 import dev.cfmobile.app.ui.d1.D1ViewModel
+import dev.cfmobile.app.ui.workers.WorkersScreen
+import dev.cfmobile.app.ui.workers.WorkersViewModel
 import dev.cfmobile.app.ui.r2.R2Screen
 import dev.cfmobile.app.ui.r2.R2ViewModel
 import dev.cfmobile.app.ui.ratelimit.RateLimitScreen
@@ -82,6 +84,7 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
                 onR2Click = { accountId -> navController.navigate(Routes.r2(accountId)) },
                 onKvClick = { accountId -> navController.navigate(Routes.kv(accountId)) },
                 onD1Click = { accountId -> navController.navigate(Routes.d1(accountId)) },
+                onWorkersClick = { accountId -> navController.navigate(Routes.workers(accountId)) },
                 onSecurityClick = { navController.navigate(Routes.SECURITY) },
                 onManageAccountsClick = { navController.navigate(Routes.SETTINGS) }
             )
@@ -186,6 +189,15 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
             val accountId = backStackEntry.arguments?.getString("accountId").orEmpty()
             val vm = viewModel<D1ViewModel>(factory = factoryOf { D1ViewModel(accountId, container.d1Repository) })
             D1Screen(vm, onBack = { navController.popBackStack() })
+        }
+
+        composable(
+            Routes.WORKERS,
+            arguments = listOf(navArgument("accountId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val accountId = backStackEntry.arguments?.getString("accountId").orEmpty()
+            val vm = viewModel<WorkersViewModel>(factory = factoryOf { WorkersViewModel(accountId, container.workersRepository) })
+            WorkersScreen(vm, onBack = { navController.popBackStack() })
         }
 
         val zoneScopedArgs = listOf(navArgument("zoneId") { type = NavType.StringType }, navArgument("zoneName") { type = NavType.StringType })

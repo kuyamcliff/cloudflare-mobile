@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CallSplit
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Dns
@@ -70,6 +71,7 @@ fun DashboardScreen(
     onR2Click: (accountId: String) -> Unit,
     onKvClick: (accountId: String) -> Unit,
     onD1Click: (accountId: String) -> Unit,
+    onWorkersClick: (accountId: String) -> Unit,
     onSecurityClick: () -> Unit,
     onManageAccountsClick: () -> Unit
 ) {
@@ -130,6 +132,11 @@ fun DashboardScreen(
                     "D1", "Serverless SQL databases",
                     Icons.Filled.Storage, enabled = hasAccountAccess,
                     onClick = { primaryAccountId?.let(onD1Click) }
+                ),
+                DashboardMenuItem(
+                    "Workers", "Deployed Worker scripts",
+                    Icons.Filled.Bolt, enabled = hasAccountAccess,
+                    onClick = { primaryAccountId?.let(onWorkersClick) }
                 )
             )
         ),

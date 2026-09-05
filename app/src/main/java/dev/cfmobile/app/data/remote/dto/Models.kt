@@ -493,3 +493,13 @@ data class D1Database(
 data class D1DatabaseCreate(
     val name: String
 )
+
+@JsonClass(generateAdapter = true)
+data class WorkerScript(
+    val id: String = "",
+    val etag: String? = null,
+    val handlers: List<String>? = null,
+    @Json(name = "usage_model") val usageModel: String? = null,
+    @Json(name = "created_on") val createdOn: String? = null,
+    @Json(name = "modified_on") val modifiedOn: String? = null
+)

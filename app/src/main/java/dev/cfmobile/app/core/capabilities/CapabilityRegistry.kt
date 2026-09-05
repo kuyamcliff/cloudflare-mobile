@@ -193,8 +193,11 @@ object CapabilityRegistry {
             displayName = "Workers",
             description = "Deploy, inspect, and manage Workers",
             scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P1
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.workers(accountId) },
+            migrationHint = "List/view/delete only - editing or deploying script code needs an editor and bundler that don't belong on mobile, so that isn't implemented. Not verified against a live API call."
         ),
         Capability(
             id = "pages",

@@ -136,4 +136,13 @@ class CapabilityRegistryTest {
         assertThat(d1.accountRoute!!("acct1")).isEqualTo("account/acct1/d1")
         assertThat(d1.migrationHint).isNotNull()
     }
+
+    @Test
+    fun `workers is implemented for list-view-delete only`() {
+        val workers = CapabilityRegistry.byId("workers")!!
+        assertThat(workers.status).isEqualTo(CapabilityStatus.IMPLEMENTED)
+        assertThat(workers.accountRoute).isNotNull()
+        assertThat(workers.accountRoute!!("acct1")).isEqualTo("account/acct1/workers")
+        assertThat(workers.migrationHint).isNotNull()
+    }
 }
