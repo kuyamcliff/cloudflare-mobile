@@ -395,4 +395,28 @@ interface CloudflareApi {
         @Path("accountId") accountId: String,
         @Path("projectName") projectName: String
     ): Response<CfEnvelope<List<PagesDeployment>>>
+
+    // ---- Zero Trust Access (applications + one inline policy per app - common cases only) ----
+
+    @GET("accounts/{accountId}/access/apps")
+    suspend fun listAccessApplications(@Path("accountId") accountId: String): Response<CfEnvelope<List<AccessApplication>>>
+
+    @POST("accounts/{accountId}/access/apps")
+    suspend fun createAccessApplication(
+        @Path("accountId") accountId: String,
+        @Body application: AccessApplicationCreate
+    ): Response<CfEnvelope<AccessApplication>>
+
+    @DELETE("accounts/{accountId}/access/apps/{appId}")
+    suspend fun deleteAccessApplication(
+        @Path("accountId") accountId: String,
+        @Path("appId") appId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    @POST("accounts/{accountId}/access/apps/{appId}/policies")
+    suspend fun createAccessPolicy(
+        @Path("accountId") accountId: String,
+        @Path("appId") appId: String,
+        @Body policy: AccessPolicyCreate
+    ): Response<CfEnvelope<Map<String, String>>>
 }

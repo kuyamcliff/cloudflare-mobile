@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.CircularProgressIndicator
@@ -74,6 +75,7 @@ fun DashboardScreen(
     onD1Click: (accountId: String) -> Unit,
     onWorkersClick: (accountId: String) -> Unit,
     onPagesClick: (accountId: String) -> Unit,
+    onAccessClick: (accountId: String) -> Unit,
     onSecurityClick: () -> Unit,
     onManageAccountsClick: () -> Unit
 ) {
@@ -144,6 +146,16 @@ fun DashboardScreen(
                     "Pages", "Static site and full-stack deployments",
                     Icons.Filled.Language, enabled = hasAccountAccess,
                     onClick = { primaryAccountId?.let(onPagesClick) }
+                )
+            )
+        ),
+        DashboardSection(
+            title = "Zero Trust",
+            items = listOf(
+                DashboardMenuItem(
+                    "Access", "Applications and email-based policies",
+                    Icons.Filled.Shield, enabled = hasAccountAccess,
+                    onClick = { primaryAccountId?.let(onAccessClick) }
                 )
             )
         ),

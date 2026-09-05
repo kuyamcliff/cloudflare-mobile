@@ -532,6 +532,46 @@ data class PagesDeploymentTrigger(
 )
 
 @JsonClass(generateAdapter = true)
+data class AccessApplication(
+    val id: String = "",
+    val name: String = "",
+    val domain: String = "",
+    val aud: String? = null,
+    @Json(name = "created_at") val createdAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AccessApplicationCreate(
+    val name: String,
+    val domain: String,
+    val type: String = "self_hosted",
+    @Json(name = "session_duration") val sessionDuration: String = "24h"
+)
+
+/** Cloudflare's Access policy "include" entries are a discriminated union in the real API
+ *  (one populated key per object, e.g. {"email_domain":{"domain":"..."}} or
+ *  {"email":{"email":"..."}}) - modeled here as one class with nullable branches, relying on
+ *  Moshi's default of omitting null fields when writing JSON, rather than a custom adapter. */
+@JsonClass(generateAdapter = true)
+data class AccessPolicyIncludeRule(
+    @Json(name = "email_domain") val emailDomain: AccessEmailDomainRule? = null,
+    val email: AccessEmailRule? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AccessEmailDomainRule(val domain: String)
+
+@JsonClass(generateAdapter = true)
+data class AccessEmailRule(val email: String)
+
+@JsonClass(generateAdapter = true)
+data class AccessPolicyCreate(
+    val name: String,
+    val decision: String,
+    val include: List<AccessPolicyIncludeRule>
+)
+
+@JsonClass(generateAdapter = true)
 data class PagesDeployment(
     val id: String = "",
     val environment: String? = null,

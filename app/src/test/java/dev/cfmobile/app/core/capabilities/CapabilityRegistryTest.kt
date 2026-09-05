@@ -154,4 +154,13 @@ class CapabilityRegistryTest {
         assertThat(pages.accountRoute!!("acct1")).isEqualTo("account/acct1/pages")
         assertThat(pages.migrationHint).isNotNull()
     }
+
+    @Test
+    fun `access is implemented for common email-based policy cases only`() {
+        val access = CapabilityRegistry.byId("access")!!
+        assertThat(access.status).isEqualTo(CapabilityStatus.IMPLEMENTED)
+        assertThat(access.accountRoute).isNotNull()
+        assertThat(access.accountRoute!!("acct1")).isEqualTo("account/acct1/access")
+        assertThat(access.migrationHint).isNotNull()
+    }
 }

@@ -261,9 +261,11 @@ object CapabilityRegistry {
             displayName = "Access",
             description = "Applications, policies, identity providers",
             scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
+            status = CapabilityStatus.IMPLEMENTED,
             roadmapPhase = RoadmapPhase.P1,
-            destructiveRisk = DestructiveRisk.HIGH
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.access(accountId) },
+            migrationHint = "Applications with one inline policy each, covering only the common allow/block by email domain or specific addresses cases - identity providers, multi-policy apps, and non-email include rules (groups, IP ranges, service tokens) aren't implemented. Not verified against a live API call."
         ),
         Capability(
             id = "gateway",
