@@ -53,10 +53,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -66,6 +69,9 @@ import dev.cfmobile.app.ui.common.CopyIconButton
 import dev.cfmobile.app.ui.common.EmptyState
 import dev.cfmobile.app.ui.common.StateContent
 import dev.cfmobile.app.ui.common.ZoneScopedTitle
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
@@ -79,12 +85,19 @@ fun DnsScreen(viewModel: DnsViewModel, zoneName: String, onBack: () -> Unit) {
     var overflowExpanded by remember { mutableStateOf(false) }
     var confirmBatchDelete by remember { mutableStateOf(false) }
 
+    val coroutineScope = rememberCoroutineScope()
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
-        val text = context.contentResolver.openInputStream(uri)?.use { stream ->
-            BufferedReader(InputStreamReader(stream)).readText()
+        coroutineScope.launch {
+            // Reading the picked file is blocking I/O - this callback otherwise runs on the
+            // main thread, so a large zone file could jank or ANR without this dispatch.
+            val text = withContext(Dispatchers.IO) {
+                context.contentResolver.openInputStream(uri)?.use { stream ->
+                    BufferedReader(InputStreamReader(stream)).readText()
+                }
+            }
+            if (text != null) viewModel.importZoneFile(text)
         }
-        if (text != null) viewModel.importZoneFile(text)
     }
 
     LaunchedEffect(uiState.exportedZoneFile) {
@@ -230,12 +243,15 @@ private fun DnsRecordRow(
         Modifier
             .fillMaxWidth()
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .then(if (isSelectionMode) Modifier.semantics { selected = isSelected } else Modifier)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         if (isSelectionMode) {
-            Checkbox(checked = isSelected, onCheckedChange = { onClick() })
+            // Purely visual - the Row above already carries the click and the selected state
+            // (via semantics), so this doesn't need its own separate TalkBack stop.
+            Checkbox(checked = isSelected, onCheckedChange = null)
         }
         AssistChip(onClick = onClick, label = { Text(record.type) })
         Column(Modifier.weight(1f).padding(start = 4.dp)) {

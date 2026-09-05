@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
@@ -161,7 +162,7 @@ private fun AccountSwitcherSheet(
                             tint = if (account.id == activeId) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
-                    modifier = Modifier.clickable { onSelect(account.id) }
+                    modifier = Modifier.selectable(selected = account.id == activeId, onClick = { onSelect(account.id) })
                 )
             }
             item {

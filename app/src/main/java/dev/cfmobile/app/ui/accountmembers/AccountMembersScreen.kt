@@ -1,6 +1,5 @@
 package dev.cfmobile.app.ui.accountmembers
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -9,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -36,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.cfmobile.app.data.remote.dto.AccountMember
@@ -164,11 +165,16 @@ private fun InviteMemberSheet(
 
             Text("Roles", style = MaterialTheme.typography.labelLarge)
             roles.forEach { role ->
+                val checked = role.id in form.selectedRoleIds
                 Row(
-                    Modifier.fillMaxWidth().clickable { onToggleRole(role.id) },
+                    Modifier
+                        .fillMaxWidth()
+                        .toggleable(value = checked, role = Role.Checkbox, onValueChange = { onToggleRole(role.id) }),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Checkbox(checked = role.id in form.selectedRoleIds, onCheckedChange = { onToggleRole(role.id) })
+                    // The Row above owns the toggle semantics (one TalkBack target with correct
+                    // checked/unchecked state) - the checkbox itself is purely visual here.
+                    Checkbox(checked = checked, onCheckedChange = null)
                     Column {
                         Text(role.name, style = MaterialTheme.typography.bodyMedium)
                         if (role.description.isNotBlank()) {

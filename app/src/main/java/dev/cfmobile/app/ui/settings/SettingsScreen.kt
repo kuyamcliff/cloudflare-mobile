@@ -1,6 +1,5 @@
 package dev.cfmobile.app.ui.settings
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
@@ -87,7 +87,11 @@ fun SettingsScreen(
                                 Icon(Icons.Filled.Delete, contentDescription = "Remove", tint = MaterialTheme.colorScheme.error)
                             }
                         },
-                        modifier = Modifier.clickable(enabled = token.id != uiState.activeId) { viewModel.switchTo(token.id) }
+                        modifier = Modifier.selectable(
+                            selected = token.id == uiState.activeId,
+                            enabled = token.id != uiState.activeId,
+                            onClick = { viewModel.switchTo(token.id) }
+                        )
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                 }
