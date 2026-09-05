@@ -51,4 +51,12 @@ class CapabilityRegistryTest {
         assertThat(pageRules.deprecated).isTrue()
         assertThat(pageRules.migrationHint).isNotNull()
     }
+
+    @Test
+    fun `waf rulesets is implemented with a route and discloses its managed-rules gap`() {
+        val waf = CapabilityRegistry.byId("waf.rulesets")!!
+        assertThat(waf.status).isEqualTo(CapabilityStatus.IMPLEMENTED)
+        assertThat(waf.zoneRoute).isNotNull()
+        assertThat(waf.migrationHint).isNotNull()
+    }
 }

@@ -51,12 +51,14 @@ object CapabilityRegistry {
         Capability(
             id = "waf.rulesets",
             product = "WAF",
-            displayName = "WAF Rulesets & Custom Rules",
-            description = "Modern managed rules and custom rules (replaces legacy Firewall Rules)",
+            displayName = "WAF Custom Rules",
+            description = "Modern custom rules via the Rulesets engine (replaces legacy Firewall Rules)",
             scope = CapabilityScope.ZONE,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
+            status = CapabilityStatus.IMPLEMENTED,
             roadmapPhase = RoadmapPhase.P0,
-            destructiveRisk = DestructiveRisk.HIGH
+            destructiveRisk = DestructiveRisk.HIGH,
+            zoneRoute = { id, name -> Routes.waf(id, name) },
+            migrationHint = "Covers Custom Rules only for now. Cloudflare Managed Rulesets (e.g. the OWASP Core Ruleset) aren't yet manageable from this app."
         ),
         Capability(
             id = "rate_limiting",

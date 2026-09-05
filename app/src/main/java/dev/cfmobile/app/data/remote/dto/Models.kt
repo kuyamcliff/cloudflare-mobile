@@ -196,6 +196,36 @@ data class AccessRuleWrite(
     val notes: String? = null
 )
 
+/** One rule inside the modern WAF Custom Rules ruleset (Cloudflare's replacement for the
+ *  legacy Firewall Rules engine that [FirewallRule] models). */
+@JsonClass(generateAdapter = true)
+data class RulesetRule(
+    val id: String = "",
+    val action: String = "block",
+    val expression: String = "",
+    val description: String? = null,
+    val enabled: Boolean = true
+)
+
+@JsonClass(generateAdapter = true)
+data class RulesetRuleWrite(
+    val action: String,
+    val expression: String,
+    val description: String? = null,
+    val enabled: Boolean = true
+)
+
+@JsonClass(generateAdapter = true)
+data class Ruleset(
+    val id: String = "",
+    val name: String? = null,
+    val phase: String? = null,
+    val rules: List<RulesetRule> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class RulesetPhaseWrite(val rules: List<RulesetRuleWrite>)
+
 @JsonClass(generateAdapter = true)
 data class PageRuleTarget(
     val target: String = "url",

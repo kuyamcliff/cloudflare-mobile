@@ -180,6 +180,44 @@ interface CloudflareApi {
         @Path("ruleId") ruleId: String
     ): Response<CfEnvelope<Map<String, String>>>
 
+    // ---- WAF Custom Rules (Rulesets) - the modern replacement for legacy Firewall Rules ----
+
+    /** 404s when the zone has never had a custom rule created - callers treat that as "no
+     *  rules yet," not a failure (see WafRepository.getCustomRuleset). */
+    @GET("zones/{zoneId}/rulesets/phases/http_request_firewall_custom/entrypoint")
+    suspend fun getCustomRuleset(@Path("zoneId") zoneId: String): Response<CfEnvelope<Ruleset>>
+
+    /** Creates the phase entrypoint ruleset (if it doesn't exist) or replaces it entirely -
+     *  only used to add the zone's very first custom rule; afterwards rules are added one at a
+     *  time via [addCustomRule] so existing rules are never clobbered. */
+    @PUT("zones/{zoneId}/rulesets/phases/http_request_firewall_custom/entrypoint")
+    suspend fun putCustomRuleset(
+        @Path("zoneId") zoneId: String,
+        @Body body: RulesetPhaseWrite
+    ): Response<CfEnvelope<Ruleset>>
+
+    @POST("zones/{zoneId}/rulesets/{rulesetId}/rules")
+    suspend fun addCustomRule(
+        @Path("zoneId") zoneId: String,
+        @Path("rulesetId") rulesetId: String,
+        @Body rule: RulesetRuleWrite
+    ): Response<CfEnvelope<Ruleset>>
+
+    @PATCH("zones/{zoneId}/rulesets/{rulesetId}/rules/{ruleId}")
+    suspend fun updateCustomRule(
+        @Path("zoneId") zoneId: String,
+        @Path("rulesetId") rulesetId: String,
+        @Path("ruleId") ruleId: String,
+        @Body rule: RulesetRuleWrite
+    ): Response<CfEnvelope<Ruleset>>
+
+    @DELETE("zones/{zoneId}/rulesets/{rulesetId}/rules/{ruleId}")
+    suspend fun deleteCustomRule(
+        @Path("zoneId") zoneId: String,
+        @Path("rulesetId") rulesetId: String,
+        @Path("ruleId") ruleId: String
+    ): Response<CfEnvelope<Ruleset>>
+
     // ---- Page rules ----
 
     @GET("zones/{zoneId}/pagerules")

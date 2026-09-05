@@ -11,6 +11,7 @@ import dev.cfmobile.app.data.repository.AuthRepository
 import dev.cfmobile.app.data.repository.DnsRepository
 import dev.cfmobile.app.data.repository.FirewallRepository
 import dev.cfmobile.app.data.repository.PageRulesRepository
+import dev.cfmobile.app.data.repository.WafRepository
 import dev.cfmobile.app.data.repository.ZoneSettingsRepository
 import dev.cfmobile.app.data.repository.ZonesRepository
 
@@ -29,6 +30,7 @@ class AppContainer(context: Context) {
     val dnsRepository = DnsRepository(api)
     val zoneSettingsRepository = ZoneSettingsRepository(api)
     val firewallRepository = FirewallRepository(api)
+    val wafRepository = WafRepository(api)
     val pageRulesRepository = PageRulesRepository(api)
     val analyticsRepository = AnalyticsRepository(api)
 }
