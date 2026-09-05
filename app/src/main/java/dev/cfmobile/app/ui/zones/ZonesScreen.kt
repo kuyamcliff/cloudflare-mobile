@@ -1,19 +1,15 @@
 package dev.cfmobile.app.ui.zones
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
@@ -40,8 +36,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -49,10 +43,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.cfmobile.app.data.local.AccountSummary
 import dev.cfmobile.app.data.remote.dto.CfZone
 import dev.cfmobile.app.ui.common.EmptyState
+import dev.cfmobile.app.ui.common.FreshnessLabel
 import dev.cfmobile.app.ui.common.StateContent
-import dev.cfmobile.app.ui.theme.StatusAmber
-import dev.cfmobile.app.ui.theme.StatusGreen
-import dev.cfmobile.app.ui.theme.StatusRed
+import dev.cfmobile.app.ui.common.StatusPill
+import dev.cfmobile.app.ui.common.zoneStatusColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,6 +58,7 @@ fun ZonesScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val query by viewModel.query.collectAsStateWithLifecycle()
+    val lastUpdatedAt by viewModel.lastUpdatedAt.collectAsStateWithLifecycle()
     var showAccountSwitcher by remember { mutableStateOf(false) }
 
     // Zones are account-scoped; if the active account changed while this screen was
@@ -109,6 +104,7 @@ fun ZonesScreen(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(16.dp, 8.dp)
             )
+            FreshnessLabel(lastUpdatedAt, modifier = Modifier.padding(16.dp, 0.dp, 16.dp, 8.dp))
 
             StateContent(state = state, onRetry = viewModel::refresh, onReauthenticate = onSettingsClick) { zones ->
                 if (zones.isEmpty()) {
@@ -192,25 +188,16 @@ private fun ZoneRow(zone: CfZone, onClick: () -> Unit) {
         Column(Modifier.weight(1f)) {
             Text(zone.name, style = MaterialTheme.typography.bodyLarge)
             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Box(
-                    Modifier
-                        .size(8.dp)
-                        .clip(CircleShape)
-                        .background(statusColor(zone.status))
-                )
-                Text(
-                    zone.status.replaceFirstChar { it.uppercase() } + (zone.plan?.let { " · ${it.name}" } ?: ""),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                StatusPill(zone.status.replaceFirstChar { it.uppercase() }, zoneStatusColor(zone.status))
+                zone.plan?.let {
+                    Text(
+                        it.name,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
         Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
-}
-
-private fun statusColor(status: String): Color = when (status) {
-    "active" -> StatusGreen
-    "pending", "initializing", "moved" -> StatusAmber
-    else -> StatusRed
 }

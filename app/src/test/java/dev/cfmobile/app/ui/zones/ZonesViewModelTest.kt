@@ -77,6 +77,29 @@ class ZonesViewModelTest {
     }
 
     @Test
+    fun `records when zones were last successfully loaded`() = runTest {
+        server.enqueue(MockResponse().setBody(zonesJson))
+        val viewModel = ZonesViewModel(ZonesRepository(testApi(server)), authRepository)
+
+        viewModel.awaitLoaded()
+
+        assertThat(viewModel.lastUpdatedAt.value).isNotNull()
+    }
+
+    @Test
+    fun `a failed load does not touch the last-updated timestamp`() = runTest {
+        server.enqueue(
+            MockResponse().setResponseCode(403)
+                .setBody("""{"success":false,"errors":[{"code":9109,"message":"Invalid API token"}],"result":null}""")
+        )
+        val viewModel = ZonesViewModel(ZonesRepository(testApi(server)), authRepository)
+
+        viewModel.awaitLoaded()
+
+        assertThat(viewModel.lastUpdatedAt.value).isNull()
+    }
+
+    @Test
     fun `query filters by domain name substring, case-insensitively`() = runTest {
         server.enqueue(MockResponse().setBody(zonesJson))
         val viewModel = ZonesViewModel(ZonesRepository(testApi(server)), authRepository)

@@ -25,6 +25,9 @@ class ZonesViewModel(
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
 
+    private val _lastUpdatedAt = MutableStateFlow<Long?>(null)
+    val lastUpdatedAt: StateFlow<Long?> = _lastUpdatedAt.asStateFlow()
+
     private var allZones: List<CfZone> = emptyList()
 
     val accounts: List<AccountSummary> get() = authRepository.savedAccounts
@@ -44,6 +47,7 @@ class ZonesViewModel(
             when (val result = repository.listZones()) {
                 is ApiResult.Success -> {
                     allZones = result.data
+                    _lastUpdatedAt.value = System.currentTimeMillis()
                     applyFilter()
                 }
                 is ApiResult.Failure -> _state.value = UiState.Error(ErrorClassifier.classify(result))
