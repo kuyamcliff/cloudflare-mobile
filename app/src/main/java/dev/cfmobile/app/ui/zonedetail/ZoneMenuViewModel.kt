@@ -2,6 +2,7 @@ package dev.cfmobile.app.ui.zonedetail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.cfmobile.app.core.errors.ErrorClassifier
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.dto.CfZone
 import dev.cfmobile.app.data.repository.ZonesRepository
@@ -28,7 +29,7 @@ class ZoneMenuViewModel(
         viewModelScope.launch {
             _state.value = when (val result = repository.getZone(zoneId)) {
                 is ApiResult.Success -> UiState.Data(result.data)
-                is ApiResult.Failure -> UiState.Error(result.message)
+                is ApiResult.Failure -> UiState.Error(ErrorClassifier.classify(result))
             }
         }
     }

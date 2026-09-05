@@ -77,7 +77,7 @@ fun ZonesScreen(
                 modifier = Modifier.fillMaxWidth().padding(16.dp, 8.dp)
             )
 
-            StateContent(state = state, onRetry = viewModel::refresh) { zones ->
+            StateContent(state = state, onRetry = viewModel::refresh, onReauthenticate = onSettingsClick) { zones ->
                 if (zones.isEmpty()) {
                     EmptyState("No domains found for this account")
                 } else {

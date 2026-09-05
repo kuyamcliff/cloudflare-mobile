@@ -2,6 +2,7 @@ package dev.cfmobile.app.ui.caching
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.cfmobile.app.core.errors.ErrorClassifier
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.repository.StringSetting
 import dev.cfmobile.app.data.repository.ZoneSettingsRepository
@@ -51,7 +52,7 @@ class CachingViewModel(
             _uiState.update {
                 it.copy(
                     settings = if (failure != null) {
-                        UiState.Error(failure.message)
+                        UiState.Error(ErrorClassifier.classify(failure))
                     } else {
                         UiState.Data(
                             CachingSettings(

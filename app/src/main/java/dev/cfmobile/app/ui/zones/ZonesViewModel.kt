@@ -2,6 +2,7 @@ package dev.cfmobile.app.ui.zones
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.cfmobile.app.core.errors.ErrorClassifier
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.dto.CfZone
 import dev.cfmobile.app.data.repository.ZonesRepository
@@ -34,7 +35,7 @@ class ZonesViewModel(private val repository: ZonesRepository) : ViewModel() {
                     allZones = result.data
                     applyFilter()
                 }
-                is ApiResult.Failure -> _state.value = UiState.Error(result.message)
+                is ApiResult.Failure -> _state.value = UiState.Error(ErrorClassifier.classify(result))
             }
         }
     }

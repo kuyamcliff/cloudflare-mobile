@@ -2,6 +2,7 @@ package dev.cfmobile.app.ui.firewall
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.cfmobile.app.core.errors.ErrorClassifier
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.dto.AccessRule
 import dev.cfmobile.app.data.remote.dto.FirewallRule
@@ -46,7 +47,7 @@ class FirewallViewModel(
             _uiState.update {
                 it.copy(rules = when (val r = repository.listRules(zoneId)) {
                     is ApiResult.Success -> UiState.Data(r.data)
-                    is ApiResult.Failure -> UiState.Error(r.message)
+                    is ApiResult.Failure -> UiState.Error(ErrorClassifier.classify(r))
                 })
             }
         }
@@ -58,7 +59,7 @@ class FirewallViewModel(
             _uiState.update {
                 it.copy(accessRules = when (val r = repository.listAccessRules(zoneId)) {
                     is ApiResult.Success -> UiState.Data(r.data)
-                    is ApiResult.Failure -> UiState.Error(r.message)
+                    is ApiResult.Failure -> UiState.Error(ErrorClassifier.classify(r))
                 })
             }
         }

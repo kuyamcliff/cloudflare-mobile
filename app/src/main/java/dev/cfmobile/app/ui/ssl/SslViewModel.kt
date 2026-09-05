@@ -2,6 +2,7 @@ package dev.cfmobile.app.ui.ssl
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.cfmobile.app.core.errors.ErrorClassifier
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.repository.StringSetting
 import dev.cfmobile.app.data.repository.ZoneSettingsRepository
@@ -49,7 +50,7 @@ class SslViewModel(
 
             val firstFailure = results.filterIsInstance<ApiResult.Failure>().firstOrNull()
             if (firstFailure != null) {
-                _state.value = UiState.Error(firstFailure.message)
+                _state.value = UiState.Error(ErrorClassifier.classify(firstFailure))
                 return@launch
             }
 

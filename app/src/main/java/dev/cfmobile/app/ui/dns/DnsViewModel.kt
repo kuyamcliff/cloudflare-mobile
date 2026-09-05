@@ -2,6 +2,7 @@ package dev.cfmobile.app.ui.dns
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.cfmobile.app.core.errors.ErrorClassifier
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.dto.DnsRecord
 import dev.cfmobile.app.data.remote.dto.DnsRecordWrite
@@ -54,7 +55,7 @@ class DnsViewModel(
                 it.copy(
                     records = when (result) {
                         is ApiResult.Success -> UiState.Data(result.data)
-                        is ApiResult.Failure -> UiState.Error(result.message)
+                        is ApiResult.Failure -> UiState.Error(ErrorClassifier.classify(result))
                     }
                 )
             }
