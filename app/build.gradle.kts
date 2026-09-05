@@ -68,6 +68,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.fragment.ktx)
+    implementation(libs.androidx.lifecycle.process)
 
     implementation(platform(libs.compose.bom))
     androidTestImplementation(platform(libs.compose.bom))

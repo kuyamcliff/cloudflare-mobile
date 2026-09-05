@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -45,7 +46,8 @@ fun SettingsScreen(
     viewModel: SettingsViewModel,
     onBack: () -> Unit,
     onAddAccount: () -> Unit,
-    onSignedOut: () -> Unit
+    onSignedOut: () -> Unit,
+    onSecurityClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var confirmSignOutAll by remember { mutableStateOf(false) }
@@ -61,6 +63,7 @@ fun SettingsScreen(
                 title = { Text("Accounts") },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") } },
                 actions = {
+                    IconButton(onClick = onSecurityClick) { Icon(Icons.Filled.Security, contentDescription = "Security") }
                     IconButton(onClick = onAddAccount) { Icon(Icons.Filled.PersonAdd, contentDescription = "Add account") }
                 }
             )

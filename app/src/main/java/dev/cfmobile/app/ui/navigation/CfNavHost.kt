@@ -11,6 +11,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import dev.cfmobile.app.AppContainer
+import dev.cfmobile.app.core.security.BiometricAuthenticator
 import dev.cfmobile.app.data.remote.dto.CfZone
 import dev.cfmobile.app.ui.analytics.AnalyticsScreen
 import dev.cfmobile.app.ui.analytics.AnalyticsViewModel
@@ -24,6 +25,8 @@ import dev.cfmobile.app.ui.login.LoginScreen
 import dev.cfmobile.app.ui.login.LoginViewModel
 import dev.cfmobile.app.ui.pagerules.PageRulesScreen
 import dev.cfmobile.app.ui.pagerules.PageRulesViewModel
+import dev.cfmobile.app.ui.security.SecurityScreen
+import dev.cfmobile.app.ui.security.SecurityViewModel
 import dev.cfmobile.app.ui.settings.SettingsScreen
 import dev.cfmobile.app.ui.settings.SettingsViewModel
 import dev.cfmobile.app.ui.ssl.SslScreen
@@ -34,7 +37,7 @@ import dev.cfmobile.app.ui.zones.ZonesScreen
 import dev.cfmobile.app.ui.zones.ZonesViewModel
 
 @Composable
-fun CfNavHost(container: AppContainer, startDestination: String) {
+fun CfNavHost(container: AppContainer, startDestination: String, authenticator: BiometricAuthenticator) {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = startDestination) {
@@ -59,7 +62,17 @@ fun CfNavHost(container: AppContainer, startDestination: String) {
                 vm,
                 onBack = { navController.popBackStack() },
                 onAddAccount = { navController.navigate(Routes.LOGIN) },
-                onSignedOut = { navController.navigateToLoginClearingBackStack() }
+                onSignedOut = { navController.navigateToLoginClearingBackStack() },
+                onSecurityClick = { navController.navigate(Routes.SECURITY) }
+            )
+        }
+
+        composable(Routes.SECURITY) {
+            val vm = viewModel<SecurityViewModel>(factory = factoryOf { SecurityViewModel(container.appLockState) })
+            SecurityScreen(
+                viewModel = vm,
+                biometricAvailability = authenticator.availability(),
+                onBack = { navController.popBackStack() }
             )
         }
 

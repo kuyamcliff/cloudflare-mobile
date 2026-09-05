@@ -4,6 +4,7 @@ object Routes {
     const val LOGIN = "login"
     const val ZONES = "zones"
     const val SETTINGS = "settings"
+    const val SECURITY = "security"
     const val ZONE_MENU = "zone/{zoneId}/{zoneName}"
     const val DNS = "zone/{zoneId}/dns"
     const val SSL = "zone/{zoneId}/ssl"

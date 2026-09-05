@@ -1,6 +1,8 @@
 package dev.cfmobile.app
 
 import android.content.Context
+import dev.cfmobile.app.core.security.AppLockPreferences
+import dev.cfmobile.app.core.security.AppLockState
 import dev.cfmobile.app.data.local.AccountStore
 import dev.cfmobile.app.data.remote.NetworkModule
 import dev.cfmobile.app.data.repository.AccountsRepository
@@ -16,6 +18,7 @@ import dev.cfmobile.app.data.repository.ZonesRepository
  *  add more ceremony than it saves. Every repository is built once and shared. */
 class AppContainer(context: Context) {
     val accountStore = AccountStore.create(context.applicationContext)
+    val appLockState = AppLockState(AppLockPreferences.create(context.applicationContext))
 
     private val api = NetworkModule.createApi { accountStore.getActiveToken() }
     private val verifierApi = NetworkModule.createVerifierApi()
