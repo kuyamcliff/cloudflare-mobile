@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.CallSplit
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Security
@@ -64,6 +65,7 @@ fun DashboardScreen(
     onAccountMembersClick: (accountId: String) -> Unit,
     onAuditLogsClick: (accountId: String) -> Unit,
     onLoadBalancingClick: (accountId: String) -> Unit,
+    onR2Click: (accountId: String) -> Unit,
     onSecurityClick: () -> Unit,
     onManageAccountsClick: () -> Unit
 ) {
@@ -104,6 +106,16 @@ fun DashboardScreen(
                     "Load Balancing", "Pools, origins, and load balancers across your zones",
                     Icons.Filled.CallSplit, enabled = hasAccountAccess,
                     onClick = { primaryAccountId?.let(onLoadBalancingClick) }
+                )
+            )
+        ),
+        DashboardSection(
+            title = "Developer Platform",
+            items = listOf(
+                DashboardMenuItem(
+                    "R2 Storage", "Object storage buckets",
+                    Icons.Filled.Inventory2, enabled = hasAccountAccess,
+                    onClick = { primaryAccountId?.let(onR2Click) }
                 )
             )
         ),

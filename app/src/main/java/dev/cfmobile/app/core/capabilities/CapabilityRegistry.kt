@@ -211,9 +211,11 @@ object CapabilityRegistry {
             displayName = "R2",
             description = "Object storage buckets",
             scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
+            status = CapabilityStatus.IMPLEMENTED,
             roadmapPhase = RoadmapPhase.P1,
-            destructiveRisk = DestructiveRisk.HIGH
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.r2(accountId) },
+            migrationHint = "Bucket management only (create/list/delete) - browsing or uploading objects inside a bucket isn't implemented, that's a separate file-browser-sized surface. Not verified against a live API call."
         ),
         Capability(
             id = "kv",

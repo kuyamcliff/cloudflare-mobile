@@ -449,3 +449,21 @@ data class LoadBalancerWrite(
     @Json(name = "fallback_pool") val fallbackPool: String,
     val ttl: Int = 30
 )
+
+@JsonClass(generateAdapter = true)
+data class R2Bucket(
+    val name: String = "",
+    @Json(name = "creation_date") val creationDate: String? = null
+)
+
+/** R2's list-buckets response nests the array under "buckets" rather than returning it as
+ *  `result` directly - unlike almost every other Cloudflare v4 list endpoint this app calls. */
+@JsonClass(generateAdapter = true)
+data class R2BucketListResult(
+    val buckets: List<R2Bucket> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class R2BucketCreate(
+    val name: String
+)

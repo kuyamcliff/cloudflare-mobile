@@ -109,4 +109,13 @@ class CapabilityRegistryTest {
         assertThat(botManagement.zoneRoute).isNotNull()
         assertThat(botManagement.migrationHint).isNotNull()
     }
+
+    @Test
+    fun `r2 is implemented for bucket management only`() {
+        val r2 = CapabilityRegistry.byId("r2")!!
+        assertThat(r2.status).isEqualTo(CapabilityStatus.IMPLEMENTED)
+        assertThat(r2.accountRoute).isNotNull()
+        assertThat(r2.accountRoute!!("acct1")).isEqualTo("account/acct1/r2")
+        assertThat(r2.migrationHint).isNotNull()
+    }
 }

@@ -322,4 +322,21 @@ interface CloudflareApi {
         @Path("zoneId") zoneId: String,
         @Path("loadBalancerId") loadBalancerId: String
     ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- R2 (bucket management only - no object/file browsing) ----
+
+    @GET("accounts/{accountId}/r2/buckets")
+    suspend fun listR2Buckets(@Path("accountId") accountId: String): Response<CfEnvelope<R2BucketListResult>>
+
+    @POST("accounts/{accountId}/r2/buckets")
+    suspend fun createR2Bucket(
+        @Path("accountId") accountId: String,
+        @Body bucket: R2BucketCreate
+    ): Response<CfEnvelope<R2Bucket>>
+
+    @DELETE("accounts/{accountId}/r2/buckets/{bucketName}")
+    suspend fun deleteR2Bucket(
+        @Path("accountId") accountId: String,
+        @Path("bucketName") bucketName: String
+    ): Response<CfEnvelope<Map<String, String>>>
 }

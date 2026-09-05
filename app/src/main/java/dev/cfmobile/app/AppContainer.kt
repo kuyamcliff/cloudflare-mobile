@@ -16,6 +16,7 @@ import dev.cfmobile.app.data.repository.DnsRepository
 import dev.cfmobile.app.data.repository.FirewallRepository
 import dev.cfmobile.app.data.repository.LoadBalancingRepository
 import dev.cfmobile.app.data.repository.PageRulesRepository
+import dev.cfmobile.app.data.repository.R2Repository
 import dev.cfmobile.app.data.repository.RateLimitRepository
 import dev.cfmobile.app.data.repository.TransformRulesRepository
 import dev.cfmobile.app.data.repository.WafRepository
@@ -42,6 +43,7 @@ class AppContainer(context: Context) {
     val zoneSettingsRepository = ZoneSettingsRepository(api)
     val firewallRepository = FirewallRepository(api)
     val loadBalancingRepository = LoadBalancingRepository(api)
+    val r2Repository = R2Repository(api)
     val wafRepository = WafRepository(api)
     val rateLimitRepository = RateLimitRepository(api)
     val transformRulesRepository = TransformRulesRepository(api)
