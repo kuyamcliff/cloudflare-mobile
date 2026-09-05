@@ -17,6 +17,8 @@ import dev.cfmobile.app.ui.analytics.AnalyticsScreen
 import dev.cfmobile.app.ui.analytics.AnalyticsViewModel
 import dev.cfmobile.app.ui.caching.CachingScreen
 import dev.cfmobile.app.ui.caching.CachingViewModel
+import dev.cfmobile.app.ui.dashboard.DashboardScreen
+import dev.cfmobile.app.ui.dashboard.DashboardViewModel
 import dev.cfmobile.app.ui.dns.DnsScreen
 import dev.cfmobile.app.ui.dns.DnsViewModel
 import dev.cfmobile.app.ui.firewall.FirewallScreen
@@ -52,13 +54,27 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
 
         composable(Routes.LOGIN) {
             val vm = viewModel<LoginViewModel>(factory = factoryOf { LoginViewModel(container.authRepository) })
-            LoginScreen(vm, onLoggedIn = { navController.navigateToZonesClearingBackStack() })
+            LoginScreen(vm, onLoggedIn = { navController.navigateToDashboardClearingBackStack() })
+        }
+
+        composable(Routes.DASHBOARD) {
+            val vm = viewModel<DashboardViewModel>(
+                factory = factoryOf { DashboardViewModel(container.zonesRepository, container.accountsRepository, container.authRepository) }
+            )
+            DashboardScreen(
+                vm,
+                onDomainsClick = { navController.navigate(Routes.ZONES) },
+                onAccountMembersClick = { accountId -> navController.navigate(Routes.accountMembers(accountId)) },
+                onSecurityClick = { navController.navigate(Routes.SECURITY) },
+                onManageAccountsClick = { navController.navigate(Routes.SETTINGS) }
+            )
         }
 
         composable(Routes.ZONES) {
             val vm = viewModel<ZonesViewModel>(factory = factoryOf { ZonesViewModel(container.zonesRepository, container.authRepository, container.zonesCache) })
             ZonesScreen(
                 vm,
+                onBack = { navController.popBackStack() },
                 onZoneClick = { zone: CfZone -> navController.navigate(Routes.zoneMenu(zone.id, zone.name)) },
                 onSettingsClick = { navController.navigate(Routes.SETTINGS) }
             )
@@ -175,8 +191,8 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
     }
 }
 
-private fun NavHostController.navigateToZonesClearingBackStack() {
-    navigate(Routes.ZONES) {
+private fun NavHostController.navigateToDashboardClearingBackStack() {
+    navigate(Routes.DASHBOARD) {
         popUpTo(0) { inclusive = true }
     }
 }

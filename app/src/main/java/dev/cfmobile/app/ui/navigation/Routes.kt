@@ -5,6 +5,7 @@ import java.net.URLEncoder
 
 object Routes {
     const val LOGIN = "login"
+    const val DASHBOARD = "dashboard"
     const val ZONES = "zones"
     const val SETTINGS = "settings"
     const val SECURITY = "security"

@@ -35,7 +35,7 @@ class MainActivity : FragmentActivity() {
             window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         }
 
-        val startDestination = if (container.accountStore.getActive() != null) Routes.ZONES else Routes.LOGIN
+        val startDestination = if (container.accountStore.getActive() != null) Routes.DASHBOARD else Routes.LOGIN
         val authenticator = BiometricAuthenticator(this)
 
         setContent {
