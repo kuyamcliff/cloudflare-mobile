@@ -31,6 +31,8 @@ import dev.cfmobile.app.ui.settings.SettingsScreen
 import dev.cfmobile.app.ui.settings.SettingsViewModel
 import dev.cfmobile.app.ui.ssl.SslScreen
 import dev.cfmobile.app.ui.ssl.SslViewModel
+import dev.cfmobile.app.ui.ratelimit.RateLimitScreen
+import dev.cfmobile.app.ui.ratelimit.RateLimitViewModel
 import dev.cfmobile.app.ui.waf.WafScreen
 import dev.cfmobile.app.ui.waf.WafViewModel
 import dev.cfmobile.app.ui.zonedetail.ZoneMenuScreen
@@ -121,6 +123,13 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
             val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
             val vm = viewModel<WafViewModel>(factory = factoryOf { WafViewModel(zoneId, container.wafRepository) })
             WafScreen(vm, zoneName = zoneName, onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.RATE_LIMITING, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<RateLimitViewModel>(factory = factoryOf { RateLimitViewModel(zoneId, container.rateLimitRepository) })
+            RateLimitScreen(vm, zoneName = zoneName, onBack = { navController.popBackStack() })
         }
 
         composable(Routes.PAGE_RULES, arguments = zoneScopedArgs) { backStackEntry ->

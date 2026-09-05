@@ -66,9 +66,10 @@ object CapabilityRegistry {
             displayName = "Rate Limiting",
             description = "Threshold-based rate limiting rules",
             scope = CapabilityScope.ZONE,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
+            status = CapabilityStatus.IMPLEMENTED,
             roadmapPhase = RoadmapPhase.P0,
-            destructiveRisk = DestructiveRisk.HIGH
+            destructiveRisk = DestructiveRisk.HIGH,
+            zoneRoute = { id, name -> Routes.rateLimiting(id, name) }
         ),
         Capability(
             id = "transform_rules",

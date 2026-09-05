@@ -196,15 +196,27 @@ data class AccessRuleWrite(
     val notes: String? = null
 )
 
-/** One rule inside the modern WAF Custom Rules ruleset (Cloudflare's replacement for the
- *  legacy Firewall Rules engine that [FirewallRule] models). */
+/** The rate-limiting-specific half of a Rulesets rule - present only for rules in the
+ *  "http_ratelimit" phase (PRD §9: threshold-based Rate Limiting). */
+@JsonClass(generateAdapter = true)
+data class RateLimit(
+    val characteristics: List<String> = listOf("ip.src"),
+    val period: Int = 60,
+    @Json(name = "requests_per_period") val requestsPerPeriod: Int = 100,
+    @Json(name = "mitigation_timeout") val mitigationTimeout: Int? = null
+)
+
+/** One rule inside a Rulesets phase entrypoint - either a WAF Custom Rule (the modern
+ *  replacement for the legacy Firewall Rules engine [FirewallRule] models) or, when
+ *  [ratelimit] is present, a Rate Limiting rule. */
 @JsonClass(generateAdapter = true)
 data class RulesetRule(
     val id: String = "",
     val action: String = "block",
     val expression: String = "",
     val description: String? = null,
-    val enabled: Boolean = true
+    val enabled: Boolean = true,
+    val ratelimit: RateLimit? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -212,7 +224,8 @@ data class RulesetRuleWrite(
     val action: String,
     val expression: String,
     val description: String? = null,
-    val enabled: Boolean = true
+    val enabled: Boolean = true,
+    val ratelimit: RateLimit? = null
 )
 
 @JsonClass(generateAdapter = true)

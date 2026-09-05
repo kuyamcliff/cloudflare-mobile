@@ -59,4 +59,11 @@ class CapabilityRegistryTest {
         assertThat(waf.zoneRoute).isNotNull()
         assertThat(waf.migrationHint).isNotNull()
     }
+
+    @Test
+    fun `rate limiting is implemented with a route`() {
+        val rateLimiting = CapabilityRegistry.byId("rate_limiting")!!
+        assertThat(rateLimiting.status).isEqualTo(CapabilityStatus.IMPLEMENTED)
+        assertThat(rateLimiting.zoneRoute).isNotNull()
+    }
 }

@@ -180,31 +180,34 @@ interface CloudflareApi {
         @Path("ruleId") ruleId: String
     ): Response<CfEnvelope<Map<String, String>>>
 
-    // ---- WAF Custom Rules (Rulesets) - the modern replacement for legacy Firewall Rules ----
+    // ---- Rulesets (phase entrypoints) - backs both WAF Custom Rules and Rate Limiting Rules,
+    // which Cloudflare models as two rule phases ("http_request_firewall_custom" and
+    // "http_ratelimit") of the same underlying Rulesets engine. ----
 
-    /** 404s when the zone has never had a custom rule created - callers treat that as "no
-     *  rules yet," not a failure (see WafRepository.getCustomRuleset). */
-    @GET("zones/{zoneId}/rulesets/phases/http_request_firewall_custom/entrypoint")
-    suspend fun getCustomRuleset(@Path("zoneId") zoneId: String): Response<CfEnvelope<Ruleset>>
+    /** 404s when the zone has never had a rule created for this phase - callers treat that as
+     *  "no rules yet," not a failure (see WafRepository/RateLimitRepository.getRuleset). */
+    @GET("zones/{zoneId}/rulesets/phases/{phase}/entrypoint")
+    suspend fun getPhaseRuleset(@Path("zoneId") zoneId: String, @Path("phase") phase: String): Response<CfEnvelope<Ruleset>>
 
     /** Creates the phase entrypoint ruleset (if it doesn't exist) or replaces it entirely -
-     *  only used to add the zone's very first custom rule; afterwards rules are added one at a
-     *  time via [addCustomRule] so existing rules are never clobbered. */
-    @PUT("zones/{zoneId}/rulesets/phases/http_request_firewall_custom/entrypoint")
-    suspend fun putCustomRuleset(
+     *  only used to add the zone's very first rule in this phase; afterwards rules are added
+     *  one at a time via [addRulesetRule] so existing rules are never clobbered. */
+    @PUT("zones/{zoneId}/rulesets/phases/{phase}/entrypoint")
+    suspend fun putPhaseRuleset(
         @Path("zoneId") zoneId: String,
+        @Path("phase") phase: String,
         @Body body: RulesetPhaseWrite
     ): Response<CfEnvelope<Ruleset>>
 
     @POST("zones/{zoneId}/rulesets/{rulesetId}/rules")
-    suspend fun addCustomRule(
+    suspend fun addRulesetRule(
         @Path("zoneId") zoneId: String,
         @Path("rulesetId") rulesetId: String,
         @Body rule: RulesetRuleWrite
     ): Response<CfEnvelope<Ruleset>>
 
     @PATCH("zones/{zoneId}/rulesets/{rulesetId}/rules/{ruleId}")
-    suspend fun updateCustomRule(
+    suspend fun updateRulesetRule(
         @Path("zoneId") zoneId: String,
         @Path("rulesetId") rulesetId: String,
         @Path("ruleId") ruleId: String,
@@ -212,7 +215,7 @@ interface CloudflareApi {
     ): Response<CfEnvelope<Ruleset>>
 
     @DELETE("zones/{zoneId}/rulesets/{rulesetId}/rules/{ruleId}")
-    suspend fun deleteCustomRule(
+    suspend fun deleteRulesetRule(
         @Path("zoneId") zoneId: String,
         @Path("rulesetId") rulesetId: String,
         @Path("ruleId") ruleId: String
