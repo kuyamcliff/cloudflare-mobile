@@ -66,4 +66,12 @@ class CapabilityRegistryTest {
         assertThat(rateLimiting.status).isEqualTo(CapabilityStatus.IMPLEMENTED)
         assertThat(rateLimiting.zoneRoute).isNotNull()
     }
+
+    @Test
+    fun `transform rules is implemented with a route and discloses its unverified request format and scope gaps`() {
+        val transformRules = CapabilityRegistry.byId("transform_rules")!!
+        assertThat(transformRules.status).isEqualTo(CapabilityStatus.IMPLEMENTED)
+        assertThat(transformRules.zoneRoute).isNotNull()
+        assertThat(transformRules.migrationHint).isNotNull()
+    }
 }

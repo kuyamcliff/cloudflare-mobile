@@ -206,9 +206,46 @@ data class RateLimit(
     @Json(name = "mitigation_timeout") val mitigationTimeout: Int? = null
 )
 
-/** One rule inside a Rulesets phase entrypoint - either a WAF Custom Rule (the modern
- *  replacement for the legacy Firewall Rules engine [FirewallRule] models) or, when
- *  [ratelimit] is present, a Rate Limiting rule. */
+/** One side of a URI rewrite (path or query) - exactly one of [value] (static) or
+ *  [expression] (dynamic) is set, matching Cloudflare's "rewrite" action schema for the
+ *  "http_request_transform" phase (PRD §9: URL Rewrite Rules). */
+@JsonClass(generateAdapter = true)
+data class UriRewritePart(
+    val value: String? = null,
+    val expression: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class UriRewrite(
+    val path: UriRewritePart? = null,
+    val query: UriRewritePart? = null
+)
+
+/** One header change inside a "rewrite" action's `headers` map - keyed by header name.
+ *  `operation` is "set" or "remove"; "set" carries exactly one of [value] (static) or
+ *  [expression] (dynamic), "remove" carries neither (PRD §9: Request/Response Header
+ *  Transform Rules, phases "http_request_late_transform" / "http_response_headers_transform"). */
+@JsonClass(generateAdapter = true)
+data class HeaderModification(
+    val operation: String,
+    val value: String? = null,
+    val expression: String? = null
+)
+
+/** The action-specific payload of a "rewrite" rule. Which of [uri]/[headers] is populated
+ *  depends on which phase the rule lives in - URL Rewrite rules set [uri], Request/Response
+ *  Header Transform rules set [headers]. */
+@JsonClass(generateAdapter = true)
+data class TransformActionParameters(
+    val uri: UriRewrite? = null,
+    val headers: Map<String, HeaderModification>? = null
+)
+
+/** One rule inside a Rulesets phase entrypoint. What it does is entirely determined by
+ *  which phase its ruleset belongs to plus [action]: a WAF Custom Rule (the modern
+ *  replacement for the legacy Firewall Rules engine [FirewallRule] models), a Rate Limiting
+ *  rule when [ratelimit] is present, or a Transform Rule (URL Rewrite / header modification)
+ *  when [actionParameters] is present. */
 @JsonClass(generateAdapter = true)
 data class RulesetRule(
     val id: String = "",
@@ -216,7 +253,8 @@ data class RulesetRule(
     val expression: String = "",
     val description: String? = null,
     val enabled: Boolean = true,
-    val ratelimit: RateLimit? = null
+    val ratelimit: RateLimit? = null,
+    @Json(name = "action_parameters") val actionParameters: TransformActionParameters? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -225,7 +263,8 @@ data class RulesetRuleWrite(
     val expression: String,
     val description: String? = null,
     val enabled: Boolean = true,
-    val ratelimit: RateLimit? = null
+    val ratelimit: RateLimit? = null,
+    @Json(name = "action_parameters") val actionParameters: TransformActionParameters? = null
 )
 
 @JsonClass(generateAdapter = true)

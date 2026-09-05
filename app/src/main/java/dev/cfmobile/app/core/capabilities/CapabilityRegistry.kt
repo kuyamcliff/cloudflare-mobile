@@ -74,12 +74,14 @@ object CapabilityRegistry {
         Capability(
             id = "transform_rules",
             product = "Transform Rules",
-            displayName = "Transform & Redirect Rules",
-            description = "URL rewrites, header transforms, origin rules, redirects, snippets",
+            displayName = "Transform Rules",
+            description = "URL rewrites and request/response header modification",
             scope = CapabilityScope.ZONE,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
+            status = CapabilityStatus.IMPLEMENTED,
             roadmapPhase = RoadmapPhase.P0,
-            destructiveRisk = DestructiveRisk.MEDIUM
+            destructiveRisk = DestructiveRisk.MEDIUM,
+            zoneRoute = { id, name -> Routes.transformRules(id, name) },
+            migrationHint = "Covers URL Rewrite and request/response header rules only. Origin Rules, Redirect Rules, and Snippets aren't yet manageable from this app - and unlike WAF/Rate Limiting, this request format hasn't been verified against a live API call, only Cloudflare's published rule schema."
         ),
         Capability(
             id = "page_rules",

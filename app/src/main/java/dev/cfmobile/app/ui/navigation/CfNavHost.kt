@@ -33,6 +33,8 @@ import dev.cfmobile.app.ui.ssl.SslScreen
 import dev.cfmobile.app.ui.ssl.SslViewModel
 import dev.cfmobile.app.ui.ratelimit.RateLimitScreen
 import dev.cfmobile.app.ui.ratelimit.RateLimitViewModel
+import dev.cfmobile.app.ui.transformrules.TransformRulesScreen
+import dev.cfmobile.app.ui.transformrules.TransformRulesViewModel
 import dev.cfmobile.app.ui.waf.WafScreen
 import dev.cfmobile.app.ui.waf.WafViewModel
 import dev.cfmobile.app.ui.zonedetail.ZoneMenuScreen
@@ -130,6 +132,13 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
             val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
             val vm = viewModel<RateLimitViewModel>(factory = factoryOf { RateLimitViewModel(zoneId, container.rateLimitRepository) })
             RateLimitScreen(vm, zoneName = zoneName, onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.TRANSFORM_RULES, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<TransformRulesViewModel>(factory = factoryOf { TransformRulesViewModel(zoneId, container.transformRulesRepository) })
+            TransformRulesScreen(vm, zoneName = zoneName, onBack = { navController.popBackStack() })
         }
 
         composable(Routes.PAGE_RULES, arguments = zoneScopedArgs) { backStackEntry ->
