@@ -505,6 +505,26 @@ data class WorkerScript(
 )
 
 @JsonClass(generateAdapter = true)
+data class GatewayRule(
+    val id: String = "",
+    val name: String = "",
+    val description: String? = null,
+    val enabled: Boolean = true,
+    val action: String = "",
+    val traffic: String? = null,
+    @Json(name = "created_at") val createdAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class GatewayRuleCreate(
+    val name: String,
+    val action: String,
+    val traffic: String,
+    val filters: List<String> = listOf("dns"),
+    val description: String? = null
+)
+
+@JsonClass(generateAdapter = true)
 data class PagesProject(
     val name: String = "",
     val subdomain: String? = null,

@@ -419,4 +419,21 @@ interface CloudflareApi {
         @Path("appId") appId: String,
         @Body policy: AccessPolicyCreate
     ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Zero Trust Gateway (DNS policies - block/allow by domain, common case only) ----
+
+    @GET("accounts/{accountId}/gateway/rules")
+    suspend fun listGatewayRules(@Path("accountId") accountId: String): Response<CfEnvelope<List<GatewayRule>>>
+
+    @POST("accounts/{accountId}/gateway/rules")
+    suspend fun createGatewayRule(
+        @Path("accountId") accountId: String,
+        @Body rule: GatewayRuleCreate
+    ): Response<CfEnvelope<GatewayRule>>
+
+    @DELETE("accounts/{accountId}/gateway/rules/{ruleId}")
+    suspend fun deleteGatewayRule(
+        @Path("accountId") accountId: String,
+        @Path("ruleId") ruleId: String
+    ): Response<CfEnvelope<Map<String, String>>>
 }

@@ -163,4 +163,13 @@ class CapabilityRegistryTest {
         assertThat(access.accountRoute!!("acct1")).isEqualTo("account/acct1/access")
         assertThat(access.migrationHint).isNotNull()
     }
+
+    @Test
+    fun `gateway is implemented for DNS policies only`() {
+        val gateway = CapabilityRegistry.byId("gateway")!!
+        assertThat(gateway.status).isEqualTo(CapabilityStatus.IMPLEMENTED)
+        assertThat(gateway.accountRoute).isNotNull()
+        assertThat(gateway.accountRoute!!("acct1")).isEqualTo("account/acct1/gateway")
+        assertThat(gateway.migrationHint).isNotNull()
+    }
 }

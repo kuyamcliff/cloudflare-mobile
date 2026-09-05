@@ -51,6 +51,8 @@ import dev.cfmobile.app.ui.pages.PagesScreen
 import dev.cfmobile.app.ui.pages.PagesViewModel
 import dev.cfmobile.app.ui.access.AccessScreen
 import dev.cfmobile.app.ui.access.AccessViewModel
+import dev.cfmobile.app.ui.gateway.GatewayScreen
+import dev.cfmobile.app.ui.gateway.GatewayViewModel
 import dev.cfmobile.app.ui.r2.R2Screen
 import dev.cfmobile.app.ui.r2.R2ViewModel
 import dev.cfmobile.app.ui.ratelimit.RateLimitScreen
@@ -91,6 +93,7 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
                 onWorkersClick = { accountId -> navController.navigate(Routes.workers(accountId)) },
                 onPagesClick = { accountId -> navController.navigate(Routes.pages(accountId)) },
                 onAccessClick = { accountId -> navController.navigate(Routes.access(accountId)) },
+                onGatewayClick = { accountId -> navController.navigate(Routes.gateway(accountId)) },
                 onSecurityClick = { navController.navigate(Routes.SECURITY) },
                 onManageAccountsClick = { navController.navigate(Routes.SETTINGS) }
             )
@@ -222,6 +225,15 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
             val accountId = backStackEntry.arguments?.getString("accountId").orEmpty()
             val vm = viewModel<AccessViewModel>(factory = factoryOf { AccessViewModel(accountId, container.accessRepository) })
             AccessScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        composable(
+            Routes.GATEWAY,
+            arguments = listOf(navArgument("accountId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val accountId = backStackEntry.arguments?.getString("accountId").orEmpty()
+            val vm = viewModel<GatewayViewModel>(factory = factoryOf { GatewayViewModel(accountId, container.gatewayRepository) })
+            GatewayScreen(vm, onBack = { navController.popBackStack() })
         }
 
         val zoneScopedArgs = listOf(navArgument("zoneId") { type = NavType.StringType }, navArgument("zoneName") { type = NavType.StringType })

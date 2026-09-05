@@ -273,8 +273,11 @@ object CapabilityRegistry {
             displayName = "Gateway",
             description = "Network, HTTP, and DNS policies",
             scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P1
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.gateway(accountId) },
+            migrationHint = "DNS policies only - block or allow traffic to a single domain. Network and HTTP policies, more complex Wirefilter expressions (categories, identity, device posture), and rule ordering aren't implemented. Not verified against a live API call."
         ),
         Capability(
             id = "tunnels",

@@ -76,6 +76,7 @@ fun DashboardScreen(
     onWorkersClick: (accountId: String) -> Unit,
     onPagesClick: (accountId: String) -> Unit,
     onAccessClick: (accountId: String) -> Unit,
+    onGatewayClick: (accountId: String) -> Unit,
     onSecurityClick: () -> Unit,
     onManageAccountsClick: () -> Unit
 ) {
@@ -156,6 +157,11 @@ fun DashboardScreen(
                     "Access", "Applications and email-based policies",
                     Icons.Filled.Shield, enabled = hasAccountAccess,
                     onClick = { primaryAccountId?.let(onAccessClick) }
+                ),
+                DashboardMenuItem(
+                    "Gateway", "DNS policies to block or allow domains",
+                    Icons.Filled.Dns, enabled = hasAccountAccess,
+                    onClick = { primaryAccountId?.let(onGatewayClick) }
                 )
             )
         ),
