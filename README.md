@@ -56,6 +56,7 @@ Requires the Android SDK (compileSdk 37, minSdk 26) and JDK 17+ (developed again
 ```bash
 ./gradlew assembleDebug       # app/build/outputs/apk/debug/app-debug.apk
 ./gradlew assembleRelease     # unsigned release APK (see "Signing" below)
+./gradlew bundleRelease       # unsigned release AAB, for Play Store submission
 ./gradlew testDebugUnitTest   # unit tests
 ./gradlew lintDebug
 ```
