@@ -12,6 +12,7 @@ import dev.cfmobile.app.data.repository.AccountsRepository
 import dev.cfmobile.app.data.repository.AnalyticsRepository
 import dev.cfmobile.app.data.repository.AuditLogsRepository
 import dev.cfmobile.app.data.repository.AuthRepository
+import dev.cfmobile.app.data.repository.D1Repository
 import dev.cfmobile.app.data.repository.DnsRepository
 import dev.cfmobile.app.data.repository.FirewallRepository
 import dev.cfmobile.app.data.repository.KvRepository
@@ -46,6 +47,7 @@ class AppContainer(context: Context) {
     val loadBalancingRepository = LoadBalancingRepository(api)
     val r2Repository = R2Repository(api)
     val kvRepository = KvRepository(api)
+    val d1Repository = D1Repository(api)
     val wafRepository = WafRepository(api)
     val rateLimitRepository = RateLimitRepository(api)
     val transformRulesRepository = TransformRulesRepository(api)

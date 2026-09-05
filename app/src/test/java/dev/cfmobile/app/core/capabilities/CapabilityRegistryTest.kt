@@ -127,4 +127,13 @@ class CapabilityRegistryTest {
         assertThat(kv.accountRoute!!("acct1")).isEqualTo("account/acct1/kv")
         assertThat(kv.migrationHint).isNotNull()
     }
+
+    @Test
+    fun `d1 is implemented for database management only`() {
+        val d1 = CapabilityRegistry.byId("d1")!!
+        assertThat(d1.status).isEqualTo(CapabilityStatus.IMPLEMENTED)
+        assertThat(d1.accountRoute).isNotNull()
+        assertThat(d1.accountRoute!!("acct1")).isEqualTo("account/acct1/d1")
+        assertThat(d1.migrationHint).isNotNull()
+    }
 }

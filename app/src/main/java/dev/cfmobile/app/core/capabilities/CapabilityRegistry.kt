@@ -235,8 +235,11 @@ object CapabilityRegistry {
             displayName = "D1",
             description = "Serverless SQL database",
             scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P1
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.d1(accountId) },
+            migrationHint = "Database management only (create/list/delete) - running SQL queries against a database isn't implemented, that's a separate SQL-console-sized surface. Not verified against a live API call."
         ),
         Capability(
             id = "queues",

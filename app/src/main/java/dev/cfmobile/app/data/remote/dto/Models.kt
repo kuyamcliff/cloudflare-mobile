@@ -478,3 +478,18 @@ data class KvNamespace(
 data class KvNamespaceCreate(
     val title: String
 )
+
+@JsonClass(generateAdapter = true)
+data class D1Database(
+    val uuid: String = "",
+    val name: String = "",
+    val version: String? = null,
+    @Json(name = "num_tables") val numTables: Int? = null,
+    @Json(name = "file_size") val fileSize: Long? = null,
+    @Json(name = "created_at") val createdAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class D1DatabaseCreate(
+    val name: String
+)

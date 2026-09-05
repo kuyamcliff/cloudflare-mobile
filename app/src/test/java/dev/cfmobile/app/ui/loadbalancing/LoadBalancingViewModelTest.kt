@@ -96,7 +96,12 @@ class LoadBalancingViewModelTest {
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
         val vm = viewModel()
+        // Both init-triggered requests (pools, zones-with-no-zones) need to have actually
+        // completed before triggering savePool's own network call - awaiting pools alone
+        // races the still-in-flight zones call, since real HTTP I/O for the two happens on
+        // OkHttp's own dispatcher threads outside the test scheduler's control.
         vm.awaitPoolsLoaded()
+        vm.awaitLbLoaded()
 
         vm.openPoolForm()
         vm.updatePoolForm { it.copy(name = "primary") }
@@ -115,7 +120,11 @@ class LoadBalancingViewModelTest {
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[{"id":"pool1","name":"primary","origins":[]}]}"""))
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
         val vm = viewModel()
+        // Await the full init chain (not just pools) so the single init coroutine has
+        // actually completed before the test ends - otherwise it can still be suspended on
+        // the in-flight zones call when runTest checks for uncompleted coroutines.
         vm.awaitPoolsLoaded()
+        vm.awaitLbLoaded()
 
         vm.openLbForm()
 

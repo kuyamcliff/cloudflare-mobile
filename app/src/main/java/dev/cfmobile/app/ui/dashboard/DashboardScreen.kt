@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -68,6 +69,7 @@ fun DashboardScreen(
     onLoadBalancingClick: (accountId: String) -> Unit,
     onR2Click: (accountId: String) -> Unit,
     onKvClick: (accountId: String) -> Unit,
+    onD1Click: (accountId: String) -> Unit,
     onSecurityClick: () -> Unit,
     onManageAccountsClick: () -> Unit
 ) {
@@ -123,6 +125,11 @@ fun DashboardScreen(
                     "Workers KV", "Key-value namespaces for Workers",
                     Icons.Filled.Key, enabled = hasAccountAccess,
                     onClick = { primaryAccountId?.let(onKvClick) }
+                ),
+                DashboardMenuItem(
+                    "D1", "Serverless SQL databases",
+                    Icons.Filled.Storage, enabled = hasAccountAccess,
+                    onClick = { primaryAccountId?.let(onD1Click) }
                 )
             )
         ),

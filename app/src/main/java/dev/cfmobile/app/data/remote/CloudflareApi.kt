@@ -356,4 +356,21 @@ interface CloudflareApi {
         @Path("accountId") accountId: String,
         @Path("namespaceId") namespaceId: String
     ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- D1 (database management only - no query execution) ----
+
+    @GET("accounts/{accountId}/d1/database")
+    suspend fun listD1Databases(@Path("accountId") accountId: String): Response<CfEnvelope<List<D1Database>>>
+
+    @POST("accounts/{accountId}/d1/database")
+    suspend fun createD1Database(
+        @Path("accountId") accountId: String,
+        @Body database: D1DatabaseCreate
+    ): Response<CfEnvelope<D1Database>>
+
+    @DELETE("accounts/{accountId}/d1/database/{databaseId}")
+    suspend fun deleteD1Database(
+        @Path("accountId") accountId: String,
+        @Path("databaseId") databaseId: String
+    ): Response<CfEnvelope<Map<String, String>>>
 }
