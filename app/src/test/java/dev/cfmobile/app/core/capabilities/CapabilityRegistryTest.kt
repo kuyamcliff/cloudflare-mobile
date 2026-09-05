@@ -83,4 +83,13 @@ class CapabilityRegistryTest {
         assertThat(accountMembers.accountRoute).isNotNull()
         assertThat(accountMembers.accountRoute!!("acct1")).isEqualTo("account/acct1/members")
     }
+
+    @Test
+    fun `audit logs is implemented via an account-scoped route`() {
+        val auditLogs = CapabilityRegistry.byId("audit_logs")!!
+        assertThat(auditLogs.status).isEqualTo(CapabilityStatus.IMPLEMENTED)
+        assertThat(auditLogs.accountRoute).isNotNull()
+        assertThat(auditLogs.accountRoute!!("acct1")).isEqualTo("account/acct1/auditlogs")
+        assertThat(auditLogs.migrationHint).isNotNull()
+    }
 }

@@ -366,3 +366,35 @@ data class AccountMemberInvite(
     val email: String,
     val roles: List<String>
 )
+
+@JsonClass(generateAdapter = true)
+data class AuditLogActor(
+    val id: String? = null,
+    val email: String? = null,
+    val ip: String? = null,
+    val type: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AuditLogAction(
+    val type: String? = null,
+    val result: Boolean? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AuditLogResource(
+    val id: String? = null,
+    val type: String? = null,
+    val product: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AuditLogEntry(
+    val id: String = "",
+    val action: AuditLogAction? = null,
+    val actor: AuditLogActor? = null,
+    val resource: AuditLogResource? = null,
+    @Json(name = "when") val occurredAt: String? = null,
+    @Json(name = "newValue") val newValue: String? = null,
+    @Json(name = "oldValue") val oldValue: String? = null
+)

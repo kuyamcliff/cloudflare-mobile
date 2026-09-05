@@ -11,6 +11,7 @@ object Routes {
     const val SECURITY = "security"
     const val ZONE_MENU = "zone/{zoneId}/{zoneName}"
     const val ACCOUNT_MEMBERS = "account/{accountId}/members"
+    const val AUDIT_LOGS = "account/{accountId}/auditlogs"
     const val DNS = "zone/{zoneId}/{zoneName}/dns"
     const val SSL = "zone/{zoneId}/{zoneName}/ssl"
     const val FIREWALL = "zone/{zoneId}/{zoneName}/firewall"
@@ -29,6 +30,7 @@ object Routes {
 
     fun zoneMenu(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}"
     fun accountMembers(accountId: String) = "account/$accountId/members"
+    fun auditLogs(accountId: String) = "account/$accountId/auditlogs"
     fun dns(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/dns"
     fun ssl(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/ssl"
     fun firewall(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/firewall"

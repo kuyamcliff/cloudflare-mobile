@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Dns
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Security
@@ -37,6 +38,20 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.cfmobile.app.ui.common.AccountSwitcherSheet
 
+/** One row in the Dashboard's menu. Unlike CapabilityRegistry (which drives the per-zone menu
+ *  and needs to describe capabilities independent of any specific navigation callback), this
+ *  carries its own onClick directly - the Dashboard's destinations are a small, hand-written
+ *  set, not a growing registry, so a lambda per item is simpler than a lookup-by-id dispatch. */
+private data class DashboardMenuItem(
+    val title: String,
+    val description: String,
+    val icon: ImageVector,
+    val enabled: Boolean = true,
+    val onClick: () -> Unit = {}
+)
+
+private data class DashboardSection(val title: String?, val items: List<DashboardMenuItem>)
+
 /** The app's landing screen once a token is connected - an account overview plus a menu into
  *  every main destination, so it's immediately clear there's more to the app than one list
  *  (this replaced dropping straight into the Zones screen as the app's root). */
@@ -46,12 +61,48 @@ fun DashboardScreen(
     viewModel: DashboardViewModel,
     onDomainsClick: () -> Unit,
     onAccountMembersClick: (accountId: String) -> Unit,
+    onAuditLogsClick: (accountId: String) -> Unit,
     onSecurityClick: () -> Unit,
     onManageAccountsClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showAccountSwitcher by remember { mutableStateOf(false) }
     val primaryAccountId = uiState.cfAccounts.firstOrNull()?.id
+    val hasAccountAccess = primaryAccountId != null
+
+    val sections = listOf(
+        DashboardSection(
+            title = null,
+            items = listOf(
+                DashboardMenuItem(
+                    "Domains", "DNS, SSL/TLS, WAF, caching, analytics, and more for each zone",
+                    Icons.Filled.Dns, onClick = onDomainsClick
+                )
+            )
+        ),
+        DashboardSection(
+            title = "Account",
+            items = listOf(
+                DashboardMenuItem(
+                    "Account Members", "Invite and manage who has access to this Cloudflare account",
+                    Icons.Filled.People, enabled = hasAccountAccess,
+                    onClick = { primaryAccountId?.let(onAccountMembersClick) }
+                ),
+                DashboardMenuItem(
+                    "Audit Logs", "Who changed what, and when",
+                    Icons.Filled.History, enabled = hasAccountAccess,
+                    onClick = { primaryAccountId?.let(onAuditLogsClick) }
+                )
+            )
+        ),
+        DashboardSection(
+            title = "Settings",
+            items = listOf(
+                DashboardMenuItem("Security", "App lock and screenshot protection for this device", Icons.Filled.Security, onClick = onSecurityClick),
+                DashboardMenuItem("Manage accounts", "Switch, add, or remove connected API tokens", Icons.Filled.ManageAccounts, onClick = onManageAccountsClick)
+            )
+        )
+    )
 
     Scaffold(
         topBar = {
@@ -87,16 +138,21 @@ fun DashboardScreen(
             )
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
             LazyColumn {
-                items(dashboardMenuItems(hasAccountAccess = primaryAccountId != null), key = { it.title }) { item ->
-                    DashboardMenuRow(item) {
-                        when (item.title) {
-                            "Domains" -> onDomainsClick()
-                            "Account Members" -> primaryAccountId?.let(onAccountMembersClick)
-                            "Security" -> onSecurityClick()
-                            "Manage accounts" -> onManageAccountsClick()
+                sections.forEach { section ->
+                    section.title?.let { title ->
+                        item {
+                            Text(
+                                title,
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(16.dp, 16.dp, 16.dp, 4.dp)
+                            )
                         }
                     }
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                    items(section.items, key = { it.title }) { item ->
+                        DashboardMenuRow(item)
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                    }
                 }
             }
         }
@@ -152,29 +208,12 @@ private fun DashboardSummaryCard(
     }
 }
 
-private data class DashboardMenuItem(
-    val title: String,
-    val description: String,
-    val icon: ImageVector,
-    val enabled: Boolean = true
-)
-
-private fun dashboardMenuItems(hasAccountAccess: Boolean): List<DashboardMenuItem> = listOf(
-    DashboardMenuItem("Domains", "DNS, SSL/TLS, WAF, caching, analytics, and more for each zone", Icons.Filled.Dns),
-    DashboardMenuItem(
-        "Account Members", "Invite and manage who has access to this Cloudflare account",
-        Icons.Filled.People, enabled = hasAccountAccess
-    ),
-    DashboardMenuItem("Security", "App lock and screenshot protection for this device", Icons.Filled.Security),
-    DashboardMenuItem("Manage accounts", "Switch, add, or remove connected API tokens", Icons.Filled.ManageAccounts)
-)
-
 @Composable
-private fun DashboardMenuRow(item: DashboardMenuItem, onClick: () -> Unit) {
+private fun DashboardMenuRow(item: DashboardMenuItem) {
     Row(
         Modifier
             .fillMaxWidth()
-            .clickable(enabled = item.enabled, onClick = onClick)
+            .clickable(enabled = item.enabled, onClick = item.onClick)
             .padding(horizontal = 16.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp)

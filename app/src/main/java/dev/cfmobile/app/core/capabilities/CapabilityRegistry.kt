@@ -132,8 +132,10 @@ object CapabilityRegistry {
             displayName = "Audit Logs",
             description = "Who changed what, and when",
             scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P0
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P0,
+            accountRoute = { accountId -> Routes.auditLogs(accountId) },
+            migrationHint = "Uses Cloudflare's classic audit_logs endpoint; a newer Unified Audit Logs API may eventually supersede it for some account types. Not verified against a live API call."
         ),
         Capability(
             id = "load_balancing",

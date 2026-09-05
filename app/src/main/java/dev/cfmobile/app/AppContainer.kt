@@ -10,6 +10,7 @@ import dev.cfmobile.app.data.remote.NetworkModule
 import dev.cfmobile.app.data.repository.AccountMembersRepository
 import dev.cfmobile.app.data.repository.AccountsRepository
 import dev.cfmobile.app.data.repository.AnalyticsRepository
+import dev.cfmobile.app.data.repository.AuditLogsRepository
 import dev.cfmobile.app.data.repository.AuthRepository
 import dev.cfmobile.app.data.repository.DnsRepository
 import dev.cfmobile.app.data.repository.FirewallRepository
@@ -33,6 +34,7 @@ class AppContainer(context: Context) {
     val authRepository = AuthRepository(verifierApi, accountStore)
     val accountsRepository = AccountsRepository(api)
     val accountMembersRepository = AccountMembersRepository(api)
+    val auditLogsRepository = AuditLogsRepository(api)
     val zonesRepository = ZonesRepository(api)
     val zonesCache = ZonesCache(database.zoneDao())
     val dnsRepository = DnsRepository(api)

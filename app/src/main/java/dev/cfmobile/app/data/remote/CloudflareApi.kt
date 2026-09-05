@@ -279,4 +279,15 @@ interface CloudflareApi {
         @Path("accountId") accountId: String,
         @Path("memberId") memberId: String
     ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Audit logs ----
+
+    @GET("accounts/{accountId}/audit_logs")
+    suspend fun listAuditLogs(
+        @Path("accountId") accountId: String,
+        @Query("since") since: String? = null,
+        @Query("before") before: String? = null,
+        @Query("page") page: Int = 1,
+        @Query("per_page") perPage: Int = 50
+    ): Response<CfEnvelope<List<AuditLogEntry>>>
 }
