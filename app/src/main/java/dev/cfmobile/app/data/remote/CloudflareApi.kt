@@ -255,4 +255,28 @@ interface CloudflareApi {
         @Query("since") since: String,
         @Query("until") until: String
     ): Response<CfEnvelope<AnalyticsDashboard>>
+
+    // ---- Account members ----
+
+    @GET("accounts/{accountId}/roles")
+    suspend fun listAccountRoles(@Path("accountId") accountId: String): Response<CfEnvelope<List<AccountRole>>>
+
+    @GET("accounts/{accountId}/members")
+    suspend fun listAccountMembers(
+        @Path("accountId") accountId: String,
+        @Query("page") page: Int = 1,
+        @Query("per_page") perPage: Int = 50
+    ): Response<CfEnvelope<List<AccountMember>>>
+
+    @POST("accounts/{accountId}/members")
+    suspend fun inviteAccountMember(
+        @Path("accountId") accountId: String,
+        @Body invite: AccountMemberInvite
+    ): Response<CfEnvelope<AccountMember>>
+
+    @DELETE("accounts/{accountId}/members/{memberId}")
+    suspend fun removeAccountMember(
+        @Path("accountId") accountId: String,
+        @Path("memberId") memberId: String
+    ): Response<CfEnvelope<Map<String, String>>>
 }

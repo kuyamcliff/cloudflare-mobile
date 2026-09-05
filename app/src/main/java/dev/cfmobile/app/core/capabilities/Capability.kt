@@ -39,6 +39,12 @@ data class Capability(
      *  Takes the zone name too (not just its id) so every zone-scoped screen can name its
      *  target in destructive confirmations (PRD §49, §93). */
     val zoneRoute: ((zoneId: String, zoneName: String) -> String)? = null,
+    /** Only set for [CapabilityStatus.IMPLEMENTED] account-scoped capabilities with a real
+     *  screen. The zone menu is currently the only navigation surface capabilities render
+     *  from, so an account-scoped capability is reached via whichever zone's own Cloudflare
+     *  account it belongs to (CfZone.account.id) rather than needing a separate account-level
+     *  menu. */
+    val accountRoute: ((accountId: String) -> String)? = null,
     /** True for capabilities Cloudflare itself considers legacy (PRD §18, §79). */
     val deprecated: Boolean = false,
     val migrationHint: String? = null

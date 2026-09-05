@@ -31,6 +31,8 @@ import dev.cfmobile.app.ui.settings.SettingsScreen
 import dev.cfmobile.app.ui.settings.SettingsViewModel
 import dev.cfmobile.app.ui.ssl.SslScreen
 import dev.cfmobile.app.ui.ssl.SslViewModel
+import dev.cfmobile.app.ui.accountmembers.AccountMembersScreen
+import dev.cfmobile.app.ui.accountmembers.AccountMembersViewModel
 import dev.cfmobile.app.ui.ratelimit.RateLimitScreen
 import dev.cfmobile.app.ui.ratelimit.RateLimitViewModel
 import dev.cfmobile.app.ui.transformrules.TransformRulesScreen
@@ -95,6 +97,15 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
                 onBack = { navController.popBackStack() },
                 onFeatureClick = { route -> navController.navigate(route) }
             )
+        }
+
+        composable(
+            Routes.ACCOUNT_MEMBERS,
+            arguments = listOf(navArgument("accountId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val accountId = backStackEntry.arguments?.getString("accountId").orEmpty()
+            val vm = viewModel<AccountMembersViewModel>(factory = factoryOf { AccountMembersViewModel(accountId, container.accountMembersRepository) })
+            AccountMembersScreen(vm, onBack = { navController.popBackStack() })
         }
 
         val zoneScopedArgs = listOf(navArgument("zoneId") { type = NavType.StringType }, navArgument("zoneName") { type = NavType.StringType })

@@ -337,3 +337,32 @@ data class AnalyticsMetric(
 data class AnalyticsUniques(
     val all: Double = 0.0
 )
+
+@JsonClass(generateAdapter = true)
+data class AccountRole(
+    val id: String = "",
+    val name: String = "",
+    val description: String = ""
+)
+
+@JsonClass(generateAdapter = true)
+data class AccountMemberUser(
+    val id: String = "",
+    val email: String = "",
+    @Json(name = "first_name") val firstName: String? = null,
+    @Json(name = "last_name") val lastName: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AccountMember(
+    val id: String = "",
+    val user: AccountMemberUser = AccountMemberUser(),
+    val status: String = "",
+    val roles: List<AccountRole> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class AccountMemberInvite(
+    val email: String,
+    val roles: List<String>
+)

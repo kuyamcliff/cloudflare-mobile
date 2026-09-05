@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.Http
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -85,7 +86,9 @@ fun ZoneMenuScreen(
                 LazyColumn {
                     items(CapabilityRegistry.implemented(), key = { it.id }) { capability ->
                         CapabilityRow(capability, implemented = true) {
-                            capability.zoneRoute?.let { route -> onFeatureClick(route(zone.id, zone.name)) }
+                            val route = capability.zoneRoute?.invoke(zone.id, zone.name)
+                                ?: zone.account?.id?.let { accountId -> capability.accountRoute?.invoke(accountId) }
+                            route?.let(onFeatureClick)
                         }
                         HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                     }
@@ -215,9 +218,10 @@ private fun NotImplementedDialog(capability: Capability, onDismiss: () -> Unit) 
 private fun capabilityIcon(capability: Capability) = when (capability.id) {
     "dns.records" -> Icons.Filled.Dns
     "ssl.tls" -> Icons.Filled.Lock
-    "firewall.legacy", "waf.rulesets" -> Icons.Filled.Shield
-    "page_rules" -> Icons.AutoMirrored.Filled.Rule
+    "firewall.legacy", "waf.rulesets", "rate_limiting" -> Icons.Filled.Shield
+    "page_rules", "transform_rules" -> Icons.AutoMirrored.Filled.Rule
     "caching" -> Icons.Filled.Http
     "analytics" -> Icons.Filled.Analytics
+    "account_members" -> Icons.Filled.People
     else -> Icons.Filled.Extension
 }

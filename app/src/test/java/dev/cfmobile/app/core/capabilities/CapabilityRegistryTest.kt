@@ -74,4 +74,13 @@ class CapabilityRegistryTest {
         assertThat(transformRules.zoneRoute).isNotNull()
         assertThat(transformRules.migrationHint).isNotNull()
     }
+
+    @Test
+    fun `account members is implemented via an account-scoped route, not a zone-scoped one`() {
+        val accountMembers = CapabilityRegistry.byId("account_members")!!
+        assertThat(accountMembers.status).isEqualTo(CapabilityStatus.IMPLEMENTED)
+        assertThat(accountMembers.zoneRoute).isNull()
+        assertThat(accountMembers.accountRoute).isNotNull()
+        assertThat(accountMembers.accountRoute!!("acct1")).isEqualTo("account/acct1/members")
+    }
 }

@@ -278,9 +278,11 @@ object CapabilityRegistry {
             displayName = "Members & Roles",
             description = "Account membership, roles, invitations",
             scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
+            status = CapabilityStatus.IMPLEMENTED,
             roadmapPhase = RoadmapPhase.P1,
-            destructiveRisk = DestructiveRisk.HIGH
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.accountMembers(accountId) },
+            migrationHint = "This request format (member invite/remove, roles) hasn't been verified against a live API call, only against Cloudflare's documented schema - unlike WAF/Rate Limiting, which were."
         ),
         Capability(
             id = "durable_objects",

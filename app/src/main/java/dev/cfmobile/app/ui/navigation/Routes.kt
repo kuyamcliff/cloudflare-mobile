@@ -9,6 +9,7 @@ object Routes {
     const val SETTINGS = "settings"
     const val SECURITY = "security"
     const val ZONE_MENU = "zone/{zoneId}/{zoneName}"
+    const val ACCOUNT_MEMBERS = "account/{accountId}/members"
     const val DNS = "zone/{zoneId}/{zoneName}/dns"
     const val SSL = "zone/{zoneId}/{zoneName}/ssl"
     const val FIREWALL = "zone/{zoneId}/{zoneName}/firewall"
@@ -26,6 +27,7 @@ object Routes {
     fun decodeZoneName(raw: String): String = URLDecoder.decode(raw, "UTF-8")
 
     fun zoneMenu(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}"
+    fun accountMembers(accountId: String) = "account/$accountId/members"
     fun dns(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/dns"
     fun ssl(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/ssl"
     fun firewall(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/firewall"
