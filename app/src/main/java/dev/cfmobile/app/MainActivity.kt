@@ -18,7 +18,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         val container = (application as CfApplication).container
-        val startDestination = if (container.tokenStore.getActive() != null) Routes.ZONES else Routes.LOGIN
+        val startDestination = if (container.accountStore.getActive() != null) Routes.ZONES else Routes.LOGIN
 
         setContent {
             CfMobileTheme {

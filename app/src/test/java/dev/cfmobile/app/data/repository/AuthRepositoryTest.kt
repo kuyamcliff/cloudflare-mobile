@@ -3,7 +3,9 @@ package dev.cfmobile.app.data.repository
 import android.app.Application
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
-import dev.cfmobile.app.data.local.TokenStore
+import dev.cfmobile.app.data.local.AccountMetadataStore
+import dev.cfmobile.app.data.local.AccountStore
+import dev.cfmobile.app.data.local.CredentialStore
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.testVerifierApi
 import kotlinx.coroutines.runBlocking
@@ -26,15 +28,17 @@ class AuthRepositoryTest {
 
     private lateinit var server: MockWebServer
     private lateinit var repository: AuthRepository
-    private lateinit var tokenStore: TokenStore
+    private lateinit var accountStore: AccountStore
 
     @Before
     fun setUp() {
         server = MockWebServer()
         server.start()
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
-        tokenStore = TokenStore(context.getSharedPreferences("test_tokens", android.content.Context.MODE_PRIVATE))
-        repository = AuthRepository(testVerifierApi(server), tokenStore)
+        val credentials = CredentialStore(context.getSharedPreferences("test_credentials", android.content.Context.MODE_PRIVATE))
+        val metadata = AccountMetadataStore(context.getSharedPreferences("test_metadata", android.content.Context.MODE_PRIVATE))
+        accountStore = AccountStore(credentials, metadata)
+        repository = AuthRepository(testVerifierApi(server), accountStore)
     }
 
     @After
@@ -47,8 +51,8 @@ class AuthRepositoryTest {
         val result = repository.addToken("My site", "cf-token-123")
 
         assertThat(result).isInstanceOf(ApiResult.Success::class.java)
-        assertThat(tokenStore.getAll()).hasSize(1)
-        assertThat(tokenStore.getActive()?.token).isEqualTo("cf-token-123")
+        assertThat(accountStore.getAll()).hasSize(1)
+        assertThat(accountStore.getActiveToken()).isEqualTo("cf-token-123")
 
         val request = server.takeRequest()
         assertThat(request.getHeader("Authorization")).isEqualTo("Bearer cf-token-123")
@@ -64,7 +68,7 @@ class AuthRepositoryTest {
         val result = repository.addToken("Bad token", "not-a-real-token")
 
         assertThat(result).isInstanceOf(ApiResult.Failure::class.java)
-        assertThat(tokenStore.getAll()).isEmpty()
+        assertThat(accountStore.getAll()).isEmpty()
     }
 
     @Test
@@ -82,7 +86,7 @@ class AuthRepositoryTest {
         val result = repository.addToken("Account token", "cfat_realtoken")
 
         assertThat(result).isInstanceOf(ApiResult.Success::class.java)
-        assertThat(tokenStore.getActive()?.token).isEqualTo("cfat_realtoken")
+        assertThat(accountStore.getActiveToken()).isEqualTo("cfat_realtoken")
     }
 
     @Test
@@ -91,5 +95,18 @@ class AuthRepositoryTest {
 
         assertThat(result).isInstanceOf(ApiResult.Failure::class.java)
         assertThat(server.requestCount).isEqualTo(0)
+    }
+
+    @Test
+    fun `addToken result never exposes the raw token - only the account summary`() = runBlocking {
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"id":"tok1","status":"active"}}"""))
+
+        val result = repository.addToken("My site", "cf-token-123") as ApiResult.Success
+
+        // AccountSummary has no token field at all - this is a compile-time guarantee, but
+        // asserting the label/id shape here documents that addToken's return type is safe
+        // to pass into ViewModel/UI state without leaking the secret.
+        assertThat(result.data.label).isEqualTo("My site")
+        assertThat(result.data.id).isNotEmpty()
     }
 }

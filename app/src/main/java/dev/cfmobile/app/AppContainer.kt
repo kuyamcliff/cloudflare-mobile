@@ -1,7 +1,7 @@
 package dev.cfmobile.app
 
 import android.content.Context
-import dev.cfmobile.app.data.local.TokenStore
+import dev.cfmobile.app.data.local.AccountStore
 import dev.cfmobile.app.data.remote.NetworkModule
 import dev.cfmobile.app.data.repository.AccountsRepository
 import dev.cfmobile.app.data.repository.AnalyticsRepository
@@ -15,12 +15,12 @@ import dev.cfmobile.app.data.repository.ZonesRepository
 /** Simple hand-rolled service locator: this app is small enough that a DI framework would
  *  add more ceremony than it saves. Every repository is built once and shared. */
 class AppContainer(context: Context) {
-    val tokenStore = TokenStore.create(context.applicationContext)
+    val accountStore = AccountStore.create(context.applicationContext)
 
-    private val api = NetworkModule.createApi { tokenStore.getActive()?.token }
+    private val api = NetworkModule.createApi { accountStore.getActiveToken() }
     private val verifierApi = NetworkModule.createVerifierApi()
 
-    val authRepository = AuthRepository(verifierApi, tokenStore)
+    val authRepository = AuthRepository(verifierApi, accountStore)
     val accountsRepository = AccountsRepository(api)
     val zonesRepository = ZonesRepository(api)
     val dnsRepository = DnsRepository(api)

@@ -36,7 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import dev.cfmobile.app.data.local.SavedToken
+import dev.cfmobile.app.data.local.AccountSummary
 import dev.cfmobile.app.ui.theme.StatusRed
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,7 +49,7 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var confirmSignOutAll by remember { mutableStateOf(false) }
-    var pendingRemove by remember { mutableStateOf<SavedToken?>(null) }
+    var pendingRemove by remember { mutableStateOf<AccountSummary?>(null) }
 
     LaunchedEffect(uiState.signedOut) {
         if (uiState.signedOut) onSignedOut()
@@ -68,7 +68,7 @@ fun SettingsScreen(
     ) { padding ->
         Column(Modifier.padding(padding)) {
             LazyColumn(Modifier.weight(1f, fill = false)) {
-                items(uiState.tokens, key = { it.id }) { token ->
+                items(uiState.accounts, key = { it.id }) { token ->
                     ListItem(
                         headlineContent = { Text(token.label) },
                         supportingContent = token.email?.let { { Text(it) } },
