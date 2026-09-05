@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Router
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
@@ -77,6 +78,7 @@ fun DashboardScreen(
     onPagesClick: (accountId: String) -> Unit,
     onAccessClick: (accountId: String) -> Unit,
     onGatewayClick: (accountId: String) -> Unit,
+    onTunnelsClick: (accountId: String) -> Unit,
     onSecurityClick: () -> Unit,
     onManageAccountsClick: () -> Unit
 ) {
@@ -162,6 +164,11 @@ fun DashboardScreen(
                     "Gateway", "DNS policies to block or allow domains",
                     Icons.Filled.Dns, enabled = hasAccountAccess,
                     onClick = { primaryAccountId?.let(onGatewayClick) }
+                ),
+                DashboardMenuItem(
+                    "Tunnels", "Register Cloudflare Tunnels for this account",
+                    Icons.Filled.Router, enabled = hasAccountAccess,
+                    onClick = { primaryAccountId?.let(onTunnelsClick) }
                 )
             )
         ),

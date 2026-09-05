@@ -53,6 +53,8 @@ import dev.cfmobile.app.ui.access.AccessScreen
 import dev.cfmobile.app.ui.access.AccessViewModel
 import dev.cfmobile.app.ui.gateway.GatewayScreen
 import dev.cfmobile.app.ui.gateway.GatewayViewModel
+import dev.cfmobile.app.ui.tunnels.TunnelsScreen
+import dev.cfmobile.app.ui.tunnels.TunnelsViewModel
 import dev.cfmobile.app.ui.r2.R2Screen
 import dev.cfmobile.app.ui.r2.R2ViewModel
 import dev.cfmobile.app.ui.ratelimit.RateLimitScreen
@@ -94,6 +96,7 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
                 onPagesClick = { accountId -> navController.navigate(Routes.pages(accountId)) },
                 onAccessClick = { accountId -> navController.navigate(Routes.access(accountId)) },
                 onGatewayClick = { accountId -> navController.navigate(Routes.gateway(accountId)) },
+                onTunnelsClick = { accountId -> navController.navigate(Routes.tunnels(accountId)) },
                 onSecurityClick = { navController.navigate(Routes.SECURITY) },
                 onManageAccountsClick = { navController.navigate(Routes.SETTINGS) }
             )
@@ -234,6 +237,15 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
             val accountId = backStackEntry.arguments?.getString("accountId").orEmpty()
             val vm = viewModel<GatewayViewModel>(factory = factoryOf { GatewayViewModel(accountId, container.gatewayRepository) })
             GatewayScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        composable(
+            Routes.TUNNELS,
+            arguments = listOf(navArgument("accountId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val accountId = backStackEntry.arguments?.getString("accountId").orEmpty()
+            val vm = viewModel<TunnelsViewModel>(factory = factoryOf { TunnelsViewModel(accountId, container.tunnelsRepository) })
+            TunnelsScreen(vm, onBack = { navController.popBackStack() })
         }
 
         val zoneScopedArgs = listOf(navArgument("zoneId") { type = NavType.StringType }, navArgument("zoneName") { type = NavType.StringType })

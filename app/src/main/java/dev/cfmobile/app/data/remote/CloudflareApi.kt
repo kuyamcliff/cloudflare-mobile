@@ -436,4 +436,21 @@ interface CloudflareApi {
         @Path("accountId") accountId: String,
         @Path("ruleId") ruleId: String
     ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Zero Trust Tunnels (list/create/delete only - running one needs cloudflared) ----
+
+    @GET("accounts/{accountId}/cfd_tunnel")
+    suspend fun listTunnels(@Path("accountId") accountId: String): Response<CfEnvelope<List<CfTunnel>>>
+
+    @POST("accounts/{accountId}/cfd_tunnel")
+    suspend fun createTunnel(
+        @Path("accountId") accountId: String,
+        @Body tunnel: TunnelCreate
+    ): Response<CfEnvelope<CfTunnel>>
+
+    @DELETE("accounts/{accountId}/cfd_tunnel/{tunnelId}")
+    suspend fun deleteTunnel(
+        @Path("accountId") accountId: String,
+        @Path("tunnelId") tunnelId: String
+    ): Response<CfEnvelope<CfTunnel>>
 }

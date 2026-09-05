@@ -285,8 +285,11 @@ object CapabilityRegistry {
             displayName = "Tunnels",
             description = "Cloudflare Tunnel inventory and status",
             scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P1
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.tunnels(accountId) },
+            migrationHint = "List/create/delete only - this registers a tunnel with Cloudflare, it doesn't run one. Actually connecting traffic through it needs the cloudflared daemon on a machine elsewhere, which is out of scope for a mobile app. Not verified against a live API call."
         ),
         Capability(
             id = "device_posture",

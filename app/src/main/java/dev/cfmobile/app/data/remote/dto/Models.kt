@@ -525,6 +525,25 @@ data class GatewayRuleCreate(
 )
 
 @JsonClass(generateAdapter = true)
+data class CfTunnel(
+    val id: String = "",
+    val name: String = "",
+    val status: String? = null,
+    @Json(name = "tun_type") val tunType: String? = null,
+    @Json(name = "created_at") val createdAt: String? = null
+)
+
+/** Creates a remotely-managed tunnel (config_src "cloudflare") rather than a locally-managed
+ *  one, so no tunnel_secret needs to be generated on-device - see CapabilityRegistry's
+ *  migrationHint: this only registers the tunnel, running it still needs the cloudflared
+ *  daemon elsewhere. */
+@JsonClass(generateAdapter = true)
+data class TunnelCreate(
+    val name: String,
+    @Json(name = "config_src") val configSrc: String = "cloudflare"
+)
+
+@JsonClass(generateAdapter = true)
 data class PagesProject(
     val name: String = "",
     val subdomain: String? = null,

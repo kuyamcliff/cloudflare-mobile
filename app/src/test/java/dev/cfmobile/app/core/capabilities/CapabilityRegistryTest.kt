@@ -172,4 +172,13 @@ class CapabilityRegistryTest {
         assertThat(gateway.accountRoute!!("acct1")).isEqualTo("account/acct1/gateway")
         assertThat(gateway.migrationHint).isNotNull()
     }
+
+    @Test
+    fun `tunnels is implemented for list-create-delete only`() {
+        val tunnels = CapabilityRegistry.byId("tunnels")!!
+        assertThat(tunnels.status).isEqualTo(CapabilityStatus.IMPLEMENTED)
+        assertThat(tunnels.accountRoute).isNotNull()
+        assertThat(tunnels.accountRoute!!("acct1")).isEqualTo("account/acct1/tunnels")
+        assertThat(tunnels.migrationHint).isNotNull()
+    }
 }
