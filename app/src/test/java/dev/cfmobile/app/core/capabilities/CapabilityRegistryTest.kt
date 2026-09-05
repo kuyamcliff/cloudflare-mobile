@@ -145,4 +145,13 @@ class CapabilityRegistryTest {
         assertThat(workers.accountRoute!!("acct1")).isEqualTo("account/acct1/workers")
         assertThat(workers.migrationHint).isNotNull()
     }
+
+    @Test
+    fun `pages is implemented read-mostly for projects and deployment history`() {
+        val pages = CapabilityRegistry.byId("pages")!!
+        assertThat(pages.status).isEqualTo(CapabilityStatus.IMPLEMENTED)
+        assertThat(pages.accountRoute).isNotNull()
+        assertThat(pages.accountRoute!!("acct1")).isEqualTo("account/acct1/pages")
+        assertThat(pages.migrationHint).isNotNull()
+    }
 }

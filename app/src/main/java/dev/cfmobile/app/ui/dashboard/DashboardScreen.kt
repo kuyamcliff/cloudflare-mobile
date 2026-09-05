@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Security
@@ -72,6 +73,7 @@ fun DashboardScreen(
     onKvClick: (accountId: String) -> Unit,
     onD1Click: (accountId: String) -> Unit,
     onWorkersClick: (accountId: String) -> Unit,
+    onPagesClick: (accountId: String) -> Unit,
     onSecurityClick: () -> Unit,
     onManageAccountsClick: () -> Unit
 ) {
@@ -137,6 +139,11 @@ fun DashboardScreen(
                     "Workers", "Deployed Worker scripts",
                     Icons.Filled.Bolt, enabled = hasAccountAccess,
                     onClick = { primaryAccountId?.let(onWorkersClick) }
+                ),
+                DashboardMenuItem(
+                    "Pages", "Static site and full-stack deployments",
+                    Icons.Filled.Language, enabled = hasAccountAccess,
+                    onClick = { primaryAccountId?.let(onPagesClick) }
                 )
             )
         ),

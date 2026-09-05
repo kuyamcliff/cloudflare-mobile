@@ -205,8 +205,10 @@ object CapabilityRegistry {
             displayName = "Pages",
             description = "Static site and full-stack deployments",
             scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P1
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            accountRoute = { accountId -> Routes.pages(accountId) },
+            migrationHint = "Read-mostly: list projects and view deployment history only - triggering a new deployment or editing project/build config isn't implemented. Not verified against a live API call."
         ),
         Capability(
             id = "r2",

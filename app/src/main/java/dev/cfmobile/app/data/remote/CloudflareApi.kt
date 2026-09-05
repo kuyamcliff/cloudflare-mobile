@@ -384,4 +384,15 @@ interface CloudflareApi {
         @Path("accountId") accountId: String,
         @Path("scriptName") scriptName: String
     ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Pages (list + deployment history only - read-mostly, no new deployments) ----
+
+    @GET("accounts/{accountId}/pages/projects")
+    suspend fun listPagesProjects(@Path("accountId") accountId: String): Response<CfEnvelope<List<PagesProject>>>
+
+    @GET("accounts/{accountId}/pages/projects/{projectName}/deployments")
+    suspend fun listPagesDeployments(
+        @Path("accountId") accountId: String,
+        @Path("projectName") projectName: String
+    ): Response<CfEnvelope<List<PagesDeployment>>>
 }

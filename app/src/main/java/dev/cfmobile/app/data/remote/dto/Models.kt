@@ -503,3 +503,40 @@ data class WorkerScript(
     @Json(name = "created_on") val createdOn: String? = null,
     @Json(name = "modified_on") val modifiedOn: String? = null
 )
+
+@JsonClass(generateAdapter = true)
+data class PagesProject(
+    val name: String = "",
+    val subdomain: String? = null,
+    val domains: List<String>? = null,
+    @Json(name = "production_branch") val productionBranch: String? = null,
+    @Json(name = "created_on") val createdOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PagesDeploymentStage(
+    val name: String? = null,
+    val status: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PagesDeploymentTriggerMetadata(
+    val branch: String? = null,
+    @Json(name = "commit_hash") val commitHash: String? = null,
+    @Json(name = "commit_message") val commitMessage: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PagesDeploymentTrigger(
+    val metadata: PagesDeploymentTriggerMetadata? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PagesDeployment(
+    val id: String = "",
+    val environment: String? = null,
+    val url: String? = null,
+    @Json(name = "created_on") val createdOn: String? = null,
+    @Json(name = "latest_stage") val latestStage: PagesDeploymentStage? = null,
+    @Json(name = "deployment_trigger") val deploymentTrigger: PagesDeploymentTrigger? = null
+)
