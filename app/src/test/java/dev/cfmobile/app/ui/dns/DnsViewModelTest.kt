@@ -106,4 +106,93 @@ class DnsViewModelTest {
         assertThat(form.type).isEqualTo("CNAME")
         assertThat(form.proxied).isTrue()
     }
+
+    @Test
+    fun `editing an SRV record pre-fills its structured data fields`() = runTest {
+        awaitLoaded()
+        val record = dev.cfmobile.app.data.remote.dto.DnsRecord(
+            id = "rec2", type = "SRV", name = "_sip._tcp", ttl = 300,
+            data = dev.cfmobile.app.data.remote.dto.DnsRecordData(priority = 10, weight = 5, port = 5060, target = "sip.example.com")
+        )
+
+        viewModel.openEditForm(record)
+
+        val form = viewModel.uiState.value.form!!
+        assertThat(form.srvPriority).isEqualTo("10")
+        assertThat(form.srvWeight).isEqualTo("5")
+        assertThat(form.srvPort).isEqualTo("5060")
+        assertThat(form.srvTarget).isEqualTo("sip.example.com")
+    }
+
+    @Test
+    fun `toggling a record's selection enters and exits selection mode`() = runTest {
+        awaitLoaded()
+
+        viewModel.toggleSelection("rec1")
+        assertThat(viewModel.uiState.value.isSelectionMode).isTrue()
+        assertThat(viewModel.uiState.value.selectedIds).containsExactly("rec1")
+
+        viewModel.toggleSelection("rec1")
+        assertThat(viewModel.uiState.value.isSelectionMode).isFalse()
+    }
+
+    @Test
+    fun `clearSelection exits selection mode without deleting anything`() = runTest {
+        awaitLoaded()
+        viewModel.toggleSelection("rec1")
+        viewModel.toggleSelection("rec2")
+
+        viewModel.clearSelection()
+
+        assertThat(viewModel.uiState.value.selectedIds).isEmpty()
+        assertThat(viewModel.uiState.value.isSelectionMode).isFalse()
+    }
+
+    @Test
+    fun `batchDelete clears the selection and refreshes on success`() = runTest {
+        awaitLoaded()
+        viewModel.toggleSelection("rec1")
+        viewModel.toggleSelection("rec2")
+
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"deletes":[{"id":"rec1"},{"id":"rec2"}]}}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
+
+        viewModel.batchDelete()
+        val state = viewModel.uiState.first { !it.isBatchDeleting && it.selectedIds.isEmpty() }
+
+        assertThat(state.selectedIds).isEmpty()
+    }
+
+    @Test
+    fun `batchDelete on an empty selection makes no request`() = runTest {
+        awaitLoaded()
+        val requestsBefore = server.requestCount
+
+        viewModel.batchDelete()
+
+        assertThat(server.requestCount).isEqualTo(requestsBefore)
+    }
+
+    @Test
+    fun `exportZoneFile surfaces the exported text for the screen to share`() = runTest {
+        awaitLoaded()
+        server.enqueue(MockResponse().setBody("example.com.\t1\tIN\tA\t203.0.113.1\n"))
+
+        viewModel.exportZoneFile()
+        val state = viewModel.uiState.first { it.exportedZoneFile != null }
+
+        assertThat(state.exportedZoneFile).contains("203.0.113.1")
+    }
+
+    @Test
+    fun `importZoneFile reports how many records were imported and refreshes`() = runTest {
+        awaitLoaded()
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"recs_added":2,"total_records_parsed":2}}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[{"id":"1","type":"A","name":"a","content":"1.1.1.1","ttl":1}]}"""))
+
+        viewModel.importZoneFile("a.example.com.\t1\tIN\tA\t1.1.1.1\n")
+        val state = viewModel.uiState.first { it.notice != null }
+
+        assertThat(state.notice).contains("2")
+    }
 }

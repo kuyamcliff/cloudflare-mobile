@@ -1,6 +1,8 @@
 package dev.cfmobile.app.data.remote
 
 import dev.cfmobile.app.data.remote.dto.*
+import okhttp3.MultipartBody
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -80,6 +82,25 @@ interface CloudflareApi {
         @Path("zoneId") zoneId: String,
         @Path("recordId") recordId: String
     ): Response<CfEnvelope<Map<String, String>>>
+
+    @POST("zones/{zoneId}/dns_records/batch")
+    suspend fun batchDnsRecords(
+        @Path("zoneId") zoneId: String,
+        @Body batch: DnsBatchRequest
+    ): Response<CfEnvelope<DnsBatchResult>>
+
+    /** Returns a raw BIND zone file, not a [CfEnvelope] - Cloudflare's export endpoint is the
+     *  one DNS record response that isn't JSON. */
+    @GET("zones/{zoneId}/dns_records/export")
+    suspend fun exportDnsRecords(@Path("zoneId") zoneId: String): Response<ResponseBody>
+
+    @Multipart
+    @POST("zones/{zoneId}/dns_records/import")
+    suspend fun importDnsRecords(
+        @Path("zoneId") zoneId: String,
+        @Part file: MultipartBody.Part,
+        @Part proxied: MultipartBody.Part
+    ): Response<CfEnvelope<DnsImportResult>>
 
     // ---- Zone settings (string-valued) ----
 

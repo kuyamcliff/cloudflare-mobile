@@ -41,6 +41,33 @@ data class CfZone(
     val account: CfAccount? = null
 )
 
+/** Union of the `data` object shapes Cloudflare uses for record types that can't be expressed
+ *  as a plain `content` string (SRV, URI, TLSA/SMIMEA, NAPTR, SSHFP, CERT). Fields are all
+ *  optional and only the ones relevant to the record's `type` are populated - see
+ *  dev.cfmobile.app.ui.dns.buildDnsRecordWrite for which fields each type actually uses. */
+@JsonClass(generateAdapter = true)
+data class DnsRecordData(
+    val priority: Int? = null,
+    val weight: Int? = null,
+    val port: Int? = null,
+    val target: String? = null,
+    val content: String? = null,
+    val usage: Int? = null,
+    val selector: Int? = null,
+    @Json(name = "matching_type") val matchingType: Int? = null,
+    val certificate: String? = null,
+    val algorithm: Int? = null,
+    val type: Int? = null,
+    @Json(name = "key_tag") val keyTag: Int? = null,
+    val fingerprint: String? = null,
+    val order: Int? = null,
+    val preference: Int? = null,
+    val flags: String? = null,
+    val service: String? = null,
+    val regex: String? = null,
+    val replacement: String? = null
+)
+
 @JsonClass(generateAdapter = true)
 data class DnsRecord(
     val id: String = "",
@@ -49,8 +76,13 @@ data class DnsRecord(
     val content: String = "",
     val ttl: Int = 1,
     val proxied: Boolean? = null,
+    val proxiable: Boolean? = null,
     val priority: Int? = null,
-    val comment: String? = null
+    val comment: String? = null,
+    val tags: List<String> = emptyList(),
+    val data: DnsRecordData? = null,
+    @Json(name = "created_on") val createdOn: String? = null,
+    @Json(name = "modified_on") val modifiedOn: String? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -61,7 +93,25 @@ data class DnsRecordWrite(
     val ttl: Int,
     val proxied: Boolean? = null,
     val priority: Int? = null,
-    val comment: String? = null
+    val comment: String? = null,
+    val data: DnsRecordData? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class DnsBatchDeleteRef(val id: String)
+
+@JsonClass(generateAdapter = true)
+data class DnsBatchRequest(val deletes: List<DnsBatchDeleteRef>)
+
+@JsonClass(generateAdapter = true)
+data class DnsBatchResult(
+    val deletes: List<DnsRecord>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class DnsImportResult(
+    @Json(name = "recs_added") val recsAdded: Int = 0,
+    @Json(name = "total_records_parsed") val totalRecordsParsed: Int = 0
 )
 
 @JsonClass(generateAdapter = true)
