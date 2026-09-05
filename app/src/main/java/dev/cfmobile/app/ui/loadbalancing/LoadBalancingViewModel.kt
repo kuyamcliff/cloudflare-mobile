@@ -111,7 +111,13 @@ class LoadBalancingViewModel(
             when (val result = zonesRepository.listZones()) {
                 is ApiResult.Success -> {
                     _uiState.update { state -> state.copy(zones = result.data, selectedZoneId = state.selectedZoneId ?: result.data.firstOrNull()?.id) }
-                    refreshLoadBalancers()
+                    if (result.data.isEmpty()) {
+                        // No zone to pick means there's nothing to fetch load balancers for -
+                        // resolve to an empty list rather than leaving this tab spinning forever.
+                        _uiState.update { it.copy(loadBalancers = UiState.Data(emptyList())) }
+                    } else {
+                        refreshLoadBalancers()
+                    }
                 }
                 is ApiResult.Failure -> _uiState.update { it.copy(loadBalancers = UiState.Error(ErrorClassifier.classify(result))) }
             }

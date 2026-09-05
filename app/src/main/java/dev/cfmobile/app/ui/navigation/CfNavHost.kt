@@ -15,6 +15,8 @@ import dev.cfmobile.app.core.security.BiometricAuthenticator
 import dev.cfmobile.app.data.remote.dto.CfZone
 import dev.cfmobile.app.ui.analytics.AnalyticsScreen
 import dev.cfmobile.app.ui.analytics.AnalyticsViewModel
+import dev.cfmobile.app.ui.botmanagement.BotManagementScreen
+import dev.cfmobile.app.ui.botmanagement.BotManagementViewModel
 import dev.cfmobile.app.ui.caching.CachingScreen
 import dev.cfmobile.app.ui.caching.CachingViewModel
 import dev.cfmobile.app.ui.dashboard.DashboardScreen
@@ -213,6 +215,13 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
             val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
             val vm = viewModel<AnalyticsViewModel>(factory = factoryOf { AnalyticsViewModel(zoneId, container.analyticsRepository) })
             AnalyticsScreen(vm, zoneName = zoneName, onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.BOT_MANAGEMENT, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<BotManagementViewModel>(factory = factoryOf { BotManagementViewModel(zoneId, container.zoneSettingsRepository) })
+            BotManagementScreen(vm, zoneName = zoneName, onBack = { navController.popBackStack() })
         }
     }
 }

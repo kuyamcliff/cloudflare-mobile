@@ -101,4 +101,12 @@ class CapabilityRegistryTest {
         assertThat(loadBalancing.accountRoute!!("acct1")).isEqualTo("account/acct1/loadbalancing")
         assertThat(loadBalancing.migrationHint).isNotNull()
     }
+
+    @Test
+    fun `bot management is implemented via a zone-scoped route and discloses the Super Bot Fight Mode gap`() {
+        val botManagement = CapabilityRegistry.byId("bot_management")!!
+        assertThat(botManagement.status).isEqualTo(CapabilityStatus.IMPLEMENTED)
+        assertThat(botManagement.zoneRoute).isNotNull()
+        assertThat(botManagement.migrationHint).isNotNull()
+    }
 }

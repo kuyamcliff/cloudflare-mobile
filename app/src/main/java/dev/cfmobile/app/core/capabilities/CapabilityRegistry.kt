@@ -173,8 +173,10 @@ object CapabilityRegistry {
             displayName = "Bot Management",
             description = "Bot score insights and mitigation",
             scope = CapabilityScope.ZONE,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P1
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            zoneRoute = { id, name -> Routes.botManagement(id, name) },
+            migrationHint = "Only the free-tier Bot Fight Mode toggle is implemented. Super Bot Fight Mode's per-category configuration (definitely/likely automated, verified bots, static resources) and bot score analytics both require a paid plan and aren't implemented."
         ),
         Capability(
             id = "ddos",

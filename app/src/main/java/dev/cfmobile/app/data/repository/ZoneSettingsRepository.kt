@@ -16,7 +16,8 @@ enum class StringSetting(val id: String) {
     AUTOMATIC_HTTPS_REWRITES("automatic_https_rewrites"),
     CACHE_LEVEL("cache_level"),
     DEVELOPMENT_MODE("development_mode"),
-    SECURITY_LEVEL("security_level")
+    SECURITY_LEVEL("security_level"),
+    BOT_FIGHT_MODE("bot_fight_mode")
 }
 
 class ZoneSettingsRepository(private val api: CloudflareApi) {

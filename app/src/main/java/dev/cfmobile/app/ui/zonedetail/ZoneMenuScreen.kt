@@ -218,7 +218,7 @@ private fun NotImplementedDialog(capability: Capability, onDismiss: () -> Unit) 
 private fun capabilityIcon(capability: Capability) = when (capability.id) {
     "dns.records" -> Icons.Filled.Dns
     "ssl.tls" -> Icons.Filled.Lock
-    "firewall.legacy", "waf.rulesets", "rate_limiting" -> Icons.Filled.Shield
+    "firewall.legacy", "waf.rulesets", "rate_limiting", "bot_management" -> Icons.Filled.Shield
     "page_rules", "transform_rules" -> Icons.AutoMirrored.Filled.Rule
     "caching" -> Icons.Filled.Http
     "analytics" -> Icons.Filled.Analytics

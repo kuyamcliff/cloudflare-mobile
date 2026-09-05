@@ -92,6 +92,6 @@ class SslViewModel(
         StringSetting.MIN_TLS_VERSION -> copy(minTlsVersion = value)
         StringSetting.AUTOMATIC_HTTPS_REWRITES -> copy(automaticHttpsRewrites = value)
         StringSetting.SECURITY_LEVEL -> copy(securityLevel = value)
-        StringSetting.CACHE_LEVEL, StringSetting.DEVELOPMENT_MODE -> this
+        StringSetting.CACHE_LEVEL, StringSetting.DEVELOPMENT_MODE, StringSetting.BOT_FIGHT_MODE -> this
     }
 }

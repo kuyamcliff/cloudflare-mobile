@@ -22,6 +22,7 @@ object Routes {
     const val PAGE_RULES = "zone/{zoneId}/{zoneName}/pagerules"
     const val CACHING = "zone/{zoneId}/{zoneName}/caching"
     const val ANALYTICS = "zone/{zoneId}/{zoneName}/analytics"
+    const val BOT_MANAGEMENT = "zone/{zoneId}/{zoneName}/botmanagement"
 
     /** Zone names (domains) only ever contain URL-safe characters, but this encodes anyway
      *  rather than assuming - a nav route argument is still a URL path segment. */
@@ -42,4 +43,5 @@ object Routes {
     fun pageRules(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/pagerules"
     fun caching(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/caching"
     fun analytics(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/analytics"
+    fun botManagement(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/botmanagement"
 }

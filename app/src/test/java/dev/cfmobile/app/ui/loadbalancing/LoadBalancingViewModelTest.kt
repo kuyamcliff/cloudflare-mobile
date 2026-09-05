@@ -77,7 +77,11 @@ class LoadBalancingViewModelTest {
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
         val vm = viewModel()
+        // Both init-triggered requests (pools, zones-with-no-zones) need to have actually
+        // completed before recording a baseline - awaiting pools alone races the still-in-
+        // flight zones call, since the two are launched independently in init.
         vm.awaitPoolsLoaded()
+        vm.awaitLbLoaded()
         val requestsBefore = server.requestCount
 
         vm.openPoolForm()
