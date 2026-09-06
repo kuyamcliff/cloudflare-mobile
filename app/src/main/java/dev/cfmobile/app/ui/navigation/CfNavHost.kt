@@ -90,6 +90,12 @@ import dev.cfmobile.app.ui.emailrouting.EmailRoutingScreen
 import dev.cfmobile.app.ui.emailrouting.EmailRoutingViewModel
 import dev.cfmobile.app.ui.spectrum.SpectrumScreen
 import dev.cfmobile.app.ui.spectrum.SpectrumViewModel
+import dev.cfmobile.app.ui.certificates.CertificatesScreen
+import dev.cfmobile.app.ui.certificates.CertificatesViewModel
+import dev.cfmobile.app.ui.waitingroom.WaitingRoomScreen
+import dev.cfmobile.app.ui.waitingroom.WaitingRoomViewModel
+import dev.cfmobile.app.ui.healthchecks.HealthChecksScreen
+import dev.cfmobile.app.ui.healthchecks.HealthChecksViewModel
 import dev.cfmobile.app.ui.zonesettings.ZoneSettingGroups
 import dev.cfmobile.app.ui.zonesettings.ZoneSettingSpec
 import dev.cfmobile.app.ui.zonesettings.ZoneSettingsGroupScreen
@@ -375,6 +381,27 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
                 )
                 ZoneSettingsGroupScreen(title, zoneName, vm, onBack = { navController.popBackStack() })
             }
+        }
+
+        composable(Routes.CERTIFICATES, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<CertificatesViewModel>(factory = factoryOf { CertificatesViewModel(zoneId, container.certificatesRepository) })
+            CertificatesScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.WAITING_ROOM, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<WaitingRoomViewModel>(factory = factoryOf { WaitingRoomViewModel(zoneId, container.waitingRoomRepository) })
+            WaitingRoomScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.HEALTH_CHECKS, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<HealthChecksViewModel>(factory = factoryOf { HealthChecksViewModel(zoneId, container.healthChecksRepository) })
+            HealthChecksScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
         }
 
         settingsGroupScreen(Routes.SPEED, "Speed", ZoneSettingGroups.SPEED)

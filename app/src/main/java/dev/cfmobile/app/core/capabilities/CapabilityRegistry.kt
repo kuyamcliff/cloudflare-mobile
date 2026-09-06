@@ -108,6 +108,42 @@ object CapabilityRegistry {
             zoneRoute = { id, name -> Routes.caching(id, name) }
         ),
         Capability(
+            id = "certificates",
+            product = "SSL/TLS",
+            displayName = "Certificates & DNSSEC",
+            description = "Edge certificates, custom hostnames, DNSSEC",
+            scope = CapabilityScope.ZONE,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.HIGH,
+            zoneRoute = { id, name -> Routes.certificates(id, name) },
+            migrationHint = "Edge certificate packs are read-only; custom hostnames (SSL for SaaS) can be added and removed; DNSSEC can be turned on and its DS record copied. Uploading a custom certificate, ordering advanced packs, and client certificates aren't implemented. Enabling DNSSEC only generates the DS record - your registrar still has to publish it. Not verified against a live API call."
+        ),
+        Capability(
+            id = "waiting_room",
+            product = "Traffic",
+            displayName = "Waiting Room",
+            description = "Queue visitors ahead of a busy page",
+            scope = CapabilityScope.ZONE,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.HIGH,
+            zoneRoute = { id, name -> Routes.waitingRoom(id, name) },
+            migrationHint = "Create, list, and delete rooms with the core queueing thresholds. Custom queue pages, event scheduling, and per-room rules aren't implemented. Requires a plan that includes Waiting Room. Not verified against a live API call."
+        ),
+        Capability(
+            id = "health_checks",
+            product = "Traffic",
+            displayName = "Health Checks",
+            description = "Standalone origin monitors",
+            scope = CapabilityScope.ZONE,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.MEDIUM,
+            zoneRoute = { id, name -> Routes.healthChecks(id, name) },
+            migrationHint = "Create, list, and delete standalone zone health checks. Advanced probe tuning (intervals, retries, expected codes, custom headers) uses Cloudflare's defaults here. Not verified against a live API call."
+        ),
+        Capability(
             id = "speed",
             product = "Speed",
             displayName = "Speed & Optimization",

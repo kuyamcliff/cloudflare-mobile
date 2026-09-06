@@ -628,6 +628,73 @@ interface CloudflareApi {
     @GET("zones/{zoneId}/api_gateway/operations")
     suspend fun listApiOperations(@Path("zoneId") zoneId: String): Response<CfEnvelope<List<ApiOperation>>>
 
+    // ---- DNSSEC ----
+
+    @GET("zones/{zoneId}/dnssec")
+    suspend fun getDnssec(@Path("zoneId") zoneId: String): Response<CfEnvelope<DnssecStatus>>
+
+    @PATCH("zones/{zoneId}/dnssec")
+    suspend fun updateDnssec(
+        @Path("zoneId") zoneId: String,
+        @Body update: DnssecUpdate
+    ): Response<CfEnvelope<DnssecStatus>>
+
+    // ---- Custom hostnames (SSL for SaaS) ----
+
+    @GET("zones/{zoneId}/custom_hostnames")
+    suspend fun listCustomHostnames(@Path("zoneId") zoneId: String): Response<CfEnvelope<List<CustomHostname>>>
+
+    @POST("zones/{zoneId}/custom_hostnames")
+    suspend fun createCustomHostname(
+        @Path("zoneId") zoneId: String,
+        @Body hostname: CustomHostnameCreate
+    ): Response<CfEnvelope<CustomHostname>>
+
+    @DELETE("zones/{zoneId}/custom_hostnames/{hostnameId}")
+    suspend fun deleteCustomHostname(
+        @Path("zoneId") zoneId: String,
+        @Path("hostnameId") hostnameId: String
+    ): Response<CfEnvelope<CustomHostname>>
+
+    // ---- Edge certificates (read-only) ----
+
+    @GET("zones/{zoneId}/ssl/certificate_packs")
+    suspend fun listCertificatePacks(@Path("zoneId") zoneId: String): Response<CfEnvelope<List<CertificatePack>>>
+
+    // ---- Waiting Room ----
+
+    @GET("zones/{zoneId}/waiting_rooms")
+    suspend fun listWaitingRooms(@Path("zoneId") zoneId: String): Response<CfEnvelope<List<WaitingRoom>>>
+
+    @POST("zones/{zoneId}/waiting_rooms")
+    suspend fun createWaitingRoom(
+        @Path("zoneId") zoneId: String,
+        @Body room: WaitingRoomCreate
+    ): Response<CfEnvelope<WaitingRoom>>
+
+    @DELETE("zones/{zoneId}/waiting_rooms/{roomId}")
+    suspend fun deleteWaitingRoom(
+        @Path("zoneId") zoneId: String,
+        @Path("roomId") roomId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Standalone health checks ----
+
+    @GET("zones/{zoneId}/healthchecks")
+    suspend fun listHealthChecks(@Path("zoneId") zoneId: String): Response<CfEnvelope<List<HealthCheck>>>
+
+    @POST("zones/{zoneId}/healthchecks")
+    suspend fun createHealthCheck(
+        @Path("zoneId") zoneId: String,
+        @Body check: HealthCheckCreate
+    ): Response<CfEnvelope<HealthCheck>>
+
+    @DELETE("zones/{zoneId}/healthchecks/{checkId}")
+    suspend fun deleteHealthCheck(
+        @Path("zoneId") zoneId: String,
+        @Path("checkId") checkId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
     // ---- Email Routing ----
 
     @GET("zones/{zoneId}/email/routing")

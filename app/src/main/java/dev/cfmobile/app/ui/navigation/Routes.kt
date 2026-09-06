@@ -53,6 +53,9 @@ object Routes {
     const val NETWORK = "zone/{zoneId}/{zoneName}/network"
     const val SCRAPE_SHIELD = "zone/{zoneId}/{zoneName}/scrapeshield"
     const val CACHE_BEHAVIOUR = "zone/{zoneId}/{zoneName}/cachebehaviour"
+    const val CERTIFICATES = "zone/{zoneId}/{zoneName}/certificates"
+    const val WAITING_ROOM = "zone/{zoneId}/{zoneName}/waitingroom"
+    const val HEALTH_CHECKS = "zone/{zoneId}/{zoneName}/healthchecks"
     const val ANALYTICS = "zone/{zoneId}/{zoneName}/analytics"
     const val BOT_MANAGEMENT = "zone/{zoneId}/{zoneName}/botmanagement"
 
@@ -106,6 +109,9 @@ object Routes {
     fun network(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/network"
     fun scrapeShield(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/scrapeshield"
     fun cacheBehaviour(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/cachebehaviour"
+    fun certificates(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/certificates"
+    fun waitingRoom(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/waitingroom"
+    fun healthChecks(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/healthchecks"
     fun analytics(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/analytics"
     fun botManagement(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/botmanagement"
 }

@@ -33,7 +33,10 @@ import dev.cfmobile.app.data.repository.BillingRepository
 import dev.cfmobile.app.data.repository.BrowserRenderingRepository
 import dev.cfmobile.app.data.repository.EmailRoutingRepository
 import dev.cfmobile.app.data.repository.MagicNetworkRepository
+import dev.cfmobile.app.data.repository.CertificatesRepository
+import dev.cfmobile.app.data.repository.HealthChecksRepository
 import dev.cfmobile.app.data.repository.SecurityEventsRepository
+import dev.cfmobile.app.data.repository.WaitingRoomRepository
 import dev.cfmobile.app.data.repository.SpectrumRepository
 import dev.cfmobile.app.data.repository.WorkersAiRepository
 import dev.cfmobile.app.data.repository.WorkflowsRepository
@@ -98,6 +101,9 @@ class AppContainer(context: Context) {
     val magicNetworkRepository = MagicNetworkRepository(api)
     val billingRepository = BillingRepository(api)
     val browserRenderingRepository = BrowserRenderingRepository(api)
+    val certificatesRepository = CertificatesRepository(api)
+    val waitingRoomRepository = WaitingRoomRepository(api)
+    val healthChecksRepository = HealthChecksRepository(api)
     val wafRepository = WafRepository(api)
     val rateLimitRepository = RateLimitRepository(api)
     val transformRulesRepository = TransformRulesRepository(api)

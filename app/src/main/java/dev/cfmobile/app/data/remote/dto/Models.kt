@@ -525,6 +525,102 @@ data class GatewayRuleCreate(
 )
 
 @JsonClass(generateAdapter = true)
+data class DnssecStatus(
+    val status: String? = null,
+    val algorithm: String? = null,
+    val digest: String? = null,
+    @Json(name = "digest_algorithm") val digestAlgorithm: String? = null,
+    @Json(name = "digest_type") val digestType: String? = null,
+    val ds: String? = null,
+    val flags: Int? = null,
+    @Json(name = "key_tag") val keyTag: Int? = null,
+    @Json(name = "key_type") val keyType: String? = null,
+    @Json(name = "public_key") val publicKey: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class DnssecUpdate(
+    val status: String
+)
+
+@JsonClass(generateAdapter = true)
+data class CustomHostnameSsl(
+    val status: String? = null,
+    val method: String? = null,
+    val type: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class CustomHostname(
+    val id: String = "",
+    val hostname: String = "",
+    val status: String? = null,
+    val ssl: CustomHostnameSsl? = null,
+    @Json(name = "created_at") val createdAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class CustomHostnameCreate(
+    val hostname: String,
+    val ssl: CustomHostnameSsl
+)
+
+@JsonClass(generateAdapter = true)
+data class CertificatePack(
+    val id: String = "",
+    val type: String? = null,
+    val status: String? = null,
+    val hosts: List<String> = emptyList(),
+    @Json(name = "certificate_authority") val certificateAuthority: String? = null,
+    @Json(name = "validity_days") val validityDays: Int? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class WaitingRoom(
+    val id: String = "",
+    val name: String = "",
+    val host: String = "",
+    val path: String? = null,
+    val suspended: Boolean = false,
+    @Json(name = "new_users_per_minute") val newUsersPerMinute: Int? = null,
+    @Json(name = "total_active_users") val totalActiveUsers: Int? = null,
+    @Json(name = "queue_all") val queueAll: Boolean? = null,
+    val description: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class WaitingRoomCreate(
+    val name: String,
+    val host: String,
+    val path: String,
+    @Json(name = "new_users_per_minute") val newUsersPerMinute: Int,
+    @Json(name = "total_active_users") val totalActiveUsers: Int
+)
+
+@JsonClass(generateAdapter = true)
+data class HealthCheck(
+    val id: String = "",
+    val name: String = "",
+    val address: String = "",
+    val type: String? = null,
+    val status: String? = null,
+    val description: String? = null,
+    val suspended: Boolean = false,
+    val interval: Int? = null,
+    val retries: Int? = null,
+    val timeout: Int? = null,
+    @Json(name = "failure_reason") val failureReason: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class HealthCheckCreate(
+    val name: String,
+    val address: String,
+    val type: String,
+    val description: String? = null
+)
+
+@JsonClass(generateAdapter = true)
 data class EmailRoutingSettings(
     val enabled: Boolean = false,
     val name: String? = null,
