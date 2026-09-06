@@ -480,6 +480,62 @@ data class KvNamespaceCreate(
 )
 
 @JsonClass(generateAdapter = true)
+data class KvKey(
+    val name: String = "",
+    val expiration: Long? = null,
+    val metadata: Map<String, Any?>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class D1QueryRequest(
+    val sql: String
+)
+
+@JsonClass(generateAdapter = true)
+data class D1QueryMeta(
+    val duration: Double? = null,
+    @Json(name = "rows_read") val rowsRead: Long? = null,
+    @Json(name = "rows_written") val rowsWritten: Long? = null,
+    @Json(name = "changed_db") val changedDb: Boolean? = null
+)
+
+/** One statement's outcome. `results` is null or empty for statements that don't return rows
+ *  (INSERT, CREATE TABLE, ...), which is a success, not an error. */
+@JsonClass(generateAdapter = true)
+data class D1QueryResult(
+    val success: Boolean = false,
+    val results: List<Map<String, Any?>>? = null,
+    val meta: D1QueryMeta? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class WorkerSchedule(
+    val cron: String = "",
+    @Json(name = "created_on") val createdOn: String? = null,
+    @Json(name = "modified_on") val modifiedOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class WorkerSchedules(
+    val schedules: List<WorkerSchedule> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class WorkerRoute(
+    val id: String = "",
+    val pattern: String = "",
+    val script: String? = null
+)
+
+/** Cloudflare treats an empty `script` as "no worker runs here", which is how a route is used
+ *  to carve an exception out of a broader pattern. */
+@JsonClass(generateAdapter = true)
+data class WorkerRouteWrite(
+    val pattern: String,
+    val script: String
+)
+
+@JsonClass(generateAdapter = true)
 data class D1Database(
     val uuid: String = "",
     val name: String = "",

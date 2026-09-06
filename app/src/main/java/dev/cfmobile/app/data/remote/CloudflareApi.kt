@@ -2,6 +2,7 @@ package dev.cfmobile.app.data.remote
 
 import dev.cfmobile.app.data.remote.dto.*
 import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.*
@@ -357,7 +358,36 @@ interface CloudflareApi {
         @Path("namespaceId") namespaceId: String
     ): Response<CfEnvelope<Map<String, String>>>
 
-    // ---- D1 (database management only - no query execution) ----
+    @GET("accounts/{accountId}/storage/kv/namespaces/{namespaceId}/keys")
+    suspend fun listKvKeys(
+        @Path("accountId") accountId: String,
+        @Path("namespaceId") namespaceId: String
+    ): Response<CfEnvelope<List<KvKey>>>
+
+    /** Values are returned as-is (text or bytes), not wrapped in the JSON envelope. */
+    @GET("accounts/{accountId}/storage/kv/namespaces/{namespaceId}/values/{keyName}")
+    suspend fun getKvValue(
+        @Path("accountId") accountId: String,
+        @Path("namespaceId") namespaceId: String,
+        @Path("keyName") keyName: String
+    ): Response<ResponseBody>
+
+    @PUT("accounts/{accountId}/storage/kv/namespaces/{namespaceId}/values/{keyName}")
+    suspend fun putKvValue(
+        @Path("accountId") accountId: String,
+        @Path("namespaceId") namespaceId: String,
+        @Path("keyName") keyName: String,
+        @Body value: RequestBody
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    @DELETE("accounts/{accountId}/storage/kv/namespaces/{namespaceId}/values/{keyName}")
+    suspend fun deleteKvValue(
+        @Path("accountId") accountId: String,
+        @Path("namespaceId") namespaceId: String,
+        @Path("keyName") keyName: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- D1 (databases plus a SQL console) ----
 
     @GET("accounts/{accountId}/d1/database")
     suspend fun listD1Databases(@Path("accountId") accountId: String): Response<CfEnvelope<List<D1Database>>>
@@ -374,7 +404,14 @@ interface CloudflareApi {
         @Path("databaseId") databaseId: String
     ): Response<CfEnvelope<Map<String, String>>>
 
-    // ---- Workers (script list/view/delete only - no code editing/deployment) ----
+    @POST("accounts/{accountId}/d1/database/{databaseId}/query")
+    suspend fun queryD1Database(
+        @Path("accountId") accountId: String,
+        @Path("databaseId") databaseId: String,
+        @Body request: D1QueryRequest
+    ): Response<CfEnvelope<List<D1QueryResult>>>
+
+    // ---- Workers (list/inspect/delete scripts, zone routes - no code editing/deployment) ----
 
     @GET("accounts/{accountId}/workers/scripts")
     suspend fun listWorkerScripts(@Path("accountId") accountId: String): Response<CfEnvelope<List<WorkerScript>>>
@@ -385,7 +422,43 @@ interface CloudflareApi {
         @Path("scriptName") scriptName: String
     ): Response<CfEnvelope<Map<String, String>>>
 
-    // ---- Pages (list + deployment history only - read-mostly, no new deployments) ----
+    /** Returns the deployed script itself - JavaScript for a service-worker script, or a
+     *  multipart body for a module worker - so it isn't the JSON envelope. */
+    @GET("accounts/{accountId}/workers/scripts/{scriptName}")
+    suspend fun getWorkerScriptContent(
+        @Path("accountId") accountId: String,
+        @Path("scriptName") scriptName: String
+    ): Response<ResponseBody>
+
+    @GET("accounts/{accountId}/workers/scripts/{scriptName}/schedules")
+    suspend fun getWorkerSchedules(
+        @Path("accountId") accountId: String,
+        @Path("scriptName") scriptName: String
+    ): Response<CfEnvelope<WorkerSchedules>>
+
+    @GET("zones/{zoneId}/workers/routes")
+    suspend fun listWorkerRoutes(@Path("zoneId") zoneId: String): Response<CfEnvelope<List<WorkerRoute>>>
+
+    @POST("zones/{zoneId}/workers/routes")
+    suspend fun createWorkerRoute(
+        @Path("zoneId") zoneId: String,
+        @Body route: WorkerRouteWrite
+    ): Response<CfEnvelope<WorkerRoute>>
+
+    @PUT("zones/{zoneId}/workers/routes/{routeId}")
+    suspend fun updateWorkerRoute(
+        @Path("zoneId") zoneId: String,
+        @Path("routeId") routeId: String,
+        @Body route: WorkerRouteWrite
+    ): Response<CfEnvelope<WorkerRoute>>
+
+    @DELETE("zones/{zoneId}/workers/routes/{routeId}")
+    suspend fun deleteWorkerRoute(
+        @Path("zoneId") zoneId: String,
+        @Path("routeId") routeId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Pages (projects, deployment history, redeploy/retry - no build config editing) ----
 
     @GET("accounts/{accountId}/pages/projects")
     suspend fun listPagesProjects(@Path("accountId") accountId: String): Response<CfEnvelope<List<PagesProject>>>
@@ -395,6 +468,19 @@ interface CloudflareApi {
         @Path("accountId") accountId: String,
         @Path("projectName") projectName: String
     ): Response<CfEnvelope<List<PagesDeployment>>>
+
+    @POST("accounts/{accountId}/pages/projects/{projectName}/deployments")
+    suspend fun createPagesDeployment(
+        @Path("accountId") accountId: String,
+        @Path("projectName") projectName: String
+    ): Response<CfEnvelope<PagesDeployment>>
+
+    @POST("accounts/{accountId}/pages/projects/{projectName}/deployments/{deploymentId}/retry")
+    suspend fun retryPagesDeployment(
+        @Path("accountId") accountId: String,
+        @Path("projectName") projectName: String,
+        @Path("deploymentId") deploymentId: String
+    ): Response<CfEnvelope<PagesDeployment>>
 
     // ---- Zero Trust Access (applications + one inline policy per app - common cases only) ----
 

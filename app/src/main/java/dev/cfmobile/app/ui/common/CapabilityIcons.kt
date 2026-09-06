@@ -1,26 +1,30 @@
 package dev.cfmobile.app.ui.common
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.AltRoute
+import androidx.compose.material.icons.automirrored.filled.CallSplit
 import androidx.compose.material.icons.automirrored.filled.Rule
 import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Api
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.CallSplit
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Extension
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Http
 import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Lan
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.MonitorHeart
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Queue
@@ -28,6 +32,7 @@ import androidx.compose.material.icons.filled.Router
 import androidx.compose.material.icons.filled.ScatterPlot
 import androidx.compose.material.icons.filled.SettingsEthernet
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.VerifiedUser
@@ -55,7 +60,7 @@ fun capabilityIcon(capability: Capability): ImageVector = when (capability.id) {
     "analytics" -> Icons.Filled.Analytics
     "account_members" -> Icons.Filled.People
     "audit_logs" -> Icons.Filled.History
-    "load_balancing" -> Icons.Filled.CallSplit
+    "load_balancing" -> Icons.AutoMirrored.Filled.CallSplit
     "workers", "hyperdrive" -> Icons.Filled.Bolt
     "pages" -> Icons.Filled.Language
     "r2" -> Icons.Filled.Inventory2
@@ -78,5 +83,13 @@ fun capabilityIcon(capability: Capability): ImageVector = when (capability.id) {
     "gateway" -> Icons.Filled.Dns
     "tunnels" -> Icons.Filled.Router
     "device_posture" -> Icons.Filled.Devices
+    "worker_routes" -> Icons.AutoMirrored.Filled.AltRoute
+    "certificates" -> Icons.Filled.VerifiedUser
+    "waiting_room" -> Icons.Filled.Groups
+    "health_checks" -> Icons.Filled.MonitorHeart
+    "speed" -> Icons.Filled.Speed
+    "network_settings" -> Icons.Filled.Lan
+    "scrape_shield" -> Icons.Filled.Shield
+    "cache_behaviour" -> Icons.Filled.Http
     else -> Icons.Filled.Extension
 }

@@ -289,7 +289,19 @@ object CapabilityRegistry {
             roadmapPhase = RoadmapPhase.P1,
             destructiveRisk = DestructiveRisk.HIGH,
             accountRoute = { accountId -> Routes.workers(accountId) },
-            migrationHint = "List/view/delete only - editing or deploying script code needs an editor and bundler that don't belong on mobile, so that isn't implemented. Not verified against a live API call."
+            migrationHint = "List, inspect (source, cron triggers), and delete. Editing or deploying script code needs an editor and bundler that don't belong on mobile, so that isn't implemented; bindings, secrets, versions, and tail logs aren't covered either. A module Worker's source is shown as the multipart parts Cloudflare returns. Not verified against a live API call."
+        ),
+        Capability(
+            id = "worker_routes",
+            product = "Develop",
+            displayName = "Worker Routes",
+            description = "Map URL patterns on a zone to Workers",
+            scope = CapabilityScope.ZONE,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.HIGH,
+            zoneRoute = { zoneId, zoneName -> Routes.workerRoutes(zoneId, zoneName) },
+            migrationHint = "Create, edit, and delete routes that bind a URL pattern on this zone to a Worker. Routes attached to a Worker from the account side (the newer per-script routes API) and custom domains aren't covered. Not verified against a live API call."
         ),
         Capability(
             id = "pages",
@@ -300,7 +312,7 @@ object CapabilityRegistry {
             status = CapabilityStatus.IMPLEMENTED,
             roadmapPhase = RoadmapPhase.P1,
             accountRoute = { accountId -> Routes.pages(accountId) },
-            migrationHint = "Read-mostly: list projects and view deployment history only - triggering a new deployment or editing project/build config isn't implemented. Not verified against a live API call."
+            migrationHint = "List projects, view deployment history, redeploy the production branch, and retry a failed deployment. Editing project or build configuration, uploading assets directly, and managing custom domains aren't implemented. Not verified against a live API call."
         ),
         Capability(
             id = "r2",
@@ -324,7 +336,7 @@ object CapabilityRegistry {
             roadmapPhase = RoadmapPhase.P1,
             destructiveRisk = DestructiveRisk.HIGH,
             accountRoute = { accountId -> Routes.kv(accountId) },
-            migrationHint = "Namespace management only (create/list/delete) - browsing or editing individual keys isn't implemented, that's a separate larger surface. Not verified against a live API call."
+            migrationHint = "Namespaces plus browsing, editing, and deleting the keys inside one. Values are handled as UTF-8 text: a binary value is reported rather than shown, and writing metadata, expirations, or bulk operations isn't implemented. The key list isn't paginated, so a very large namespace shows only Cloudflare's first page. Not verified against a live API call."
         ),
         Capability(
             id = "d1",
@@ -336,7 +348,7 @@ object CapabilityRegistry {
             roadmapPhase = RoadmapPhase.P1,
             destructiveRisk = DestructiveRisk.HIGH,
             accountRoute = { accountId -> Routes.d1(accountId) },
-            migrationHint = "Database management only (create/list/delete) - running SQL queries against a database isn't implemented, that's a separate SQL-console-sized surface. Not verified against a live API call."
+            migrationHint = "Databases plus a SQL console that runs arbitrary statements, with a confirmation before anything that writes. Results are shown as a scrollable table; exporting results, time-travel restore, and migrations aren't implemented. Not verified against a live API call."
         ),
         Capability(
             id = "queues",

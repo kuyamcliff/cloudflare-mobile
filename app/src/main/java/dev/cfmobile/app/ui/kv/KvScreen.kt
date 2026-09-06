@@ -16,12 +16,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.cfmobile.app.data.remote.dto.KvNamespace
 import dev.cfmobile.app.ui.common.CfListScreen
 import dev.cfmobile.app.ui.common.DeletableListRow
 import dev.cfmobile.app.ui.common.FormActions
 
 @Composable
-fun KvScreen(viewModel: KvViewModel, onBack: () -> Unit) {
+fun KvScreen(viewModel: KvViewModel, onBack: () -> Unit, onOpenKeys: (KvNamespace) -> Unit) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     CfListScreen(
@@ -45,7 +46,8 @@ fun KvScreen(viewModel: KvViewModel, onBack: () -> Unit) {
             deleteContentDescription = "Delete namespace",
             confirmTitle = "Delete namespace?",
             confirmText = "\"${namespace.title}\" and every key stored in it will be permanently deleted. This can't be undone.",
-            onDelete = { viewModel.delete(namespace) }
+            onDelete = { viewModel.delete(namespace) },
+            onClick = { onOpenKeys(namespace) }
         )
     }
 

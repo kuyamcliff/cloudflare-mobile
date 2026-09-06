@@ -16,12 +16,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.cfmobile.app.data.remote.dto.D1Database
 import dev.cfmobile.app.ui.common.CfListScreen
 import dev.cfmobile.app.ui.common.DeletableListRow
 import dev.cfmobile.app.ui.common.FormActions
 
 @Composable
-fun D1Screen(viewModel: D1ViewModel, onBack: () -> Unit) {
+fun D1Screen(viewModel: D1ViewModel, onBack: () -> Unit, onOpenConsole: (D1Database) -> Unit) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     CfListScreen(
@@ -51,7 +52,8 @@ fun D1Screen(viewModel: D1ViewModel, onBack: () -> Unit) {
             deleteContentDescription = "Delete database",
             confirmTitle = "Delete database?",
             confirmText = "\"${database.name}\" and all its data will be permanently deleted. This can't be undone.",
-            onDelete = { viewModel.delete(database) }
+            onDelete = { viewModel.delete(database) },
+            onClick = { onOpenConsole(database) }
         )
     }
 

@@ -15,7 +15,9 @@ object Routes {
     const val LOAD_BALANCING = "account/{accountId}/loadbalancing"
     const val R2 = "account/{accountId}/r2"
     const val KV = "account/{accountId}/kv"
+    const val KV_KEYS = "account/{accountId}/kv/{namespaceId}/{namespaceTitle}"
     const val D1 = "account/{accountId}/d1"
+    const val D1_CONSOLE = "account/{accountId}/d1/{databaseId}/{databaseName}/query"
     const val WORKERS = "account/{accountId}/workers"
     const val PAGES = "account/{accountId}/pages"
     const val ACCESS = "account/{accountId}/access"
@@ -56,6 +58,7 @@ object Routes {
     const val CERTIFICATES = "zone/{zoneId}/{zoneName}/certificates"
     const val WAITING_ROOM = "zone/{zoneId}/{zoneName}/waitingroom"
     const val HEALTH_CHECKS = "zone/{zoneId}/{zoneName}/healthchecks"
+    const val WORKER_ROUTES = "zone/{zoneId}/{zoneName}/workerroutes"
     const val ANALYTICS = "zone/{zoneId}/{zoneName}/analytics"
     const val BOT_MANAGEMENT = "zone/{zoneId}/{zoneName}/botmanagement"
 
@@ -65,13 +68,20 @@ object Routes {
 
     fun decodeZoneName(raw: String): String = URLDecoder.decode(raw, "UTF-8")
 
+    /** Same decode, for any other name carried through a route argument. */
+    fun decodeArg(raw: String): String = URLDecoder.decode(raw, "UTF-8")
+
     fun zoneMenu(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}"
     fun accountMembers(accountId: String) = "account/$accountId/members"
     fun auditLogs(accountId: String) = "account/$accountId/auditlogs"
     fun loadBalancing(accountId: String) = "account/$accountId/loadbalancing"
     fun r2(accountId: String) = "account/$accountId/r2"
     fun kv(accountId: String) = "account/$accountId/kv"
+    fun kvKeys(accountId: String, namespaceId: String, namespaceTitle: String) =
+        "account/$accountId/kv/$namespaceId/${encode(namespaceTitle)}"
     fun d1(accountId: String) = "account/$accountId/d1"
+    fun d1Console(accountId: String, databaseId: String, databaseName: String) =
+        "account/$accountId/d1/$databaseId/${encode(databaseName)}/query"
     fun workers(accountId: String) = "account/$accountId/workers"
     fun pages(accountId: String) = "account/$accountId/pages"
     fun access(accountId: String) = "account/$accountId/access"
@@ -112,6 +122,7 @@ object Routes {
     fun certificates(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/certificates"
     fun waitingRoom(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/waitingroom"
     fun healthChecks(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/healthchecks"
+    fun workerRoutes(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/workerroutes"
     fun analytics(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/analytics"
     fun botManagement(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/botmanagement"
 }

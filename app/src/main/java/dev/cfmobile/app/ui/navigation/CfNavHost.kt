@@ -42,10 +42,16 @@ import dev.cfmobile.app.ui.auditlogs.AuditLogsScreen
 import dev.cfmobile.app.ui.auditlogs.AuditLogsViewModel
 import dev.cfmobile.app.ui.loadbalancing.LoadBalancingScreen
 import dev.cfmobile.app.ui.loadbalancing.LoadBalancingViewModel
+import dev.cfmobile.app.ui.kv.KvKeysScreen
+import dev.cfmobile.app.ui.kv.KvKeysViewModel
 import dev.cfmobile.app.ui.kv.KvScreen
 import dev.cfmobile.app.ui.kv.KvViewModel
+import dev.cfmobile.app.ui.d1.D1ConsoleScreen
+import dev.cfmobile.app.ui.d1.D1ConsoleViewModel
 import dev.cfmobile.app.ui.d1.D1Screen
 import dev.cfmobile.app.ui.d1.D1ViewModel
+import dev.cfmobile.app.ui.workerroutes.WorkerRoutesScreen
+import dev.cfmobile.app.ui.workerroutes.WorkerRoutesViewModel
 import dev.cfmobile.app.ui.workers.WorkersScreen
 import dev.cfmobile.app.ui.workers.WorkersViewModel
 import dev.cfmobile.app.ui.pages.PagesScreen
@@ -240,7 +246,28 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
         ) { backStackEntry ->
             val accountId = backStackEntry.arguments?.getString("accountId").orEmpty()
             val vm = viewModel<KvViewModel>(factory = factoryOf { KvViewModel(accountId, container.kvRepository) })
-            KvScreen(vm, onBack = { navController.popBackStack() })
+            KvScreen(
+                vm,
+                onBack = { navController.popBackStack() },
+                onOpenKeys = { namespace -> navController.navigate(Routes.kvKeys(accountId, namespace.id, namespace.title)) }
+            )
+        }
+
+        composable(
+            Routes.KV_KEYS,
+            arguments = listOf(
+                navArgument("accountId") { type = NavType.StringType },
+                navArgument("namespaceId") { type = NavType.StringType },
+                navArgument("namespaceTitle") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val accountId = backStackEntry.arguments?.getString("accountId").orEmpty()
+            val namespaceId = backStackEntry.arguments?.getString("namespaceId").orEmpty()
+            val namespaceTitle = Routes.decodeArg(backStackEntry.arguments?.getString("namespaceTitle").orEmpty())
+            val vm = viewModel<KvKeysViewModel>(
+                factory = factoryOf { KvKeysViewModel(accountId, namespaceId, container.kvRepository) }
+            )
+            KvKeysScreen(namespaceLabel = namespaceTitle, viewModel = vm, onBack = { navController.popBackStack() })
         }
 
         composable(
@@ -249,7 +276,28 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
         ) { backStackEntry ->
             val accountId = backStackEntry.arguments?.getString("accountId").orEmpty()
             val vm = viewModel<D1ViewModel>(factory = factoryOf { D1ViewModel(accountId, container.d1Repository) })
-            D1Screen(vm, onBack = { navController.popBackStack() })
+            D1Screen(
+                vm,
+                onBack = { navController.popBackStack() },
+                onOpenConsole = { database -> navController.navigate(Routes.d1Console(accountId, database.uuid, database.name)) }
+            )
+        }
+
+        composable(
+            Routes.D1_CONSOLE,
+            arguments = listOf(
+                navArgument("accountId") { type = NavType.StringType },
+                navArgument("databaseId") { type = NavType.StringType },
+                navArgument("databaseName") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val accountId = backStackEntry.arguments?.getString("accountId").orEmpty()
+            val databaseId = backStackEntry.arguments?.getString("databaseId").orEmpty()
+            val databaseName = Routes.decodeArg(backStackEntry.arguments?.getString("databaseName").orEmpty())
+            val vm = viewModel<D1ConsoleViewModel>(
+                factory = factoryOf { D1ConsoleViewModel(accountId, databaseId, container.d1Repository) }
+            )
+            D1ConsoleScreen(databaseName = databaseName, viewModel = vm, onBack = { navController.popBackStack() })
         }
 
         composable(
@@ -381,6 +429,13 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
                 )
                 ZoneSettingsGroupScreen(title, zoneName, vm, onBack = { navController.popBackStack() })
             }
+        }
+
+        composable(Routes.WORKER_ROUTES, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<WorkerRoutesViewModel>(factory = factoryOf { WorkerRoutesViewModel(zoneId, container.workersRepository) })
+            WorkerRoutesScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
         }
 
         composable(Routes.CERTIFICATES, arguments = zoneScopedArgs) { backStackEntry ->

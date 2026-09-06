@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -25,9 +26,13 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
@@ -66,10 +71,15 @@ fun PagesScreen(viewModel: PagesViewModel, onBack: () -> Unit) {
         }
     }
 
-    if (uiState.selectedProjectName != null) {
+    uiState.selectedProjectName?.let { projectName ->
         DeploymentsSheet(
-            projectName = uiState.selectedProjectName!!,
+            projectName = projectName,
             deployments = uiState.deployments,
+            isDeploying = uiState.deployingProject == projectName,
+            deployError = uiState.deployError,
+            deployMessage = uiState.deployMessage,
+            onDeploy = viewModel::deploy,
+            onRetry = viewModel::retry,
             onDismiss = viewModel::closeDeployments
         )
     }
@@ -102,12 +112,30 @@ private fun PagesProjectRow(project: PagesProject, onClick: () -> Unit) {
 private fun DeploymentsSheet(
     projectName: String,
     deployments: UiState<List<PagesDeployment>>?,
+    isDeploying: Boolean,
+    deployError: String?,
+    deployMessage: String?,
+    onDeploy: () -> Unit,
+    onRetry: (PagesDeployment) -> Unit,
     onDismiss: () -> Unit
 ) {
+    var confirmDeploy by remember { mutableStateOf(false) }
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(20.dp).heightIn(max = 480.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(projectName, style = MaterialTheme.typography.titleMedium, fontFamily = FontFamily.Monospace)
             Text("Deployment history", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Button(onClick = { confirmDeploy = true }, enabled = !isDeploying) {
+                if (isDeploying) CircularProgressIndicator(Modifier.padding(end = 6.dp))
+                Text(if (isDeploying) "Deploying…" else "Deploy production branch")
+            }
+            deployError?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
+            if (deployError == null) {
+                deployMessage?.let {
+                    Text(it, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
+                }
+            }
             when (deployments) {
                 is UiState.Loading, null -> Box(Modifier.fillMaxWidth().padding(24.dp)) {
                     CircularProgressIndicator(Modifier.padding(4.dp))
@@ -121,7 +149,7 @@ private fun DeploymentsSheet(
                     } else {
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             items(deployments.value, key = { it.id }) { deployment ->
-                                DeploymentRow(deployment)
+                                DeploymentRow(deployment, isDeploying = isDeploying, onRetry = { onRetry(deployment) })
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                             }
                         }
@@ -130,10 +158,28 @@ private fun DeploymentsSheet(
             }
         }
     }
+    if (confirmDeploy) {
+        ConfirmDeployDialog(
+            projectName = projectName,
+            onConfirm = onDeploy,
+            onDismiss = { confirmDeploy = false }
+        )
+    }
 }
 
 @Composable
-private fun DeploymentRow(deployment: PagesDeployment) {
+private fun ConfirmDeployDialog(projectName: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Deploy now?") },
+        text = { Text("This rebuilds \"$projectName\" from its production branch and publishes the result live.") },
+        confirmButton = { TextButton(onClick = { onDismiss(); onConfirm() }) { Text("Deploy") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
+@Composable
+private fun DeploymentRow(deployment: PagesDeployment, isDeploying: Boolean, onRetry: () -> Unit) {
     Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
         val branch = deployment.deploymentTrigger?.metadata?.branch
         Text(
@@ -147,5 +193,15 @@ private fun DeploymentRow(deployment: PagesDeployment) {
         if (statusLine.isNotBlank()) {
             Text(statusLine, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+        // Only a deployment that actually failed can be retried; offering it on a healthy one
+        // would just queue a pointless build.
+        if (isRetryableDeployment(deployment)) {
+            TextButton(onClick = onRetry, enabled = !isDeploying) { Text("Retry this deployment") }
+        }
     }
 }
+
+/** Cloudflare reports the last build stage's status; "failure" and "canceled" are the two
+ *  states a retry is meant for. */
+fun isRetryableDeployment(deployment: PagesDeployment): Boolean =
+    deployment.latestStage?.status?.lowercase() in setOf("failure", "failed", "canceled", "cancelled")
