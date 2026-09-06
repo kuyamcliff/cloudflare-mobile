@@ -15,15 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.automirrored.filled.Rule
-import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Dns
-import androidx.compose.material.icons.filled.Extension
-import androidx.compose.material.icons.filled.Http
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -46,10 +38,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.cfmobile.app.core.capabilities.Capability
 import dev.cfmobile.app.core.capabilities.CapabilityRegistry
+import dev.cfmobile.app.core.capabilities.CapabilityScope
 import dev.cfmobile.app.core.capabilities.CapabilityStatus
 import dev.cfmobile.app.core.capabilities.RoadmapPhase
 import dev.cfmobile.app.data.remote.dto.CfZone
 import dev.cfmobile.app.ui.common.CopyIconButton
+import dev.cfmobile.app.ui.common.capabilityIcon
 import dev.cfmobile.app.ui.common.FreshnessLabel
 import dev.cfmobile.app.ui.common.StateContent
 import dev.cfmobile.app.ui.common.StatusPill
@@ -83,31 +77,36 @@ fun ZoneMenuScreen(
             Column(Modifier.padding(padding)) {
                 ZoneOverviewCard(zone, lastUpdatedAt)
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                // Zone-scoped capabilities only: account-scoped products (R2, Workers, Zero
+                // Trust, ...) belong to the account, not to this domain, and are reached from
+                // the Dashboard instead - listing them under a single zone implied a
+                // relationship that doesn't exist.
+                val zoneNotImplemented = CapabilityRegistry.notYetImplementedForScope(CapabilityScope.ZONE)
                 LazyColumn {
-                    items(CapabilityRegistry.implemented(), key = { it.id }) { capability ->
+                    items(CapabilityRegistry.implementedForScope(CapabilityScope.ZONE), key = { it.id }) { capability ->
                         CapabilityRow(capability, implemented = true) {
-                            val route = capability.zoneRoute?.invoke(zone.id, zone.name)
-                                ?: zone.account?.id?.let { accountId -> capability.accountRoute?.invoke(accountId) }
-                            route?.let(onFeatureClick)
+                            capability.zoneRoute?.invoke(zone.id, zone.name)?.let(onFeatureClick)
                         }
                         HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                     }
-                    item {
-                        Text(
-                            "More Cloudflare products",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(16.dp, 20.dp, 16.dp, 4.dp)
-                        )
-                        Text(
-                            "Not yet implemented in this app - tap to see status.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(16.dp, 0.dp, 16.dp, 8.dp)
-                        )
-                    }
-                    items(CapabilityRegistry.notYetImplemented(), key = { it.id }) { capability ->
-                        CapabilityRow(capability, implemented = false) { notImplementedInfo = capability }
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                    if (zoneNotImplemented.isNotEmpty()) {
+                        item {
+                            Text(
+                                "More Cloudflare products",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(16.dp, 20.dp, 16.dp, 4.dp)
+                            )
+                            Text(
+                                "Not yet implemented in this app - tap to see status.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(16.dp, 0.dp, 16.dp, 8.dp)
+                            )
+                        }
+                        items(zoneNotImplemented, key = { it.id }) { capability ->
+                            CapabilityRow(capability, implemented = false) { notImplementedInfo = capability }
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                        }
                     }
                 }
             }
@@ -213,15 +212,4 @@ private fun NotImplementedDialog(capability: Capability, onDismiss: () -> Unit) 
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("OK") } }
     )
-}
-
-private fun capabilityIcon(capability: Capability) = when (capability.id) {
-    "dns.records" -> Icons.Filled.Dns
-    "ssl.tls" -> Icons.Filled.Lock
-    "firewall.legacy", "waf.rulesets", "rate_limiting", "bot_management" -> Icons.Filled.Shield
-    "page_rules", "transform_rules" -> Icons.AutoMirrored.Filled.Rule
-    "caching" -> Icons.Filled.Http
-    "analytics" -> Icons.Filled.Analytics
-    "account_members" -> Icons.Filled.People
-    else -> Icons.Filled.Extension
 }

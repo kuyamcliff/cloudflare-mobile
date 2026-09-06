@@ -86,17 +86,7 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
             DashboardScreen(
                 vm,
                 onDomainsClick = { navController.navigate(Routes.ZONES) },
-                onAccountMembersClick = { accountId -> navController.navigate(Routes.accountMembers(accountId)) },
-                onAuditLogsClick = { accountId -> navController.navigate(Routes.auditLogs(accountId)) },
-                onLoadBalancingClick = { accountId -> navController.navigate(Routes.loadBalancing(accountId)) },
-                onR2Click = { accountId -> navController.navigate(Routes.r2(accountId)) },
-                onKvClick = { accountId -> navController.navigate(Routes.kv(accountId)) },
-                onD1Click = { accountId -> navController.navigate(Routes.d1(accountId)) },
-                onWorkersClick = { accountId -> navController.navigate(Routes.workers(accountId)) },
-                onPagesClick = { accountId -> navController.navigate(Routes.pages(accountId)) },
-                onAccessClick = { accountId -> navController.navigate(Routes.access(accountId)) },
-                onGatewayClick = { accountId -> navController.navigate(Routes.gateway(accountId)) },
-                onTunnelsClick = { accountId -> navController.navigate(Routes.tunnels(accountId)) },
+                onNavigate = { route -> navController.navigate(route) },
                 onSecurityClick = { navController.navigate(Routes.SECURITY) },
                 onManageAccountsClick = { navController.navigate(Routes.SETTINGS) }
             )

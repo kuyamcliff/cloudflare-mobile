@@ -24,6 +24,40 @@ class CapabilityRegistryTest {
     }
 
     @Test
+    fun `every implemented account capability has a working account route`() {
+        CapabilityRegistry.implementedForScope(CapabilityScope.ACCOUNT).forEach { capability ->
+            assertThat(capability.accountRoute).isNotNull()
+            assertThat(capability.accountRoute!!("acct123")).contains("acct123")
+        }
+    }
+
+    @Test
+    fun `the account menu covers every implemented account capability exactly once`() {
+        val menuIds = CapabilityRegistry.accountMenu().flatMap { (_, capabilities) -> capabilities }.map { it.id }
+        val accountIds = CapabilityRegistry.implementedForScope(CapabilityScope.ACCOUNT).map { it.id }
+
+        assertThat(menuIds).containsNoDuplicates()
+        assertThat(menuIds).containsExactlyElementsIn(accountIds)
+    }
+
+    @Test
+    fun `the account menu groups capabilities under their product area`() {
+        CapabilityRegistry.accountMenu().forEach { (product, capabilities) ->
+            assertThat(capabilities).isNotEmpty()
+            capabilities.forEach { assertThat(it.product).isEqualTo(product) }
+        }
+    }
+
+    @Test
+    fun `scope filters partition the implemented capabilities`() {
+        val zone = CapabilityRegistry.implementedForScope(CapabilityScope.ZONE).map { it.id }
+        val account = CapabilityRegistry.implementedForScope(CapabilityScope.ACCOUNT).map { it.id }
+        val user = CapabilityRegistry.implementedForScope(CapabilityScope.USER).map { it.id }
+
+        assertThat(zone + account + user).containsExactlyElementsIn(CapabilityRegistry.implemented().map { it.id })
+    }
+
+    @Test
     fun `no not-implemented capability exposes a route`() {
         CapabilityRegistry.notYetImplemented().forEach { capability ->
             assertThat(capability.zoneRoute).isNull()

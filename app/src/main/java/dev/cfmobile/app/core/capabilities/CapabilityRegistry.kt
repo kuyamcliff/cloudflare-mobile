@@ -446,4 +446,20 @@ object CapabilityRegistry {
     fun notYetImplemented(): List<Capability> = zoneCapabilities.filter { it.status != CapabilityStatus.IMPLEMENTED }
 
     fun byId(id: String): Capability? = zoneCapabilities.firstOrNull { it.id == id }
+
+    fun implementedForScope(scope: CapabilityScope): List<Capability> =
+        implemented().filter { it.scope == scope }
+
+    fun notYetImplementedForScope(scope: CapabilityScope): List<Capability> =
+        notYetImplemented().filter { it.scope == scope }
+
+    /**
+     * Account-scoped capabilities the Dashboard renders, grouped under their product area.
+     * Grouping preserves registry order (rather than sorting alphabetically) so related
+     * products stay adjacent, and [groupBy] on a List keeps first-appearance order for us.
+     */
+    fun accountMenu(): List<Pair<String, List<Capability>>> =
+        implementedForScope(CapabilityScope.ACCOUNT)
+            .groupBy { it.product }
+            .toList()
 }
