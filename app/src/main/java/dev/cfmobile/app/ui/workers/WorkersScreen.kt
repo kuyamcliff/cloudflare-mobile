@@ -1,72 +1,56 @@
 package dev.cfmobile.app.ui.workers
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.cfmobile.app.data.remote.dto.WorkerScript
-import dev.cfmobile.app.ui.common.EmptyState
-import dev.cfmobile.app.ui.common.StateContent
+import dev.cfmobile.app.ui.common.CfListScreen
+import dev.cfmobile.app.ui.common.ReadOnlyListRow
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkersScreen(viewModel: WorkersViewModel, onBack: () -> Unit) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var detailScript by remember { mutableStateOf<WorkerScript?>(null) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Workers") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") } }
-            )
-        }
-    ) { padding ->
-        StateContent(state = uiState.scripts, onRetry = viewModel::refresh) { scripts ->
-            if (scripts.isEmpty()) {
-                EmptyState("No Worker scripts yet", Modifier.padding(padding))
-            } else {
-                LazyColumn(Modifier.padding(padding), contentPadding = PaddingValues(bottom = 16.dp)) {
-                    items(scripts, key = { it.id }) { script ->
-                        WorkerScriptRow(script, onClick = { detailScript = script })
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-                    }
-                }
-            }
-        }
+    CfListScreen(
+        title = "Workers",
+        onBack = onBack,
+        state = uiState.scripts,
+        isRefreshing = uiState.isRefreshing,
+        onRefresh = viewModel::refresh,
+        emptyMessage = "No Worker scripts yet",
+        key = { it.id },
+        searchPlaceholder = "Search scripts",
+        searchMatches = { script, query -> script.id.contains(query, ignoreCase = true) }
+    ) { script ->
+        ReadOnlyListRow(
+            icon = Icons.Filled.Bolt,
+            title = script.id,
+            monospaceTitle = true,
+            subtitle = script.modifiedOn?.let { "Modified $it" },
+            onClick = { detailScript = script }
+        )
     }
 
     detailScript?.let { script ->
@@ -79,26 +63,6 @@ fun WorkersScreen(viewModel: WorkersViewModel, onBack: () -> Unit) {
                 detailScript = null
             }
         )
-    }
-}
-
-@Composable
-private fun WorkerScriptRow(script: WorkerScript, onClick: () -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(16.dp, 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Icon(Icons.Filled.Bolt, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-        Column(Modifier.weight(1f)) {
-            Text(script.id, style = MaterialTheme.typography.bodyLarge, fontFamily = FontFamily.Monospace)
-            script.modifiedOn?.let {
-                Text("Modified $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
     }
 }
 

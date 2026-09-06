@@ -68,7 +68,9 @@ fun <T> CfListScreen(
     row: @Composable (T) -> Unit
 ) {
     var query by remember { mutableStateOf("") }
-    val searchable = searchPlaceholder != null && searchMatches != null
+    // Bound to locals so the null checks below smart-cast, rather than asserting with !!.
+    val placeholder = searchPlaceholder
+    val matcher = searchMatches
 
     Scaffold(
         modifier = modifier,
@@ -102,12 +104,12 @@ fun <T> CfListScreen(
     ) { padding ->
         Column(Modifier.padding(padding)) {
             header?.invoke()
-            if (searchable) {
-                ListSearchField(value = query, onValueChange = { query = it }, placeholder = searchPlaceholder!!)
+            if (placeholder != null && matcher != null) {
+                ListSearchField(value = query, onValueChange = { query = it }, placeholder = placeholder)
             }
             RefreshableStateContent(state = state, isRefreshing = isRefreshing, onRefresh = onRefresh) { allItems ->
-                val items = if (searchable && query.isNotBlank()) {
-                    allItems.filter { searchMatches!!(it, query.trim()) }
+                val items = if (matcher != null && query.isNotBlank()) {
+                    allItems.filter { matcher(it, query.trim()) }
                 } else {
                     allItems
                 }

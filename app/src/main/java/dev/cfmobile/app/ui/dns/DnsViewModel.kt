@@ -63,6 +63,8 @@ data class DnsFormState(
 
 data class DnsUiState(
     val records: UiState<List<DnsRecord>> = UiState.Loading,
+    val isRefreshing: Boolean = false,
+    val query: String = "",
     val form: DnsFormState? = null,
     val deletingId: String? = null,
     val selectedIds: Set<String> = emptySet(),
@@ -161,6 +163,17 @@ fun buildDnsRecordWrite(form: DnsFormState, ttl: Int): DnsRecordWrite {
     }
 }
 
+/** Which fields a DNS search matches on. Extracted from the screen so the behaviour people
+ *  actually rely on - finding a record by its target IP, not just its name - is unit-tested
+ *  rather than living only inside a composable. */
+fun dnsRecordMatches(record: DnsRecord, query: String): Boolean {
+    val q = query.trim()
+    if (q.isEmpty()) return true
+    return record.name.contains(q, ignoreCase = true) ||
+        record.content.contains(q, ignoreCase = true) ||
+        record.type.contains(q, ignoreCase = true)
+}
+
 class DnsViewModel(
     private val zoneId: String,
     private val repository: DnsRepository
@@ -170,15 +183,20 @@ class DnsViewModel(
     val uiState: StateFlow<DnsUiState> = _uiState.asStateFlow()
 
     init {
-        refresh()
+        load(isRefresh = false)
     }
 
-    fun refresh() {
-        _uiState.update { it.copy(records = UiState.Loading) }
+    fun refresh() = load(isRefresh = true)
+
+    /** [isRefresh] keeps the current records on screen during a pull-to-refresh instead of
+     *  replacing a full list with a spinner. */
+    private fun load(isRefresh: Boolean) {
+        _uiState.update { if (isRefresh) it.copy(isRefreshing = true) else it.copy(records = UiState.Loading) }
         viewModelScope.launch {
             val result = repository.listRecords(zoneId)
             _uiState.update {
                 it.copy(
+                    isRefreshing = false,
                     records = when (result) {
                         is ApiResult.Success -> UiState.Data(result.data)
                         is ApiResult.Failure -> UiState.Error(ErrorClassifier.classify(result))
@@ -187,6 +205,8 @@ class DnsViewModel(
             }
         }
     }
+
+    fun onQueryChange(value: String) = _uiState.update { it.copy(query = value) }
 
     fun openAddForm() = _uiState.update { it.copy(form = DnsFormState()) }
 

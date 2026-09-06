@@ -14,7 +14,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class AuditLogsUiState(
-    val entries: UiState<List<AuditLogEntry>> = UiState.Loading
+    val entries: UiState<List<AuditLogEntry>> = UiState.Loading,
+    val isRefreshing: Boolean = false
 )
 
 /** Read-only - PRD §9 "who changed what, and when." Uses Cloudflare's classic
@@ -30,15 +31,19 @@ class AuditLogsViewModel(
     val uiState: StateFlow<AuditLogsUiState> = _uiState.asStateFlow()
 
     init {
-        refresh()
+        load(isRefresh = false)
     }
 
-    fun refresh() {
-        _uiState.update { it.copy(entries = UiState.Loading) }
+    fun refresh() = load(isRefresh = true)
+
+    private fun load(isRefresh: Boolean) {
+        _uiState.update { if (isRefresh) it.copy(isRefreshing = true) else it.copy(entries = UiState.Loading) }
         viewModelScope.launch {
             when (val result = repository.listEntries(accountId)) {
-                is ApiResult.Success -> _uiState.update { it.copy(entries = UiState.Data(result.data)) }
-                is ApiResult.Failure -> _uiState.update { it.copy(entries = UiState.Error(ErrorClassifier.classify(result))) }
+                is ApiResult.Success -> _uiState.update { it.copy(entries = UiState.Data(result.data), isRefreshing = false) }
+                is ApiResult.Failure -> _uiState.update {
+                    it.copy(entries = UiState.Error(ErrorClassifier.classify(result)), isRefreshing = false)
+                }
             }
         }
     }

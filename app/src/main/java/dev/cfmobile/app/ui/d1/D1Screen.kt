@@ -2,117 +2,61 @@ package dev.cfmobile.app.ui.d1
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Storage
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import dev.cfmobile.app.data.remote.dto.D1Database
-import dev.cfmobile.app.ui.common.EmptyState
-import dev.cfmobile.app.ui.common.StateContent
+import dev.cfmobile.app.ui.common.CfListScreen
+import dev.cfmobile.app.ui.common.DeletableListRow
+import dev.cfmobile.app.ui.common.FormActions
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun D1Screen(viewModel: D1ViewModel, onBack: () -> Unit) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("D1 Databases") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") } }
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = viewModel::openForm) {
-                Icon(Icons.Filled.Add, contentDescription = "Create database")
-            }
-        }
-    ) { padding ->
-        StateContent(state = uiState.databases, onRetry = viewModel::refresh) { databases ->
-            if (databases.isEmpty()) {
-                EmptyState("No D1 databases yet", Modifier.padding(padding))
-            } else {
-                LazyColumn(Modifier.padding(padding), contentPadding = PaddingValues(bottom = 96.dp)) {
-                    items(databases, key = { it.uuid }) { database ->
-                        DatabaseRow(database, isDeleting = uiState.deletingUuid == database.uuid, onDelete = { viewModel.delete(database) })
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-                    }
-                }
-            }
-        }
+    CfListScreen(
+        title = "D1 Databases",
+        onBack = onBack,
+        state = uiState.databases,
+        isRefreshing = uiState.isRefreshing,
+        onRefresh = viewModel::refresh,
+        emptyMessage = "No D1 databases yet",
+        key = { it.uuid },
+        onCreate = viewModel::openForm,
+        createContentDescription = "Create database",
+        searchPlaceholder = "Search databases",
+        searchMatches = { database, query -> database.name.contains(query, ignoreCase = true) }
+    ) { database ->
+        val details = listOfNotNull(
+            database.numTables?.let { "$it table${if (it == 1) "" else "s"}" },
+            database.createdAt?.let { "Created $it" }
+        ).joinToString(" · ").ifBlank { null }
+
+        DeletableListRow(
+            icon = Icons.Filled.Storage,
+            title = database.name,
+            monospaceTitle = true,
+            subtitle = details,
+            isDeleting = uiState.deletingUuid == database.uuid,
+            deleteContentDescription = "Delete database",
+            confirmTitle = "Delete database?",
+            confirmText = "\"${database.name}\" and all its data will be permanently deleted. This can't be undone.",
+            onDelete = { viewModel.delete(database) }
+        )
     }
 
     uiState.form?.let { form ->
         CreateDatabaseSheet(form, onDismiss = viewModel::closeForm, viewModel = viewModel)
-    }
-}
-
-@Composable
-private fun DatabaseRow(database: D1Database, isDeleting: Boolean, onDelete: () -> Unit) {
-    var confirmDelete by remember { mutableStateOf(false) }
-    Row(
-        Modifier.fillMaxWidth().padding(16.dp, 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Icon(Icons.Filled.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-        Column(Modifier.weight(1f)) {
-            Text(database.name, style = MaterialTheme.typography.bodyLarge, fontFamily = FontFamily.Monospace)
-            val details = listOfNotNull(
-                database.numTables?.let { "$it table${if (it == 1) "" else "s"}" },
-                database.createdAt?.let { "Created $it" }
-            ).joinToString(" · ")
-            if (details.isNotBlank()) {
-                Text(details, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-        if (isDeleting) {
-            CircularProgressIndicator(Modifier.padding(4.dp))
-        } else {
-            IconButton(onClick = { confirmDelete = true }) {
-                Icon(Icons.Filled.Delete, contentDescription = "Delete database", tint = MaterialTheme.colorScheme.error)
-            }
-        }
-    }
-    if (confirmDelete) {
-        AlertDialog(
-            onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete database?") },
-            text = { Text("\"${database.name}\" and all its data will be permanently deleted. This can't be undone.") },
-            confirmButton = { TextButton(onClick = { confirmDelete = false; onDelete() }) { Text("Delete") } },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } }
-        )
     }
 }
 
@@ -133,13 +77,7 @@ private fun CreateDatabaseSheet(form: D1FormState, onDismiss: () -> Unit, viewMo
             if (form.error != null) {
                 Text(form.error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = onDismiss) { Text("Cancel") }
-                TextButton(onClick = viewModel::save, enabled = !form.isSaving) {
-                    if (form.isSaving) CircularProgressIndicator(Modifier.padding(end = 6.dp))
-                    Text("Create")
-                }
-            }
+            FormActions(isSaving = form.isSaving, onCancel = onDismiss, onSave = viewModel::save)
         }
     }
 }

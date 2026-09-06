@@ -34,6 +34,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -67,7 +68,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.cfmobile.app.data.remote.dto.DnsRecord
 import dev.cfmobile.app.ui.common.CopyIconButton
 import dev.cfmobile.app.ui.common.EmptyState
-import dev.cfmobile.app.ui.common.StateContent
+import dev.cfmobile.app.ui.common.ListSearchField
+import dev.cfmobile.app.ui.common.RefreshableStateContent
 import dev.cfmobile.app.ui.common.ZoneScopedTitle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -170,11 +172,26 @@ fun DnsScreen(viewModel: DnsViewModel, zoneName: String, onBack: () -> Unit) {
             }
         }
     ) { padding ->
-        StateContent(state = uiState.records, onRetry = viewModel::refresh) { records ->
-            if (records.isEmpty()) {
-                EmptyState("No DNS records yet", Modifier.padding(padding))
+        Column(Modifier.padding(padding)) {
+            // A busy zone can carry hundreds of records, so searching beats scrolling.
+            ListSearchField(
+                value = uiState.query,
+                onValueChange = viewModel::onQueryChange,
+                placeholder = "Search records"
+            )
+            RefreshableStateContent(
+                state = uiState.records,
+                isRefreshing = uiState.isRefreshing,
+                onRefresh = viewModel::refresh
+            ) { allRecords ->
+            val query = uiState.query.trim()
+            val records = allRecords.filter { dnsRecordMatches(it, query) }
+            if (allRecords.isEmpty()) {
+                EmptyState("No DNS records yet")
+            } else if (records.isEmpty()) {
+                EmptyState("No records match \"$query\".")
             } else {
-                LazyColumn(Modifier.padding(padding), contentPadding = PaddingValues(bottom = 96.dp)) {
+                LazyColumn(contentPadding = PaddingValues(bottom = 96.dp)) {
                     items(records, key = { it.id }) { record ->
                         DnsRecordRow(
                             record = record,
@@ -192,6 +209,7 @@ fun DnsScreen(viewModel: DnsViewModel, zoneName: String, onBack: () -> Unit) {
                         HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                     }
                 }
+            }
             }
         }
     }
@@ -407,7 +425,7 @@ private fun DnsFormSheet(
                     readOnly = true,
                     label = { Text("Type") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor()
+                    modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                 )
                 ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                     DNS_RECORD_TYPES.forEach { type ->

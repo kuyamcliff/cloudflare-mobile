@@ -30,6 +30,11 @@ class ZonesViewModel(
     private val _lastUpdatedAt = MutableStateFlow<Long?>(null)
     val lastUpdatedAt: StateFlow<Long?> = _lastUpdatedAt.asStateFlow()
 
+    /** True only while a pull-to-refresh is in flight over already-visible zones - a first
+     *  load still shows the full-screen loading state instead. */
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     private var allZones: List<CfZone> = emptyList()
 
     val accounts: List<AccountSummary> get() = authRepository.savedAccounts
@@ -51,6 +56,7 @@ class ZonesViewModel(
      *  only surfaced as an error when there's nothing to show at all. */
     fun refresh() {
         val accountId = activeAccountId
+        if (_state.value is UiState.Data) _isRefreshing.value = true
         viewModelScope.launch {
             if (allZones.isEmpty() && accountId != null) {
                 val cached = zonesCache.get(accountId)
@@ -77,6 +83,7 @@ class ZonesViewModel(
                     _state.value = UiState.Error(ErrorClassifier.classify(result))
                 }
             }
+            _isRefreshing.value = false
         }
     }
 

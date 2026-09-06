@@ -19,6 +19,7 @@ data class R2FormState(val name: String = "", val isSaving: Boolean = false, val
 
 data class R2UiState(
     val buckets: UiState<List<R2Bucket>> = UiState.Loading,
+    val isRefreshing: Boolean = false,
     val form: R2FormState? = null,
     val deletingName: String? = null
 )
@@ -41,15 +42,21 @@ class R2ViewModel(
     val uiState: StateFlow<R2UiState> = _uiState.asStateFlow()
 
     init {
-        refresh()
+        load(isRefresh = false)
     }
 
-    fun refresh() {
-        _uiState.update { it.copy(buckets = UiState.Loading) }
+    fun refresh() = load(isRefresh = true)
+
+    /** [isRefresh] keeps the current list on screen during a pull-to-refresh, rather than
+     *  replacing content the user is reading with a spinner. */
+    private fun load(isRefresh: Boolean) {
+        _uiState.update { if (isRefresh) it.copy(isRefreshing = true) else it.copy(buckets = UiState.Loading) }
         viewModelScope.launch {
             when (val result = repository.listBuckets(accountId)) {
-                is ApiResult.Success -> _uiState.update { it.copy(buckets = UiState.Data(result.data)) }
-                is ApiResult.Failure -> _uiState.update { it.copy(buckets = UiState.Error(ErrorClassifier.classify(result))) }
+                is ApiResult.Success -> _uiState.update { it.copy(buckets = UiState.Data(result.data), isRefreshing = false) }
+                is ApiResult.Failure -> _uiState.update {
+                    it.copy(buckets = UiState.Error(ErrorClassifier.classify(result)), isRefreshing = false)
+                }
             }
         }
     }

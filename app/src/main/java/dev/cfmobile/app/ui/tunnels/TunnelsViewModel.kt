@@ -17,6 +17,7 @@ data class TunnelFormState(val name: String = "", val isSaving: Boolean = false,
 
 data class TunnelsUiState(
     val tunnels: UiState<List<CfTunnel>> = UiState.Loading,
+    val isRefreshing: Boolean = false,
     val form: TunnelFormState? = null,
     val deletingId: String? = null
 )
@@ -35,15 +36,21 @@ class TunnelsViewModel(
     val uiState: StateFlow<TunnelsUiState> = _uiState.asStateFlow()
 
     init {
-        refresh()
+        load(isRefresh = false)
     }
 
-    fun refresh() {
-        _uiState.update { it.copy(tunnels = UiState.Loading) }
+    fun refresh() = load(isRefresh = true)
+
+    /** [isRefresh] keeps the current list on screen during a pull-to-refresh, rather than
+     *  replacing content the user is reading with a spinner. */
+    private fun load(isRefresh: Boolean) {
+        _uiState.update { if (isRefresh) it.copy(isRefreshing = true) else it.copy(tunnels = UiState.Loading) }
         viewModelScope.launch {
             when (val result = repository.listTunnels(accountId)) {
-                is ApiResult.Success -> _uiState.update { it.copy(tunnels = UiState.Data(result.data)) }
-                is ApiResult.Failure -> _uiState.update { it.copy(tunnels = UiState.Error(ErrorClassifier.classify(result))) }
+                is ApiResult.Success -> _uiState.update { it.copy(tunnels = UiState.Data(result.data), isRefreshing = false) }
+                is ApiResult.Failure -> _uiState.update {
+                    it.copy(tunnels = UiState.Error(ErrorClassifier.classify(result)), isRefreshing = false)
+                }
             }
         }
     }

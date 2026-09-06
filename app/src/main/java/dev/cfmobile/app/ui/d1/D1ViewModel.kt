@@ -19,6 +19,7 @@ data class D1FormState(val name: String = "", val isSaving: Boolean = false, val
 
 data class D1UiState(
     val databases: UiState<List<D1Database>> = UiState.Loading,
+    val isRefreshing: Boolean = false,
     val form: D1FormState? = null,
     val deletingUuid: String? = null
 )
@@ -38,15 +39,21 @@ class D1ViewModel(
     val uiState: StateFlow<D1UiState> = _uiState.asStateFlow()
 
     init {
-        refresh()
+        load(isRefresh = false)
     }
 
-    fun refresh() {
-        _uiState.update { it.copy(databases = UiState.Loading) }
+    fun refresh() = load(isRefresh = true)
+
+    /** [isRefresh] keeps the current list on screen during a pull-to-refresh, rather than
+     *  replacing content the user is reading with a spinner. */
+    private fun load(isRefresh: Boolean) {
+        _uiState.update { if (isRefresh) it.copy(isRefreshing = true) else it.copy(databases = UiState.Loading) }
         viewModelScope.launch {
             when (val result = repository.listDatabases(accountId)) {
-                is ApiResult.Success -> _uiState.update { it.copy(databases = UiState.Data(result.data)) }
-                is ApiResult.Failure -> _uiState.update { it.copy(databases = UiState.Error(ErrorClassifier.classify(result))) }
+                is ApiResult.Success -> _uiState.update { it.copy(databases = UiState.Data(result.data), isRefreshing = false) }
+                is ApiResult.Failure -> _uiState.update {
+                    it.copy(databases = UiState.Error(ErrorClassifier.classify(result)), isRefreshing = false)
+                }
             }
         }
     }

@@ -17,6 +17,7 @@ data class KvFormState(val title: String = "", val isSaving: Boolean = false, va
 
 data class KvUiState(
     val namespaces: UiState<List<KvNamespace>> = UiState.Loading,
+    val isRefreshing: Boolean = false,
     val form: KvFormState? = null,
     val deletingId: String? = null
 )
@@ -32,15 +33,21 @@ class KvViewModel(
     val uiState: StateFlow<KvUiState> = _uiState.asStateFlow()
 
     init {
-        refresh()
+        load(isRefresh = false)
     }
 
-    fun refresh() {
-        _uiState.update { it.copy(namespaces = UiState.Loading) }
+    fun refresh() = load(isRefresh = true)
+
+    /** [isRefresh] keeps the current list on screen during a pull-to-refresh, rather than
+     *  replacing content the user is reading with a spinner. */
+    private fun load(isRefresh: Boolean) {
+        _uiState.update { if (isRefresh) it.copy(isRefreshing = true) else it.copy(namespaces = UiState.Loading) }
         viewModelScope.launch {
             when (val result = repository.listNamespaces(accountId)) {
-                is ApiResult.Success -> _uiState.update { it.copy(namespaces = UiState.Data(result.data)) }
-                is ApiResult.Failure -> _uiState.update { it.copy(namespaces = UiState.Error(ErrorClassifier.classify(result))) }
+                is ApiResult.Success -> _uiState.update { it.copy(namespaces = UiState.Data(result.data), isRefreshing = false) }
+                is ApiResult.Failure -> _uiState.update {
+                    it.copy(namespaces = UiState.Error(ErrorClassifier.classify(result)), isRefreshing = false)
+                }
             }
         }
     }

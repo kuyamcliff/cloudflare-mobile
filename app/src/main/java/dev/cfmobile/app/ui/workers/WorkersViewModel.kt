@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 
 data class WorkersUiState(
     val scripts: UiState<List<WorkerScript>> = UiState.Loading,
+    val isRefreshing: Boolean = false,
     val deletingId: String? = null
 )
 
@@ -29,15 +30,21 @@ class WorkersViewModel(
     val uiState: StateFlow<WorkersUiState> = _uiState.asStateFlow()
 
     init {
-        refresh()
+        load(isRefresh = false)
     }
 
-    fun refresh() {
-        _uiState.update { it.copy(scripts = UiState.Loading) }
+    fun refresh() = load(isRefresh = true)
+
+    /** [isRefresh] keeps the current list on screen during a pull-to-refresh, rather than
+     *  replacing content the user is reading with a spinner. */
+    private fun load(isRefresh: Boolean) {
+        _uiState.update { if (isRefresh) it.copy(isRefreshing = true) else it.copy(scripts = UiState.Loading) }
         viewModelScope.launch {
             when (val result = repository.listScripts(accountId)) {
-                is ApiResult.Success -> _uiState.update { it.copy(scripts = UiState.Data(result.data)) }
-                is ApiResult.Failure -> _uiState.update { it.copy(scripts = UiState.Error(ErrorClassifier.classify(result))) }
+                is ApiResult.Success -> _uiState.update { it.copy(scripts = UiState.Data(result.data), isRefreshing = false) }
+                is ApiResult.Failure -> _uiState.update {
+                    it.copy(scripts = UiState.Error(ErrorClassifier.classify(result)), isRefreshing = false)
+                }
             }
         }
     }

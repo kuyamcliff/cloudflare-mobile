@@ -28,35 +28,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.cfmobile.app.data.remote.dto.AuditLogEntry
-import dev.cfmobile.app.ui.common.EmptyState
-import dev.cfmobile.app.ui.common.StateContent
+import dev.cfmobile.app.ui.common.CfListScreen
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AuditLogsScreen(viewModel: AuditLogsViewModel, onBack: () -> Unit) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var detailEntry by remember { mutableStateOf<AuditLogEntry?>(null) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Audit Logs") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") } }
-            )
+    CfListScreen(
+        title = "Audit Logs",
+        onBack = onBack,
+        state = uiState.entries,
+        isRefreshing = uiState.isRefreshing,
+        onRefresh = viewModel::refresh,
+        emptyMessage = "No audit log entries found",
+        key = { it.id },
+        searchPlaceholder = "Search actions, people, resources",
+        searchMatches = { entry, query ->
+            auditActionLabel(entry).contains(query, ignoreCase = true) ||
+                auditActorLabel(entry).contains(query, ignoreCase = true) ||
+                auditResourceLabel(entry).orEmpty().contains(query, ignoreCase = true)
         }
-    ) { padding ->
-        StateContent(state = uiState.entries, onRetry = viewModel::refresh) { entries ->
-            if (entries.isEmpty()) {
-                EmptyState("No audit log entries found", Modifier.padding(padding))
-            } else {
-                LazyColumn(Modifier.padding(padding), contentPadding = PaddingValues(bottom = 16.dp)) {
-                    items(entries, key = { it.id }) { entry ->
-                        AuditLogRow(entry, onClick = { detailEntry = entry })
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-                    }
-                }
-            }
-        }
+    ) { entry ->
+        AuditLogRow(entry, onClick = { detailEntry = entry })
     }
 
     detailEntry?.let { entry ->

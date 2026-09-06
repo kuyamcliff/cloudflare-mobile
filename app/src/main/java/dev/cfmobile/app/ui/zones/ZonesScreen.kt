@@ -40,7 +40,8 @@ import dev.cfmobile.app.data.remote.dto.CfZone
 import dev.cfmobile.app.ui.common.AccountSwitcherSheet
 import dev.cfmobile.app.ui.common.EmptyState
 import dev.cfmobile.app.ui.common.FreshnessLabel
-import dev.cfmobile.app.ui.common.StateContent
+import dev.cfmobile.app.ui.common.ListSearchField
+import dev.cfmobile.app.ui.common.RefreshableStateContent
 import dev.cfmobile.app.ui.common.StatusPill
 import dev.cfmobile.app.ui.common.zoneStatusColor
 
@@ -55,6 +56,7 @@ fun ZonesScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val query by viewModel.query.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val lastUpdatedAt by viewModel.lastUpdatedAt.collectAsStateWithLifecycle()
     var showAccountSwitcher by remember { mutableStateOf(false) }
 
@@ -94,17 +96,19 @@ fun ZonesScreen(
         }
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            OutlinedTextField(
+            ListSearchField(
                 value = query,
                 onValueChange = viewModel::onQueryChange,
-                placeholder = { Text("Search domains") },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth().padding(16.dp, 8.dp)
+                placeholder = "Search domains"
             )
             FreshnessLabel(lastUpdatedAt, modifier = Modifier.padding(16.dp, 0.dp, 16.dp, 8.dp))
 
-            StateContent(state = state, onRetry = viewModel::refresh, onReauthenticate = onSettingsClick) { zones ->
+            RefreshableStateContent(
+                state = state,
+                isRefreshing = isRefreshing,
+                onRefresh = viewModel::refresh,
+                onReauthenticate = onSettingsClick
+            ) { zones ->
                 if (zones.isEmpty()) {
                     EmptyState("No domains found for this account")
                 } else {

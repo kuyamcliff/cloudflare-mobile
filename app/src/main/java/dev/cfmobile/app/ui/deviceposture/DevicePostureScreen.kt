@@ -16,7 +16,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -44,7 +44,7 @@ fun DevicePostureScreen(viewModel: DevicePostureViewModel, onBack: () -> Unit) {
         }
     ) { padding ->
         Column(Modifier.padding(padding)) {
-            TabRow(selectedTabIndex = DevicePostureTab.entries.indexOf(uiState.tab)) {
+            PrimaryTabRow(selectedTabIndex = DevicePostureTab.entries.indexOf(uiState.tab)) {
                 DevicePostureTab.entries.forEach { tab ->
                     Tab(
                         selected = uiState.tab == tab,
