@@ -40,6 +40,10 @@ object Routes {
     const val TRANSFORM_RULES = "zone/{zoneId}/{zoneName}/transformrules"
     const val PAGE_RULES = "zone/{zoneId}/{zoneName}/pagerules"
     const val CACHING = "zone/{zoneId}/{zoneName}/caching"
+    const val SECURITY_EVENTS = "zone/{zoneId}/{zoneName}/securityevents"
+    const val PAGE_SHIELD = "zone/{zoneId}/{zoneName}/pageshield"
+    const val DDOS = "zone/{zoneId}/{zoneName}/ddos"
+    const val API_SHIELD = "zone/{zoneId}/{zoneName}/apishield"
     const val ANALYTICS = "zone/{zoneId}/{zoneName}/analytics"
     const val BOT_MANAGEMENT = "zone/{zoneId}/{zoneName}/botmanagement"
 
@@ -80,6 +84,10 @@ object Routes {
     fun transformRules(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/transformrules"
     fun pageRules(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/pagerules"
     fun caching(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/caching"
+    fun securityEvents(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/securityevents"
+    fun pageShield(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/pageshield"
+    fun ddos(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/ddos"
+    fun apiShield(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/apishield"
     fun analytics(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/analytics"
     fun botManagement(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/botmanagement"
 }

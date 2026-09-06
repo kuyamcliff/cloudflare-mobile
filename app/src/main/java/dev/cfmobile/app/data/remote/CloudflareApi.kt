@@ -593,4 +593,38 @@ interface CloudflareApi {
 
     @GET("accounts/{accountId}/devices/posture")
     suspend fun listPostureRules(@Path("accountId") accountId: String): Response<CfEnvelope<List<PostureRule>>>
+
+    // ---- Security Events (GraphQL analytics, not the REST envelope) ----
+
+    @POST("graphql")
+    suspend fun queryFirewallEvents(
+        @Body request: GraphQlRequest
+    ): Response<GraphQlResponse<FirewallEventsData>>
+
+    // ---- Page Shield ----
+
+    @GET("zones/{zoneId}/page_shield")
+    suspend fun getPageShieldSettings(@Path("zoneId") zoneId: String): Response<CfEnvelope<PageShieldSettings>>
+
+    @PUT("zones/{zoneId}/page_shield")
+    suspend fun updatePageShieldSettings(
+        @Path("zoneId") zoneId: String,
+        @Body settings: PageShieldSettingsUpdate
+    ): Response<CfEnvelope<PageShieldSettings>>
+
+    @GET("zones/{zoneId}/page_shield/scripts")
+    suspend fun listPageShieldScripts(@Path("zoneId") zoneId: String): Response<CfEnvelope<List<PageShieldScript>>>
+
+    @GET("zones/{zoneId}/page_shield/connections")
+    suspend fun listPageShieldConnections(@Path("zoneId") zoneId: String): Response<CfEnvelope<List<PageShieldConnection>>>
+
+    // ---- DDoS protection (read-only managed ruleset) ----
+
+    @GET("zones/{zoneId}/rulesets/phases/ddos_l7/entrypoint")
+    suspend fun getDdosEntrypoint(@Path("zoneId") zoneId: String): Response<CfEnvelope<DdosRuleset>>
+
+    // ---- API Shield (read-only discovered operations) ----
+
+    @GET("zones/{zoneId}/api_gateway/operations")
+    suspend fun listApiOperations(@Path("zoneId") zoneId: String): Response<CfEnvelope<List<ApiOperation>>>
 }

@@ -78,6 +78,14 @@ import dev.cfmobile.app.ui.workersai.WorkersAiScreen
 import dev.cfmobile.app.ui.workersai.WorkersAiViewModel
 import dev.cfmobile.app.ui.deviceposture.DevicePostureScreen
 import dev.cfmobile.app.ui.deviceposture.DevicePostureViewModel
+import dev.cfmobile.app.ui.securityevents.SecurityEventsScreen
+import dev.cfmobile.app.ui.securityevents.SecurityEventsViewModel
+import dev.cfmobile.app.ui.pageshield.PageShieldScreen
+import dev.cfmobile.app.ui.pageshield.PageShieldViewModel
+import dev.cfmobile.app.ui.ddos.DdosScreen
+import dev.cfmobile.app.ui.ddos.DdosViewModel
+import dev.cfmobile.app.ui.apishield.ApiShieldScreen
+import dev.cfmobile.app.ui.apishield.ApiShieldViewModel
 import dev.cfmobile.app.ui.r2.R2Screen
 import dev.cfmobile.app.ui.r2.R2ViewModel
 import dev.cfmobile.app.ui.ratelimit.RateLimitScreen
@@ -325,6 +333,34 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
         }
 
         val zoneScopedArgs = listOf(navArgument("zoneId") { type = NavType.StringType }, navArgument("zoneName") { type = NavType.StringType })
+
+        composable(Routes.SECURITY_EVENTS, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<SecurityEventsViewModel>(factory = factoryOf { SecurityEventsViewModel(zoneId, container.securityEventsRepository) })
+            SecurityEventsScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.PAGE_SHIELD, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<PageShieldViewModel>(factory = factoryOf { PageShieldViewModel(zoneId, container.pageShieldRepository) })
+            PageShieldScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.DDOS, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<DdosViewModel>(factory = factoryOf { DdosViewModel(zoneId, container.ddosRepository) })
+            DdosScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.API_SHIELD, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<ApiShieldViewModel>(factory = factoryOf { ApiShieldViewModel(zoneId, container.apiShieldRepository) })
+            ApiShieldScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
+        }
 
         composable(Routes.DNS, arguments = zoneScopedArgs) { backStackEntry ->
             val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()

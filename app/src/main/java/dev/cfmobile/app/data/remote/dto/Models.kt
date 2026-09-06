@@ -524,6 +524,98 @@ data class GatewayRuleCreate(
     val description: String? = null
 )
 
+/** One WAF/firewall event from the firewallEventsAdaptive GraphQL dataset. Every field is
+ *  optional because which columns a plan may query varies. */
+@JsonClass(generateAdapter = true)
+data class FirewallEvent(
+    val datetime: String? = null,
+    val action: String? = null,
+    val source: String? = null,
+    val clientIP: String? = null,
+    val clientCountryName: String? = null,
+    val clientAsn: String? = null,
+    val clientRequestHTTPHost: String? = null,
+    val clientRequestPath: String? = null,
+    val clientRequestHTTPMethodName: String? = null,
+    val userAgent: String? = null,
+    val ruleId: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class FirewallEventsZone(
+    val firewallEventsAdaptive: List<FirewallEvent> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class FirewallEventsViewer(
+    val zones: List<FirewallEventsZone> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class FirewallEventsData(
+    val viewer: FirewallEventsViewer? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PageShieldSettings(
+    val enabled: Boolean = false,
+    @Json(name = "use_cloudflare_reporting_endpoint") val useCloudflareReportingEndpoint: Boolean? = null,
+    @Json(name = "use_connection_url_path") val useConnectionUrlPath: Boolean? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PageShieldSettingsUpdate(
+    val enabled: Boolean
+)
+
+@JsonClass(generateAdapter = true)
+data class PageShieldScript(
+    val id: String = "",
+    val url: String? = null,
+    val host: String? = null,
+    val status: String? = null,
+    @Json(name = "first_seen_at") val firstSeenAt: String? = null,
+    @Json(name = "last_seen_at") val lastSeenAt: String? = null,
+    @Json(name = "js_integrity_score") val jsIntegrityScore: Int? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PageShieldConnection(
+    val id: String = "",
+    val url: String? = null,
+    val host: String? = null,
+    @Json(name = "first_seen_at") val firstSeenAt: String? = null,
+    @Json(name = "last_seen_at") val lastSeenAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class DdosRule(
+    val id: String = "",
+    val description: String? = null,
+    val action: String? = null,
+    val enabled: Boolean = true,
+    val expression: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class DdosRuleset(
+    val id: String = "",
+    val name: String? = null,
+    val description: String? = null,
+    val phase: String? = null,
+    @Json(name = "last_updated") val lastUpdated: String? = null,
+    val rules: List<DdosRule> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class ApiOperation(
+    @Json(name = "operation_id") val operationId: String = "",
+    val method: String? = null,
+    val host: String? = null,
+    val endpoint: String? = null,
+    @Json(name = "last_updated") val lastUpdated: String? = null
+)
+
 @JsonClass(generateAdapter = true)
 data class StreamVideoStatus(
     val state: String? = null,

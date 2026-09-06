@@ -63,3 +63,28 @@ suspend fun safeApiCallUnit(block: suspend () -> Response<CfEnvelope<Map<String,
         is ApiResult.Failure -> result
     }
 }
+
+/**
+ * GraphQL counterpart to [safeApiCall]. Cloudflare's analytics GraphQL API does not use the
+ * REST `CfEnvelope` shape: it answers HTTP 200 with `{"data": ..., "errors": [...]}`, and a
+ * query that failed still arrives as a 200. So a non-empty `errors` array is the real failure
+ * signal here, not the status line.
+ */
+suspend fun <T> safeGraphQlCall(block: suspend () -> Response<GraphQlResponse<T>>): ApiResult<T> {
+    return try {
+        val response = block()
+        val body = response.body()
+        val errorMessage = body?.errors?.takeIf { it.isNotEmpty() }?.joinToString("; ") { it.message }
+        val data = body?.data
+        when {
+            errorMessage != null -> ApiResult.Failure(errorMessage, response.code())
+            !response.isSuccessful -> ApiResult.Failure("HTTP ${response.code()}: ${response.message()}", response.code())
+            data == null -> ApiResult.Failure("Cloudflare returned an empty result", response.code())
+            else -> ApiResult.Success(data)
+        }
+    } catch (e: IOException) {
+        ApiResult.Failure(e.message?.let { "Network error: $it" } ?: "Unable to reach Cloudflare")
+    } catch (e: Exception) {
+        ApiResult.Failure(e.message?.let { "Unexpected error: $it" } ?: "Unexpected error")
+    }
+}

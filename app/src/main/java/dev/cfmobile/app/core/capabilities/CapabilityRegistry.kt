@@ -123,8 +123,10 @@ object CapabilityRegistry {
             displayName = "Security Events",
             description = "WAF/firewall event explorer with filtering",
             scope = CapabilityScope.ZONE,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P0
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P0,
+            zoneRoute = { id, name -> Routes.securityEvents(id, name) },
+            migrationHint = "Read-only event explorer over Cloudflare's GraphQL firewallEventsAdaptive dataset, filterable by time range. Event retention and which fields are queryable both depend on the zone's plan, so an empty list can mean the plan doesn't retain events that far back rather than that nothing happened. Not verified against a live API call."
         ),
         Capability(
             id = "audit_logs",
@@ -155,8 +157,10 @@ object CapabilityRegistry {
             displayName = "Page Shield",
             description = "Client-side script and connection detection",
             scope = CapabilityScope.ZONE,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P1
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            zoneRoute = { id, name -> Routes.pageShield(id, name) },
+            migrationHint = "The on/off setting plus the detected scripts and outbound connections. Page Shield policies (allow/block lists) and per-script alerting aren't implemented. Not verified against a live API call."
         ),
         Capability(
             id = "api_shield",
@@ -164,8 +168,10 @@ object CapabilityRegistry {
             displayName = "API Shield",
             description = "API discovery, schema validation, mTLS",
             scope = CapabilityScope.ZONE,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P1
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            zoneRoute = { id, name -> Routes.apiShield(id, name) },
+            migrationHint = "Read-only list of endpoints discovered from real traffic. Schema validation, mTLS certificates, and per-operation rate limits aren't managed here. Requires an API Shield-enabled plan. Not verified against a live API call."
         ),
         Capability(
             id = "bot_management",
@@ -184,8 +190,10 @@ object CapabilityRegistry {
             displayName = "DDoS Protection",
             description = "Status, events, and mitigations",
             scope = CapabilityScope.ZONE,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P1
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            zoneRoute = { id, name -> Routes.ddos(id, name) },
+            migrationHint = "Read-only view of the managed HTTP DDoS ruleset and any overrides on it. Cloudflare's L7 DDoS protection is always on and can't be disabled; changing rule sensitivity isn't offered here because that decision needs more context than a phone screen gives. Not verified against a live API call."
         ),
         Capability(
             id = "workers",
