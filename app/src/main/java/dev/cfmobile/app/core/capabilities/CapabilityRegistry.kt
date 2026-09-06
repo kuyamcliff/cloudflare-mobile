@@ -108,6 +108,54 @@ object CapabilityRegistry {
             zoneRoute = { id, name -> Routes.caching(id, name) }
         ),
         Capability(
+            id = "speed",
+            product = "Speed",
+            displayName = "Speed & Optimization",
+            description = "Polish, Brotli, Early Hints, Rocket Loader, HTTP/3",
+            scope = CapabilityScope.ZONE,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.LOW,
+            zoneRoute = { id, name -> Routes.speed(id, name) },
+            migrationHint = "The zone-level speed toggles. Settings your plan doesn't include are shown as unavailable rather than as off. Image Resizing and per-URL optimisation rules aren't covered. Not verified against a live API call."
+        ),
+        Capability(
+            id = "network_settings",
+            product = "Network",
+            displayName = "Network",
+            description = "WebSockets, IPv6, gRPC, IP geolocation, Onion Routing",
+            scope = CapabilityScope.ZONE,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.MEDIUM,
+            zoneRoute = { id, name -> Routes.network(id, name) },
+            migrationHint = "Zone-level network toggles. Not verified against a live API call."
+        ),
+        Capability(
+            id = "scrape_shield",
+            product = "Security",
+            displayName = "Scrape Shield",
+            description = "Email obfuscation, hotlink protection, server-side excludes",
+            scope = CapabilityScope.ZONE,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.LOW,
+            zoneRoute = { id, name -> Routes.scrapeShield(id, name) },
+            migrationHint = "Not verified against a live API call."
+        ),
+        Capability(
+            id = "cache_behaviour",
+            product = "Caching",
+            displayName = "Cache Behaviour",
+            description = "Always Online, crawler hints, query string sort, browser check",
+            scope = CapabilityScope.ZONE,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.MEDIUM,
+            zoneRoute = { id, name -> Routes.cacheBehaviour(id, name) },
+            migrationHint = "The zone-setting side of caching; cache level, browser TTL, development mode and purge live under Caching. Tiered Cache, Cache Reserve, and Argo have their own endpoints and aren't covered. Not verified against a live API call."
+        ),
+        Capability(
             id = "analytics",
             product = "Analytics",
             displayName = "Analytics",

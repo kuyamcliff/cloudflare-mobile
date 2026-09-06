@@ -90,6 +90,10 @@ import dev.cfmobile.app.ui.emailrouting.EmailRoutingScreen
 import dev.cfmobile.app.ui.emailrouting.EmailRoutingViewModel
 import dev.cfmobile.app.ui.spectrum.SpectrumScreen
 import dev.cfmobile.app.ui.spectrum.SpectrumViewModel
+import dev.cfmobile.app.ui.zonesettings.ZoneSettingGroups
+import dev.cfmobile.app.ui.zonesettings.ZoneSettingSpec
+import dev.cfmobile.app.ui.zonesettings.ZoneSettingsGroupScreen
+import dev.cfmobile.app.ui.zonesettings.ZoneSettingsGroupViewModel
 import dev.cfmobile.app.ui.magicnetwork.MagicNetworkScreen
 import dev.cfmobile.app.ui.magicnetwork.MagicNetworkViewModel
 import dev.cfmobile.app.ui.billing.BillingScreen
@@ -358,6 +362,25 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
         }
 
         val zoneScopedArgs = listOf(navArgument("zoneId") { type = NavType.StringType }, navArgument("zoneName") { type = NavType.StringType })
+
+        /** Every declarative zone-settings family renders through the same screen, so the
+         *  destination only differs by title and which specs it shows. */
+        fun NavGraphBuilder.settingsGroupScreen(route: String, title: String, specs: List<ZoneSettingSpec>) {
+            composable(route, arguments = zoneScopedArgs) { backStackEntry ->
+                val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+                val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+                val vm = viewModel<ZoneSettingsGroupViewModel>(
+                    key = route,
+                    factory = factoryOf { ZoneSettingsGroupViewModel(zoneId, container.zoneSettingsRepository, specs) }
+                )
+                ZoneSettingsGroupScreen(title, zoneName, vm, onBack = { navController.popBackStack() })
+            }
+        }
+
+        settingsGroupScreen(Routes.SPEED, "Speed", ZoneSettingGroups.SPEED)
+        settingsGroupScreen(Routes.NETWORK, "Network", ZoneSettingGroups.NETWORK)
+        settingsGroupScreen(Routes.SCRAPE_SHIELD, "Scrape Shield", ZoneSettingGroups.SCRAPE_SHIELD)
+        settingsGroupScreen(Routes.CACHE_BEHAVIOUR, "Cache Behaviour", ZoneSettingGroups.CACHE_BEHAVIOUR)
 
         composable(Routes.EMAIL_ROUTING, arguments = zoneScopedArgs) { backStackEntry ->
             val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()

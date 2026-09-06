@@ -23,13 +23,26 @@ enum class StringSetting(val id: String) {
 class ZoneSettingsRepository(private val api: CloudflareApi) {
 
     suspend fun getSetting(zoneId: String, setting: StringSetting): ApiResult<String> =
-        when (val result = safeApiCall { api.getStringSetting(zoneId, setting.id) }) {
+        getSetting(zoneId, setting.id)
+
+    suspend fun setSetting(zoneId: String, setting: StringSetting, value: String): ApiResult<String> =
+        setSetting(zoneId, setting.id, value)
+
+    /**
+     * Raw setting access by Cloudflare's own setting id. Cloudflare has dozens of zone
+     * settings that behave identically over the wire, so the newer settings screens declare
+     * them as data ([ZoneSettingSpec]) instead of adding an enum constant and a branch in some
+     * exhaustive `when` for each - which is what previously made adding one setting a
+     * multi-file change.
+     */
+    suspend fun getSetting(zoneId: String, settingId: String): ApiResult<String> =
+        when (val result = safeApiCall { api.getStringSetting(zoneId, settingId) }) {
             is ApiResult.Success -> ApiResult.Success(result.data.value)
             is ApiResult.Failure -> result
         }
 
-    suspend fun setSetting(zoneId: String, setting: StringSetting, value: String): ApiResult<String> =
-        when (val result = safeApiCall { api.patchStringSetting(zoneId, setting.id, ZoneSettingPatchString(value)) }) {
+    suspend fun setSetting(zoneId: String, settingId: String, value: String): ApiResult<String> =
+        when (val result = safeApiCall { api.patchStringSetting(zoneId, settingId, ZoneSettingPatchString(value)) }) {
             is ApiResult.Success -> ApiResult.Success(result.data.value)
             is ApiResult.Failure -> result
         }

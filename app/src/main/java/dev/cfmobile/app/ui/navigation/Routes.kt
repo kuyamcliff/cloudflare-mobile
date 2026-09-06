@@ -49,6 +49,10 @@ object Routes {
     const val API_SHIELD = "zone/{zoneId}/{zoneName}/apishield"
     const val EMAIL_ROUTING = "zone/{zoneId}/{zoneName}/emailrouting"
     const val SPECTRUM = "zone/{zoneId}/{zoneName}/spectrum"
+    const val SPEED = "zone/{zoneId}/{zoneName}/speed"
+    const val NETWORK = "zone/{zoneId}/{zoneName}/network"
+    const val SCRAPE_SHIELD = "zone/{zoneId}/{zoneName}/scrapeshield"
+    const val CACHE_BEHAVIOUR = "zone/{zoneId}/{zoneName}/cachebehaviour"
     const val ANALYTICS = "zone/{zoneId}/{zoneName}/analytics"
     const val BOT_MANAGEMENT = "zone/{zoneId}/{zoneName}/botmanagement"
 
@@ -98,6 +102,10 @@ object Routes {
     fun apiShield(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/apishield"
     fun emailRouting(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/emailrouting"
     fun spectrum(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/spectrum"
+    fun speed(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/speed"
+    fun network(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/network"
+    fun scrapeShield(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/scrapeshield"
+    fun cacheBehaviour(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/cachebehaviour"
     fun analytics(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/analytics"
     fun botManagement(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/botmanagement"
 }
