@@ -3,7 +3,7 @@ package dev.cfmobile.app.data.repository
 import com.google.common.truth.Truth.assertThat
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.dto.RulesetRuleWrite
-import dev.cfmobile.app.data.remote.dto.TransformActionParameters
+import dev.cfmobile.app.data.remote.dto.RuleActionParameters
 import dev.cfmobile.app.data.remote.dto.UriRewrite
 import dev.cfmobile.app.data.remote.dto.UriRewritePart
 import dev.cfmobile.app.data.remote.testApi
@@ -14,16 +14,16 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
-class TransformRulesRepositoryTest {
+class RulesetPhaseRepositoryTest {
 
     private lateinit var server: MockWebServer
-    private lateinit var repository: TransformRulesRepository
+    private lateinit var repository: RulesetPhaseRepository
 
     @Before
     fun setUp() {
         server = MockWebServer()
         server.start()
-        repository = TransformRulesRepository(testApi(server))
+        repository = RulesetPhaseRepository(testApi(server))
     }
 
     @After
@@ -54,7 +54,7 @@ class TransformRulesRepositoryTest {
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"id":"rs1","rules":[{"id":"r1"}]}}"""))
         val rule = RulesetRuleWrite(
             action = "rewrite", expression = "true",
-            actionParameters = TransformActionParameters(uri = UriRewrite(path = UriRewritePart(value = "/new")))
+            actionParameters = RuleActionParameters(uri = UriRewrite(path = UriRewritePart(value = "/new")))
         )
 
         val result = repository.addRule("zone1", "http_request_transform", existingRulesetId = null, rule = rule)
@@ -79,5 +79,23 @@ class TransformRulesRepositoryTest {
         val request = server.takeRequest()
         assertThat(request.method).isEqualTo("POST")
         assertThat(request.path).isEqualTo("/zones/zone1/rulesets/rs1/rules")
+    }
+
+    @Test
+    fun `listRulesets returns the zone's rulesets with their kind and phase`() = runBlocking {
+        server.enqueue(
+            MockResponse().setBody(
+                """{"success":true,"errors":[],"result":[
+                    {"id":"ms1","name":"Cloudflare Managed Ruleset","kind":"managed","phase":"http_request_firewall_managed"},
+                    {"id":"z1","name":"zone entrypoint","kind":"zone","phase":"http_request_firewall_custom"}
+                ]}"""
+            )
+        )
+
+        val result = RulesetPhaseRepository(testApi(server)).listRulesets("zone1")
+
+        val rulesets = (result as ApiResult.Success).data
+        assertThat(rulesets.map { it.kind }).containsExactly("managed", "zone").inOrder()
+        assertThat(server.takeRequest().path).isEqualTo("/zones/zone1/rulesets")
     }
 }

@@ -3,11 +3,11 @@ package dev.cfmobile.app.ui.transformrules
 import com.google.common.truth.Truth.assertThat
 import dev.cfmobile.app.MainDispatcherRule
 import dev.cfmobile.app.data.remote.dto.RulesetRule
-import dev.cfmobile.app.data.remote.dto.TransformActionParameters
+import dev.cfmobile.app.data.remote.dto.RuleActionParameters
 import dev.cfmobile.app.data.remote.dto.UriRewrite
 import dev.cfmobile.app.data.remote.dto.UriRewritePart
 import dev.cfmobile.app.data.remote.testApi
-import dev.cfmobile.app.data.repository.TransformRulesRepository
+import dev.cfmobile.app.data.repository.RulesetPhaseRepository
 import dev.cfmobile.app.ui.common.UiState
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -39,7 +39,7 @@ class TransformRulesViewModelTest {
     @Test
     fun `loads the URL Rewrite tab by default`() = runTest {
         server.enqueue(MockResponse().setResponseCode(404).setBody("""{"success":false,"errors":[],"result":null}"""))
-        val viewModel = TransformRulesViewModel("zone1", TransformRulesRepository(testApi(server)))
+        val viewModel = TransformRulesViewModel("zone1", RulesetPhaseRepository(testApi(server)))
 
         val state = viewModel.awaitLoaded()
 
@@ -51,7 +51,7 @@ class TransformRulesViewModelTest {
     @Test
     fun `switching tabs loads that phase's ruleset only once`() = runTest {
         server.enqueue(MockResponse().setResponseCode(404).setBody("""{"success":false,"errors":[],"result":null}"""))
-        val viewModel = TransformRulesViewModel("zone1", TransformRulesRepository(testApi(server)))
+        val viewModel = TransformRulesViewModel("zone1", RulesetPhaseRepository(testApi(server)))
         viewModel.awaitLoaded()
 
         server.enqueue(MockResponse().setResponseCode(404).setBody("""{"success":false,"errors":[],"result":null}"""))
@@ -69,7 +69,7 @@ class TransformRulesViewModelTest {
     @Test
     fun `save rejects an incomplete URL rewrite before calling the network`() = runTest {
         server.enqueue(MockResponse().setResponseCode(404).setBody("""{"success":false,"errors":[],"result":null}"""))
-        val viewModel = TransformRulesViewModel("zone1", TransformRulesRepository(testApi(server)))
+        val viewModel = TransformRulesViewModel("zone1", RulesetPhaseRepository(testApi(server)))
         viewModel.awaitLoaded()
         val requestsBefore = server.requestCount
 
@@ -83,7 +83,7 @@ class TransformRulesViewModelTest {
     @Test
     fun `saving a valid URL rewrite creates it and closes the form`() = runTest {
         server.enqueue(MockResponse().setResponseCode(404).setBody("""{"success":false,"errors":[],"result":null}"""))
-        val viewModel = TransformRulesViewModel("zone1", TransformRulesRepository(testApi(server)))
+        val viewModel = TransformRulesViewModel("zone1", RulesetPhaseRepository(testApi(server)))
         viewModel.awaitLoaded()
 
         viewModel.openAddForm()
@@ -103,12 +103,12 @@ class TransformRulesViewModelTest {
     @Test
     fun `editing a header rule pre-fills its name, operation, and value`() = runTest {
         server.enqueue(MockResponse().setResponseCode(404).setBody("""{"success":false,"errors":[],"result":null}"""))
-        val viewModel = TransformRulesViewModel("zone1", TransformRulesRepository(testApi(server)))
+        val viewModel = TransformRulesViewModel("zone1", RulesetPhaseRepository(testApi(server)))
         viewModel.awaitLoaded()
         viewModel.selectKind(TransformRuleKind.REQUEST_HEADERS)
         val rule = RulesetRule(
             id = "r1", action = "rewrite", expression = "true",
-            actionParameters = TransformActionParameters(headers = mapOf("X-Foo" to dev.cfmobile.app.data.remote.dto.HeaderModification(operation = "set", value = "bar")))
+            actionParameters = RuleActionParameters(headers = mapOf("X-Foo" to dev.cfmobile.app.data.remote.dto.HeaderModification(operation = "set", value = "bar")))
         )
 
         viewModel.openEditForm(rule)
@@ -123,11 +123,11 @@ class TransformRulesViewModelTest {
     @Test
     fun `editing a URL rewrite rule pre-fills path and query`() = runTest {
         server.enqueue(MockResponse().setResponseCode(404).setBody("""{"success":false,"errors":[],"result":null}"""))
-        val viewModel = TransformRulesViewModel("zone1", TransformRulesRepository(testApi(server)))
+        val viewModel = TransformRulesViewModel("zone1", RulesetPhaseRepository(testApi(server)))
         viewModel.awaitLoaded()
         val rule = RulesetRule(
             id = "r1", action = "rewrite", expression = "true",
-            actionParameters = TransformActionParameters(uri = UriRewrite(path = UriRewritePart(expression = "concat(\"/x\", http.request.uri.path)")))
+            actionParameters = RuleActionParameters(uri = UriRewrite(path = UriRewritePart(expression = "concat(\"/x\", http.request.uri.path)")))
         )
 
         viewModel.openEditForm(rule)

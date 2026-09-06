@@ -71,7 +71,7 @@ class ZoneSettingsGroupViewModel(
                     // Only a total failure is an error state: if even one setting answered,
                     // the screen is still useful.
                     values = if (values.isEmpty() && lastFailure != null) {
-                        UiState.Error(ErrorClassifier.classify(lastFailure!!))
+                        UiState.Error(ErrorClassifier.classify(lastFailure))
                     } else {
                         UiState.Data(values.toMap())
                     },

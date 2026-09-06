@@ -23,8 +23,9 @@ data class ImagesUiState(
 
 /** "1,204 of 100,000 stored" - null when the account didn't report a quota. */
 fun imagesUsageLabel(stats: ImagesStats?): String? {
-    val current = stats?.count?.current ?: return null
-    val allowed = stats.count?.allowed
+    val count = stats?.count ?: return null
+    val current = count.current
+    val allowed = count.allowed
     return if (allowed != null) "%,d of %,d images stored".format(current, allowed) else "%,d images stored".format(current)
 }
 

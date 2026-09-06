@@ -58,7 +58,7 @@ object CapabilityRegistry {
             roadmapPhase = RoadmapPhase.P0,
             destructiveRisk = DestructiveRisk.HIGH,
             zoneRoute = { id, name -> Routes.waf(id, name) },
-            migrationHint = "Covers Custom Rules only for now. Cloudflare Managed Rulesets (e.g. the OWASP Core Ruleset) aren't yet manageable from this app."
+            migrationHint = "Covers WAF Custom Rules (the http_request_firewall_custom phase). Cloudflare's own managed rulesets are a separate phase and have their own screen - see the Managed WAF capability. Not verified against a live API call."
         ),
         Capability(
             id = "rate_limiting",
@@ -82,6 +82,54 @@ object CapabilityRegistry {
             destructiveRisk = DestructiveRisk.MEDIUM,
             zoneRoute = { id, name -> Routes.transformRules(id, name) },
             migrationHint = "Covers URL Rewrite and request/response header rules only. Origin Rules, Redirect Rules, and Snippets aren't yet manageable from this app - and unlike WAF/Rate Limiting, this request format hasn't been verified against a live API call, only Cloudflare's published rule schema."
+        ),
+        Capability(
+            id = "redirect_rules",
+            product = "Rules",
+            displayName = "Redirect Rules",
+            description = "Dynamic URL redirects driven by expressions",
+            scope = CapabilityScope.ZONE,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.MEDIUM,
+            zoneRoute = { zoneId, zoneName -> Routes.redirectRules(zoneId, zoneName) },
+            migrationHint = "Single Redirects only, in the http_request_dynamic_redirect phase: create, edit, enable, and delete rules with a static or expression target. Bulk Redirects are an account-level list product and aren't implemented. Not verified against a live API call."
+        ),
+        Capability(
+            id = "origin_rules",
+            product = "Rules",
+            displayName = "Origin Rules",
+            description = "Override origin host, port, Host header, and SNI",
+            scope = CapabilityScope.ZONE,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.HIGH,
+            zoneRoute = { zoneId, zoneName -> Routes.originRules(zoneId, zoneName) },
+            migrationHint = "Origin host, port, Host header, and SNI overrides. DNS-record-level origin settings and mTLS certificate selection aren't part of this phase and aren't implemented. Not verified against a live API call."
+        ),
+        Capability(
+            id = "cache_rules",
+            product = "Rules",
+            displayName = "Cache Rules",
+            description = "Per-request cache eligibility and TTLs",
+            scope = CapabilityScope.ZONE,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.MEDIUM,
+            zoneRoute = { zoneId, zoneName -> Routes.cacheRules(zoneId, zoneName) },
+            migrationHint = "Cache eligibility plus edge and browser TTL modes. Custom cache keys, status-code-specific TTLs, serve-stale, and Cache Reserve aren't implemented - each is a form of its own. Not verified against a live API call."
+        ),
+        Capability(
+            id = "managed_waf",
+            product = "Security",
+            displayName = "Managed WAF",
+            description = "Deploy and disable Cloudflare's managed rulesets",
+            scope = CapabilityScope.ZONE,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.HIGH,
+            zoneRoute = { zoneId, zoneName -> Routes.managedWaf(zoneId, zoneName) },
+            migrationHint = "Shows which managed rulesets are deployed on the zone and lets you deploy, disable, or remove one whole ruleset. Per-rule overrides, sensitivity and paranoia levels, and scoping a deployment to an expression aren't implemented - a deployment made here applies to all traffic. Not verified against a live API call."
         ),
         Capability(
             id = "page_rules",

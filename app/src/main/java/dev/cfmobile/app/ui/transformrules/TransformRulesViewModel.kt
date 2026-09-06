@@ -7,10 +7,10 @@ import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.dto.HeaderModification
 import dev.cfmobile.app.data.remote.dto.RulesetRule
 import dev.cfmobile.app.data.remote.dto.RulesetRuleWrite
-import dev.cfmobile.app.data.remote.dto.TransformActionParameters
+import dev.cfmobile.app.data.remote.dto.RuleActionParameters
 import dev.cfmobile.app.data.remote.dto.UriRewrite
 import dev.cfmobile.app.data.remote.dto.UriRewritePart
-import dev.cfmobile.app.data.repository.TransformRulesRepository
+import dev.cfmobile.app.data.repository.RulesetPhaseRepository
 import dev.cfmobile.app.ui.common.UiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -79,13 +79,13 @@ fun validateTransformForm(form: TransformRuleForm): String? {
 /** Pure so the action_parameters payload for each Transform Rule kind is directly testable. */
 fun buildTransformRuleWrite(form: TransformRuleForm): RulesetRuleWrite {
     val actionParameters = when (form.kind) {
-        TransformRuleKind.URL_REWRITE -> TransformActionParameters(
+        TransformRuleKind.URL_REWRITE -> RuleActionParameters(
             uri = UriRewrite(
                 path = form.pathValue.takeIf { it.isNotBlank() }?.let { rewritePart(it, form.pathIsExpression) },
                 query = form.queryValue.takeIf { it.isNotBlank() }?.let { rewritePart(it, form.queryIsExpression) }
             )
         )
-        TransformRuleKind.REQUEST_HEADERS, TransformRuleKind.RESPONSE_HEADERS -> TransformActionParameters(
+        TransformRuleKind.REQUEST_HEADERS, TransformRuleKind.RESPONSE_HEADERS -> RuleActionParameters(
             headers = mapOf(
                 form.headerName.trim() to if (form.headerOperation == "remove") {
                     HeaderModification(operation = "remove")
@@ -113,7 +113,7 @@ private fun rewritePart(value: String, isExpression: Boolean): UriRewritePart =
 
 class TransformRulesViewModel(
     private val zoneId: String,
-    private val repository: TransformRulesRepository
+    private val repository: RulesetPhaseRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TransformRulesUiState())

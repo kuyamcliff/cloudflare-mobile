@@ -222,6 +222,11 @@ interface CloudflareApi {
         @Path("ruleId") ruleId: String
     ): Response<CfEnvelope<Ruleset>>
 
+    /** Every ruleset visible to the zone, managed ones included. Used to put a name to the
+     *  managed ruleset ids that a deployment rule references. */
+    @GET("zones/{zoneId}/rulesets")
+    suspend fun listRulesets(@Path("zoneId") zoneId: String): Response<CfEnvelope<List<Ruleset>>>
+
     // ---- Page rules ----
 
     @GET("zones/{zoneId}/pagerules")

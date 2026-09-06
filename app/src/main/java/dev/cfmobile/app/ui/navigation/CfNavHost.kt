@@ -50,6 +50,14 @@ import dev.cfmobile.app.ui.d1.D1ConsoleScreen
 import dev.cfmobile.app.ui.d1.D1ConsoleViewModel
 import dev.cfmobile.app.ui.d1.D1Screen
 import dev.cfmobile.app.ui.d1.D1ViewModel
+import dev.cfmobile.app.ui.rules.CacheRulesScreen
+import dev.cfmobile.app.ui.rules.CacheRulesViewModel
+import dev.cfmobile.app.ui.rules.ManagedRulesetsScreen
+import dev.cfmobile.app.ui.rules.ManagedRulesetsViewModel
+import dev.cfmobile.app.ui.rules.OriginRulesScreen
+import dev.cfmobile.app.ui.rules.OriginRulesViewModel
+import dev.cfmobile.app.ui.rules.RedirectRulesScreen
+import dev.cfmobile.app.ui.rules.RedirectRulesViewModel
 import dev.cfmobile.app.ui.workerroutes.WorkerRoutesScreen
 import dev.cfmobile.app.ui.workerroutes.WorkerRoutesViewModel
 import dev.cfmobile.app.ui.workers.WorkersScreen
@@ -431,6 +439,34 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
             }
         }
 
+        composable(Routes.REDIRECT_RULES, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<RedirectRulesViewModel>(factory = factoryOf { RedirectRulesViewModel(zoneId, container.rulesetPhaseRepository) })
+            RedirectRulesScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.ORIGIN_RULES, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<OriginRulesViewModel>(factory = factoryOf { OriginRulesViewModel(zoneId, container.rulesetPhaseRepository) })
+            OriginRulesScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.CACHE_RULES, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<CacheRulesViewModel>(factory = factoryOf { CacheRulesViewModel(zoneId, container.rulesetPhaseRepository) })
+            CacheRulesScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.MANAGED_WAF, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<ManagedRulesetsViewModel>(factory = factoryOf { ManagedRulesetsViewModel(zoneId, container.rulesetPhaseRepository) })
+            ManagedRulesetsScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
+        }
+
         composable(Routes.WORKER_ROUTES, arguments = zoneScopedArgs) { backStackEntry ->
             val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
             val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
@@ -544,7 +580,7 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
         composable(Routes.TRANSFORM_RULES, arguments = zoneScopedArgs) { backStackEntry ->
             val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
             val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
-            val vm = viewModel<TransformRulesViewModel>(factory = factoryOf { TransformRulesViewModel(zoneId, container.transformRulesRepository) })
+            val vm = viewModel<TransformRulesViewModel>(factory = factoryOf { TransformRulesViewModel(zoneId, container.rulesetPhaseRepository) })
             TransformRulesScreen(vm, zoneName = zoneName, onBack = { navController.popBackStack() })
         }
 

@@ -48,7 +48,7 @@ import dev.cfmobile.app.data.repository.LoadBalancingRepository
 import dev.cfmobile.app.data.repository.PageRulesRepository
 import dev.cfmobile.app.data.repository.R2Repository
 import dev.cfmobile.app.data.repository.RateLimitRepository
-import dev.cfmobile.app.data.repository.TransformRulesRepository
+import dev.cfmobile.app.data.repository.RulesetPhaseRepository
 import dev.cfmobile.app.data.repository.WafRepository
 import dev.cfmobile.app.data.repository.ZoneSettingsRepository
 import dev.cfmobile.app.data.repository.ZonesRepository
@@ -106,7 +106,7 @@ class AppContainer(context: Context) {
     val healthChecksRepository = HealthChecksRepository(api)
     val wafRepository = WafRepository(api)
     val rateLimitRepository = RateLimitRepository(api)
-    val transformRulesRepository = TransformRulesRepository(api)
+    val rulesetPhaseRepository = RulesetPhaseRepository(api)
     val pageRulesRepository = PageRulesRepository(api)
     val analyticsRepository = AnalyticsRepository(api)
 }

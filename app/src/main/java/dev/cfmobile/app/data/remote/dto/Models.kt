@@ -232,13 +232,63 @@ data class HeaderModification(
     val expression: String? = null
 )
 
-/** The action-specific payload of a "rewrite" rule. Which of [uri]/[headers] is populated
- *  depends on which phase the rule lives in - URL Rewrite rules set [uri], Request/Response
- *  Header Transform rules set [headers]. */
+/** A redirect rule's static or dynamic target, inside `from_value`. */
 @JsonClass(generateAdapter = true)
-data class TransformActionParameters(
+data class RedirectTargetUrl(
+    val value: String? = null,
+    val expression: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class RedirectFromValue(
+    @Json(name = "status_code") val statusCode: Int = 301,
+    @Json(name = "target_url") val targetUrl: RedirectTargetUrl = RedirectTargetUrl(),
+    @Json(name = "preserve_query_string") val preserveQueryString: Boolean? = null
+)
+
+/** An Origin Rule's replacement origin. Either field may be omitted to leave that half of the
+ *  origin as Cloudflare resolved it. */
+@JsonClass(generateAdapter = true)
+data class RuleOrigin(
+    val host: String? = null,
+    val port: Int? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class RuleSni(val value: String = "")
+
+/** A Cache Rule's TTL block. `mode` is Cloudflare's own vocabulary - "respect_origin",
+ *  "override_origin", or "bypass_by_default" - and `default` is the override in seconds,
+ *  meaningful only in "override_origin". */
+@JsonClass(generateAdapter = true)
+data class RuleTtl(
+    val mode: String = "respect_origin",
+    val default: Int? = null
+)
+
+/**
+ * The action-specific payload of a Rulesets rule. Every rules-engine family in this app writes
+ * into the same `action_parameters` object, so one wide type covers them all and Moshi omits
+ * whatever a given family leaves null:
+ *
+ *  - Transform Rules ("rewrite") populate [uri] or [headers]
+ *  - Redirect Rules ("redirect") populate [fromValue]
+ *  - Origin Rules ("route") populate [origin], [hostHeader], and/or [sni]
+ *  - Cache Rules ("set_cache_settings") populate [cache], [edgeTtl], [browserTtl]
+ *  - Managed WAF deployments ("execute") populate [id] with the managed ruleset's id
+ */
+@JsonClass(generateAdapter = true)
+data class RuleActionParameters(
     val uri: UriRewrite? = null,
-    val headers: Map<String, HeaderModification>? = null
+    val headers: Map<String, HeaderModification>? = null,
+    @Json(name = "from_value") val fromValue: RedirectFromValue? = null,
+    val origin: RuleOrigin? = null,
+    @Json(name = "host_header") val hostHeader: String? = null,
+    val sni: RuleSni? = null,
+    val cache: Boolean? = null,
+    @Json(name = "edge_ttl") val edgeTtl: RuleTtl? = null,
+    @Json(name = "browser_ttl") val browserTtl: RuleTtl? = null,
+    val id: String? = null
 )
 
 /** One rule inside a Rulesets phase entrypoint. What it does is entirely determined by
@@ -254,7 +304,7 @@ data class RulesetRule(
     val description: String? = null,
     val enabled: Boolean = true,
     val ratelimit: RateLimit? = null,
-    @Json(name = "action_parameters") val actionParameters: TransformActionParameters? = null
+    @Json(name = "action_parameters") val actionParameters: RuleActionParameters? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -264,13 +314,16 @@ data class RulesetRuleWrite(
     val description: String? = null,
     val enabled: Boolean = true,
     val ratelimit: RateLimit? = null,
-    @Json(name = "action_parameters") val actionParameters: TransformActionParameters? = null
+    @Json(name = "action_parameters") val actionParameters: RuleActionParameters? = null
 )
 
 @JsonClass(generateAdapter = true)
 data class Ruleset(
     val id: String = "",
     val name: String? = null,
+    val description: String? = null,
+    /** "managed" for a Cloudflare-maintained ruleset, "zone"/"root" for one the account owns. */
+    val kind: String? = null,
     val phase: String? = null,
     val rules: List<RulesetRule> = emptyList()
 )

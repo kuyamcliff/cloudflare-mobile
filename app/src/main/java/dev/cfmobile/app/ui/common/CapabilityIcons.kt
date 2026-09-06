@@ -55,7 +55,9 @@ fun capabilityIcon(capability: Capability): ImageVector = when (capability.id) {
     "firewall.legacy", "waf.rulesets", "rate_limiting", "bot_management", "ddos", "page_shield" -> Icons.Filled.Shield
     "security_events" -> Icons.Filled.Warning
     "api_shield" -> Icons.Filled.Api
-    "page_rules", "transform_rules" -> Icons.AutoMirrored.Filled.Rule
+    "page_rules", "transform_rules", "redirect_rules", "origin_rules" -> Icons.AutoMirrored.Filled.Rule
+    "cache_rules" -> Icons.Filled.Http
+    "managed_waf" -> Icons.Filled.Shield
     "caching" -> Icons.Filled.Http
     "analytics" -> Icons.Filled.Analytics
     "account_members" -> Icons.Filled.People
