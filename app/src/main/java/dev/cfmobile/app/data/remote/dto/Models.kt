@@ -525,6 +525,92 @@ data class GatewayRuleCreate(
 )
 
 @JsonClass(generateAdapter = true)
+data class CfQueue(
+    @Json(name = "queue_id") val queueId: String = "",
+    @Json(name = "queue_name") val queueName: String = "",
+    @Json(name = "created_on") val createdOn: String? = null,
+    @Json(name = "producers_total_count") val producersCount: Int? = null,
+    @Json(name = "consumers_total_count") val consumersCount: Int? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class QueueCreate(
+    @Json(name = "queue_name") val queueName: String
+)
+
+@JsonClass(generateAdapter = true)
+data class DurableObjectNamespace(
+    val id: String = "",
+    val name: String = "",
+    val script: String? = null,
+    @Json(name = "class") val className: String? = null,
+    @Json(name = "use_sqlite") val useSqlite: Boolean? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class CfWorkflow(
+    val id: String = "",
+    val name: String = "",
+    @Json(name = "class_name") val className: String? = null,
+    @Json(name = "script_name") val scriptName: String? = null,
+    @Json(name = "created_on") val createdOn: String? = null,
+    @Json(name = "modified_on") val modifiedOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class WorkflowInstance(
+    val id: String = "",
+    val status: String? = null,
+    @Json(name = "version_id") val versionId: String? = null,
+    @Json(name = "created_on") val createdOn: String? = null,
+    @Json(name = "started_on") val startedOn: String? = null,
+    @Json(name = "ended_on") val endedOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class HyperdriveOrigin(
+    val host: String? = null,
+    val port: Int? = null,
+    val database: String? = null,
+    val scheme: String? = null,
+    val user: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class HyperdriveCaching(
+    val disabled: Boolean? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class HyperdriveConfig(
+    val id: String = "",
+    val name: String = "",
+    val origin: HyperdriveOrigin? = null,
+    val caching: HyperdriveCaching? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class VectorizeIndexConfig(
+    val dimensions: Int = 0,
+    val metric: String = ""
+)
+
+@JsonClass(generateAdapter = true)
+data class VectorizeIndex(
+    val name: String = "",
+    val description: String? = null,
+    val config: VectorizeIndexConfig? = null,
+    @Json(name = "created_on") val createdOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class VectorizeIndexCreate(
+    val name: String,
+    val config: VectorizeIndexConfig,
+    val description: String? = null
+)
+
+@JsonClass(generateAdapter = true)
 data class CfTunnel(
     val id: String = "",
     val name: String = "",

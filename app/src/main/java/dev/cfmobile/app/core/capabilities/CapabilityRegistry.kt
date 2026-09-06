@@ -252,8 +252,11 @@ object CapabilityRegistry {
             displayName = "Queues",
             description = "Message queues for Workers",
             scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P1
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.queues(accountId) },
+            migrationHint = "Queue management only (create/list/delete) - producing and consuming messages is a Worker's job, so there's no message browser. Not verified against a live API call."
         ),
         Capability(
             id = "access",
@@ -318,8 +321,10 @@ object CapabilityRegistry {
             displayName = "Durable Objects",
             description = "Stateful Workers coordination",
             scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P2
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            accountRoute = { accountId -> Routes.durableObjects(accountId) },
+            migrationHint = "Read-only namespace inventory. Namespaces are created and removed by deploying a Worker that declares them, and inspecting an individual object's stored state isn't exposed by the API. Not verified against a live API call."
         ),
         Capability(
             id = "workflows",
@@ -327,8 +332,10 @@ object CapabilityRegistry {
             displayName = "Workflows",
             description = "Durable multi-step Workers execution",
             scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P2
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            accountRoute = { accountId -> Routes.workflows(accountId) },
+            migrationHint = "Read-only: list deployed Workflows and their recent instances. Triggering, pausing, or terminating a run isn't implemented. Not verified against a live API call."
         ),
         Capability(
             id = "hyperdrive",
@@ -336,8 +343,11 @@ object CapabilityRegistry {
             displayName = "Hyperdrive",
             description = "Database connection pooling for Workers",
             scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P2
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.hyperdrive(accountId) },
+            migrationHint = "List and delete only. Creating a config requires entering a database password, which shouldn't be typed into a phone - use wrangler or the dashboard for that. Not verified against a live API call."
         ),
         Capability(
             id = "ai",
@@ -354,8 +364,11 @@ object CapabilityRegistry {
             displayName = "Vectorize",
             description = "Vector database for AI workloads",
             scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P2
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.vectorize(accountId) },
+            migrationHint = "Index management only (create/list/delete) - inserting or querying vectors is a Worker's job, so there's no vector browser. Not verified against a live API call."
         ),
         Capability(
             id = "browser_rendering",

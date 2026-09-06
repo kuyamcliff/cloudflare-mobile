@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -55,6 +56,16 @@ import dev.cfmobile.app.ui.gateway.GatewayScreen
 import dev.cfmobile.app.ui.gateway.GatewayViewModel
 import dev.cfmobile.app.ui.tunnels.TunnelsScreen
 import dev.cfmobile.app.ui.tunnels.TunnelsViewModel
+import dev.cfmobile.app.ui.queues.QueuesScreen
+import dev.cfmobile.app.ui.queues.QueuesViewModel
+import dev.cfmobile.app.ui.durableobjects.DurableObjectsScreen
+import dev.cfmobile.app.ui.durableobjects.DurableObjectsViewModel
+import dev.cfmobile.app.ui.workflows.WorkflowsScreen
+import dev.cfmobile.app.ui.workflows.WorkflowsViewModel
+import dev.cfmobile.app.ui.hyperdrive.HyperdriveScreen
+import dev.cfmobile.app.ui.hyperdrive.HyperdriveViewModel
+import dev.cfmobile.app.ui.vectorize.VectorizeScreen
+import dev.cfmobile.app.ui.vectorize.VectorizeViewModel
 import dev.cfmobile.app.ui.r2.R2Screen
 import dev.cfmobile.app.ui.r2.R2ViewModel
 import dev.cfmobile.app.ui.ratelimit.RateLimitScreen
@@ -71,6 +82,14 @@ import dev.cfmobile.app.ui.zones.ZonesViewModel
 @Composable
 fun CfNavHost(container: AppContainer, startDestination: String, authenticator: BiometricAuthenticator) {
     val navController = rememberNavController()
+
+    /** Every account-scoped screen takes the same single {accountId} path argument, so declare
+     *  that plumbing once instead of repeating the navArgument/extract dance per destination. */
+    fun NavGraphBuilder.accountScreen(route: String, content: @Composable (accountId: String) -> Unit) {
+        composable(route, arguments = listOf(navArgument("accountId") { type = NavType.StringType })) { backStackEntry ->
+            content(backStackEntry.arguments?.getString("accountId").orEmpty())
+        }
+    }
 
     NavHost(navController = navController, startDestination = startDestination) {
 
@@ -236,6 +255,31 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
             val accountId = backStackEntry.arguments?.getString("accountId").orEmpty()
             val vm = viewModel<TunnelsViewModel>(factory = factoryOf { TunnelsViewModel(accountId, container.tunnelsRepository) })
             TunnelsScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.QUEUES) { accountId ->
+            val vm = viewModel<QueuesViewModel>(factory = factoryOf { QueuesViewModel(accountId, container.queuesRepository) })
+            QueuesScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.DURABLE_OBJECTS) { accountId ->
+            val vm = viewModel<DurableObjectsViewModel>(factory = factoryOf { DurableObjectsViewModel(accountId, container.durableObjectsRepository) })
+            DurableObjectsScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.WORKFLOWS) { accountId ->
+            val vm = viewModel<WorkflowsViewModel>(factory = factoryOf { WorkflowsViewModel(accountId, container.workflowsRepository) })
+            WorkflowsScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.HYPERDRIVE) { accountId ->
+            val vm = viewModel<HyperdriveViewModel>(factory = factoryOf { HyperdriveViewModel(accountId, container.hyperdriveRepository) })
+            HyperdriveScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.VECTORIZE) { accountId ->
+            val vm = viewModel<VectorizeViewModel>(factory = factoryOf { VectorizeViewModel(accountId, container.vectorizeRepository) })
+            VectorizeScreen(vm, onBack = { navController.popBackStack() })
         }
 
         val zoneScopedArgs = listOf(navArgument("zoneId") { type = NavType.StringType }, navArgument("zoneName") { type = NavType.StringType })

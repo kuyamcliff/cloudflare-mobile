@@ -453,4 +453,71 @@ interface CloudflareApi {
         @Path("accountId") accountId: String,
         @Path("tunnelId") tunnelId: String
     ): Response<CfEnvelope<CfTunnel>>
+
+    // ---- Queues ----
+
+    @GET("accounts/{accountId}/queues")
+    suspend fun listQueues(@Path("accountId") accountId: String): Response<CfEnvelope<List<CfQueue>>>
+
+    @POST("accounts/{accountId}/queues")
+    suspend fun createQueue(
+        @Path("accountId") accountId: String,
+        @Body queue: QueueCreate
+    ): Response<CfEnvelope<CfQueue>>
+
+    @DELETE("accounts/{accountId}/queues/{queueId}")
+    suspend fun deleteQueue(
+        @Path("accountId") accountId: String,
+        @Path("queueId") queueId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Durable Objects (read-only: namespaces come from Worker deployments) ----
+
+    @GET("accounts/{accountId}/workers/durable_objects/namespaces")
+    suspend fun listDurableObjectNamespaces(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<DurableObjectNamespace>>>
+
+    // ---- Workflows ----
+
+    @GET("accounts/{accountId}/workflows")
+    suspend fun listWorkflows(@Path("accountId") accountId: String): Response<CfEnvelope<List<CfWorkflow>>>
+
+    @GET("accounts/{accountId}/workflows/{workflowName}/instances")
+    suspend fun listWorkflowInstances(
+        @Path("accountId") accountId: String,
+        @Path("workflowName") workflowName: String
+    ): Response<CfEnvelope<List<WorkflowInstance>>>
+
+    // ---- Hyperdrive (list/delete only - creating needs a database password) ----
+
+    @GET("accounts/{accountId}/hyperdrive/configs")
+    suspend fun listHyperdriveConfigs(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<HyperdriveConfig>>>
+
+    @DELETE("accounts/{accountId}/hyperdrive/configs/{configId}")
+    suspend fun deleteHyperdriveConfig(
+        @Path("accountId") accountId: String,
+        @Path("configId") configId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Vectorize ----
+
+    @GET("accounts/{accountId}/vectorize/v2/indexes")
+    suspend fun listVectorizeIndexes(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<VectorizeIndex>>>
+
+    @POST("accounts/{accountId}/vectorize/v2/indexes")
+    suspend fun createVectorizeIndex(
+        @Path("accountId") accountId: String,
+        @Body index: VectorizeIndexCreate
+    ): Response<CfEnvelope<VectorizeIndex>>
+
+    @DELETE("accounts/{accountId}/vectorize/v2/indexes/{indexName}")
+    suspend fun deleteVectorizeIndex(
+        @Path("accountId") accountId: String,
+        @Path("indexName") indexName: String
+    ): Response<CfEnvelope<Map<String, String>>>
 }

@@ -16,7 +16,12 @@ import dev.cfmobile.app.data.repository.D1Repository
 import dev.cfmobile.app.data.repository.DnsRepository
 import dev.cfmobile.app.data.repository.AccessRepository
 import dev.cfmobile.app.data.repository.GatewayRepository
+import dev.cfmobile.app.data.repository.DurableObjectsRepository
+import dev.cfmobile.app.data.repository.HyperdriveRepository
+import dev.cfmobile.app.data.repository.QueuesRepository
 import dev.cfmobile.app.data.repository.TunnelsRepository
+import dev.cfmobile.app.data.repository.VectorizeRepository
+import dev.cfmobile.app.data.repository.WorkflowsRepository
 import dev.cfmobile.app.data.repository.PagesRepository
 import dev.cfmobile.app.data.repository.WorkersRepository
 import dev.cfmobile.app.data.repository.FirewallRepository
@@ -58,6 +63,11 @@ class AppContainer(context: Context) {
     val accessRepository = AccessRepository(api)
     val gatewayRepository = GatewayRepository(api)
     val tunnelsRepository = TunnelsRepository(api)
+    val queuesRepository = QueuesRepository(api)
+    val durableObjectsRepository = DurableObjectsRepository(api)
+    val workflowsRepository = WorkflowsRepository(api)
+    val hyperdriveRepository = HyperdriveRepository(api)
+    val vectorizeRepository = VectorizeRepository(api)
     val wafRepository = WafRepository(api)
     val rateLimitRepository = RateLimitRepository(api)
     val transformRulesRepository = TransformRulesRepository(api)
