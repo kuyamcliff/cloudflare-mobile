@@ -29,7 +29,12 @@ import dev.cfmobile.app.data.repository.VectorizeRepository
 import dev.cfmobile.app.data.repository.ApiShieldRepository
 import dev.cfmobile.app.data.repository.DdosRepository
 import dev.cfmobile.app.data.repository.PageShieldRepository
+import dev.cfmobile.app.data.repository.BillingRepository
+import dev.cfmobile.app.data.repository.BrowserRenderingRepository
+import dev.cfmobile.app.data.repository.EmailRoutingRepository
+import dev.cfmobile.app.data.repository.MagicNetworkRepository
 import dev.cfmobile.app.data.repository.SecurityEventsRepository
+import dev.cfmobile.app.data.repository.SpectrumRepository
 import dev.cfmobile.app.data.repository.WorkersAiRepository
 import dev.cfmobile.app.data.repository.WorkflowsRepository
 import dev.cfmobile.app.data.repository.PagesRepository
@@ -88,6 +93,11 @@ class AppContainer(context: Context) {
     val pageShieldRepository = PageShieldRepository(api)
     val ddosRepository = DdosRepository(api)
     val apiShieldRepository = ApiShieldRepository(api)
+    val emailRoutingRepository = EmailRoutingRepository(api)
+    val spectrumRepository = SpectrumRepository(api)
+    val magicNetworkRepository = MagicNetworkRepository(api)
+    val billingRepository = BillingRepository(api)
+    val browserRenderingRepository = BrowserRenderingRepository(api)
     val wafRepository = WafRepository(api)
     val rateLimitRepository = RateLimitRepository(api)
     val transformRulesRepository = TransformRulesRepository(api)

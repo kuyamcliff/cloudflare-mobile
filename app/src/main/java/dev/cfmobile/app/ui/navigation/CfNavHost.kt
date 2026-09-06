@@ -86,6 +86,16 @@ import dev.cfmobile.app.ui.ddos.DdosScreen
 import dev.cfmobile.app.ui.ddos.DdosViewModel
 import dev.cfmobile.app.ui.apishield.ApiShieldScreen
 import dev.cfmobile.app.ui.apishield.ApiShieldViewModel
+import dev.cfmobile.app.ui.emailrouting.EmailRoutingScreen
+import dev.cfmobile.app.ui.emailrouting.EmailRoutingViewModel
+import dev.cfmobile.app.ui.spectrum.SpectrumScreen
+import dev.cfmobile.app.ui.spectrum.SpectrumViewModel
+import dev.cfmobile.app.ui.magicnetwork.MagicNetworkScreen
+import dev.cfmobile.app.ui.magicnetwork.MagicNetworkViewModel
+import dev.cfmobile.app.ui.billing.BillingScreen
+import dev.cfmobile.app.ui.billing.BillingViewModel
+import dev.cfmobile.app.ui.browserrendering.BrowserRenderingScreen
+import dev.cfmobile.app.ui.browserrendering.BrowserRenderingViewModel
 import dev.cfmobile.app.ui.r2.R2Screen
 import dev.cfmobile.app.ui.r2.R2ViewModel
 import dev.cfmobile.app.ui.ratelimit.RateLimitScreen
@@ -332,7 +342,36 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
             DevicePostureScreen(vm, onBack = { navController.popBackStack() })
         }
 
+        accountScreen(Routes.MAGIC_NETWORK) { accountId ->
+            val vm = viewModel<MagicNetworkViewModel>(factory = factoryOf { MagicNetworkViewModel(accountId, container.magicNetworkRepository) })
+            MagicNetworkScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.BILLING) { accountId ->
+            val vm = viewModel<BillingViewModel>(factory = factoryOf { BillingViewModel(accountId, container.billingRepository) })
+            BillingScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.BROWSER_RENDERING) { accountId ->
+            val vm = viewModel<BrowserRenderingViewModel>(factory = factoryOf { BrowserRenderingViewModel(accountId, container.browserRenderingRepository) })
+            BrowserRenderingScreen(vm, onBack = { navController.popBackStack() })
+        }
+
         val zoneScopedArgs = listOf(navArgument("zoneId") { type = NavType.StringType }, navArgument("zoneName") { type = NavType.StringType })
+
+        composable(Routes.EMAIL_ROUTING, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<EmailRoutingViewModel>(factory = factoryOf { EmailRoutingViewModel(zoneId, container.emailRoutingRepository) })
+            EmailRoutingScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.SPECTRUM, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<SpectrumViewModel>(factory = factoryOf { SpectrumViewModel(zoneId, container.spectrumRepository) })
+            SpectrumScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
+        }
 
         composable(Routes.SECURITY_EVENTS, arguments = zoneScopedArgs) { backStackEntry ->
             val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()

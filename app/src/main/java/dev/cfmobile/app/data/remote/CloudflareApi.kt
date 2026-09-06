@@ -627,4 +627,59 @@ interface CloudflareApi {
 
     @GET("zones/{zoneId}/api_gateway/operations")
     suspend fun listApiOperations(@Path("zoneId") zoneId: String): Response<CfEnvelope<List<ApiOperation>>>
+
+    // ---- Email Routing ----
+
+    @GET("zones/{zoneId}/email/routing")
+    suspend fun getEmailRoutingSettings(@Path("zoneId") zoneId: String): Response<CfEnvelope<EmailRoutingSettings>>
+
+    @GET("zones/{zoneId}/email/routing/rules")
+    suspend fun listEmailRoutingRules(@Path("zoneId") zoneId: String): Response<CfEnvelope<List<EmailRoutingRule>>>
+
+    @POST("zones/{zoneId}/email/routing/rules")
+    suspend fun createEmailRoutingRule(
+        @Path("zoneId") zoneId: String,
+        @Body rule: EmailRoutingRuleCreate
+    ): Response<CfEnvelope<EmailRoutingRule>>
+
+    @DELETE("zones/{zoneId}/email/routing/rules/{ruleId}")
+    suspend fun deleteEmailRoutingRule(
+        @Path("zoneId") zoneId: String,
+        @Path("ruleId") ruleId: String
+    ): Response<CfEnvelope<EmailRoutingRule>>
+
+    // ---- Spectrum (read-only list plus delete) ----
+
+    @GET("zones/{zoneId}/spectrum/apps")
+    suspend fun listSpectrumApps(@Path("zoneId") zoneId: String): Response<CfEnvelope<List<SpectrumApp>>>
+
+    @DELETE("zones/{zoneId}/spectrum/apps/{appId}")
+    suspend fun deleteSpectrumApp(
+        @Path("zoneId") zoneId: String,
+        @Path("appId") appId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Magic WAN / Transit (read-only inventory) ----
+
+    @GET("accounts/{accountId}/magic/gre_tunnels")
+    suspend fun listMagicGreTunnels(@Path("accountId") accountId: String): Response<CfEnvelope<MagicGreTunnelList>>
+
+    @GET("accounts/{accountId}/magic/ipsec_tunnels")
+    suspend fun listMagicIpsecTunnels(@Path("accountId") accountId: String): Response<CfEnvelope<MagicIpsecTunnelList>>
+
+    @GET("accounts/{accountId}/magic/routes")
+    suspend fun listMagicRoutes(@Path("accountId") accountId: String): Response<CfEnvelope<MagicRouteList>>
+
+    // ---- Billing (read-only: this app never changes payment details) ----
+
+    @GET("accounts/{accountId}/subscriptions")
+    suspend fun listSubscriptions(@Path("accountId") accountId: String): Response<CfEnvelope<List<AccountSubscription>>>
+
+    // ---- Browser Rendering (returns image bytes, not the JSON envelope) ----
+
+    @POST("accounts/{accountId}/browser-rendering/screenshot")
+    suspend fun renderScreenshot(
+        @Path("accountId") accountId: String,
+        @Body request: ScreenshotRequest
+    ): Response<ResponseBody>
 }

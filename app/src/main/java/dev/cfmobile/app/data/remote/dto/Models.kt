@@ -524,6 +524,135 @@ data class GatewayRuleCreate(
     val description: String? = null
 )
 
+@JsonClass(generateAdapter = true)
+data class EmailRoutingSettings(
+    val enabled: Boolean = false,
+    val name: String? = null,
+    val status: String? = null,
+    val created: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class EmailRoutingMatcher(
+    val type: String = "literal",
+    val field: String? = "to",
+    val value: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class EmailRoutingAction(
+    val type: String = "forward",
+    val value: List<String> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class EmailRoutingRule(
+    val tag: String = "",
+    val name: String? = null,
+    val enabled: Boolean = true,
+    val priority: Int? = null,
+    val matchers: List<EmailRoutingMatcher> = emptyList(),
+    val actions: List<EmailRoutingAction> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class EmailRoutingRuleCreate(
+    val name: String,
+    val enabled: Boolean,
+    val matchers: List<EmailRoutingMatcher>,
+    val actions: List<EmailRoutingAction>
+)
+
+@JsonClass(generateAdapter = true)
+data class SpectrumDns(
+    val type: String? = null,
+    val name: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class SpectrumApp(
+    val id: String = "",
+    val protocol: String? = null,
+    val dns: SpectrumDns? = null,
+    @Json(name = "origin_direct") val originDirect: List<String>? = null,
+    @Json(name = "traffic_type") val trafficType: String? = null,
+    @Json(name = "ip_firewall") val ipFirewall: Boolean? = null,
+    @Json(name = "created_on") val createdOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class MagicGreTunnel(
+    val id: String = "",
+    val name: String = "",
+    @Json(name = "cloudflare_gre_endpoint") val cloudflareEndpoint: String? = null,
+    @Json(name = "customer_gre_endpoint") val customerEndpoint: String? = null,
+    @Json(name = "interface_address") val interfaceAddress: String? = null,
+    val description: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class MagicGreTunnelList(
+    @Json(name = "gre_tunnels") val greTunnels: List<MagicGreTunnel> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class MagicIpsecTunnel(
+    val id: String = "",
+    val name: String = "",
+    @Json(name = "cloudflare_endpoint") val cloudflareEndpoint: String? = null,
+    @Json(name = "customer_endpoint") val customerEndpoint: String? = null,
+    @Json(name = "interface_address") val interfaceAddress: String? = null,
+    val description: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class MagicIpsecTunnelList(
+    @Json(name = "ipsec_tunnels") val ipsecTunnels: List<MagicIpsecTunnel> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class MagicRoute(
+    val id: String = "",
+    val prefix: String = "",
+    val nexthop: String? = null,
+    val priority: Int? = null,
+    val description: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class MagicRouteList(
+    val routes: List<MagicRoute> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class SubscriptionProduct(
+    val name: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class SubscriptionRatePlan(
+    val id: String? = null,
+    @Json(name = "public_name") val publicName: String? = null,
+    val currency: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AccountSubscription(
+    val id: String = "",
+    val state: String? = null,
+    val price: Double? = null,
+    val currency: String? = null,
+    val frequency: String? = null,
+    val product: SubscriptionProduct? = null,
+    @Json(name = "rate_plan") val ratePlan: SubscriptionRatePlan? = null,
+    @Json(name = "current_period_end") val currentPeriodEnd: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ScreenshotRequest(
+    val url: String
+)
+
 /** One WAF/firewall event from the firewallEventsAdaptive GraphQL dataset. Every field is
  *  optional because which columns a plan may query varies. */
 @JsonClass(generateAdapter = true)

@@ -383,15 +383,6 @@ object CapabilityRegistry {
             migrationHint = "Index management only (create/list/delete) - inserting or querying vectors is a Worker's job, so there's no vector browser. Not verified against a live API call."
         ),
         Capability(
-            id = "browser_rendering",
-            product = "Develop",
-            displayName = "Browser Rendering",
-            description = "Headless browser automation",
-            scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P2
-        ),
-        Capability(
             id = "stream",
             product = "Storage & Media",
             displayName = "Stream",
@@ -421,8 +412,11 @@ object CapabilityRegistry {
             displayName = "Email Routing",
             description = "Custom email addresses and routing rules",
             scope = CapabilityScope.ZONE,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P2
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.MEDIUM,
+            zoneRoute = { id, name -> Routes.emailRouting(id, name) },
+            migrationHint = "Status plus forwarding rules (list/create/delete). A rule forwards to a destination address you have already verified: verifying a new one requires clicking a link in an email, which this app can't do. Catch-all rules and Email Workers routing aren't covered. Not verified against a live API call."
         ),
         Capability(
             id = "turnstile",
@@ -442,8 +436,11 @@ object CapabilityRegistry {
             displayName = "Spectrum",
             description = "TCP/UDP application proxying",
             scope = CapabilityScope.ZONE,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P2
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.HIGH,
+            zoneRoute = { id, name -> Routes.spectrum(id, name) },
+            migrationHint = "List and delete only. Creating an application means choosing origin, protocol, edge IP and TLS settings together - a desktop-sized form. Spectrum needs a plan that includes it. Not verified against a live API call."
         ),
         Capability(
             id = "magic_network",
@@ -451,8 +448,10 @@ object CapabilityRegistry {
             displayName = "Magic Firewall / WAN / Transit",
             description = "Network-layer routing and protection",
             scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P2
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            accountRoute = { accountId -> Routes.magicNetwork(accountId) },
+            migrationHint = "Read-only inventory of GRE tunnels, IPsec tunnels, and static routes. Changing network routing isn't offered from a phone, and Magic Firewall rulesets aren't covered. These are Enterprise features, so most accounts will see empty lists. Not verified against a live API call."
         ),
         Capability(
             id = "logpush",
@@ -472,9 +471,22 @@ object CapabilityRegistry {
             displayName = "Billing & Plan",
             description = "Current plan and usage - no payment changes",
             scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
+            status = CapabilityStatus.IMPLEMENTED,
             roadmapPhase = RoadmapPhase.P1,
-            requiresBrowserHandoff = true
+            requiresBrowserHandoff = true,
+            accountRoute = { accountId -> Routes.billing(accountId) },
+            migrationHint = "Strictly read-only: current subscriptions and their state. Changing a plan or touching payment details always hands off to Cloudflare's dashboard - money-moving actions belong behind Cloudflare's own confirmation flow, not a phone tap. Not verified against a live API call."
+        ),
+        Capability(
+            id = "browser_rendering",
+            product = "Develop",
+            displayName = "Browser Rendering",
+            description = "Headless browser automation",
+            scope = CapabilityScope.ACCOUNT,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            accountRoute = { accountId -> Routes.browserRendering(accountId) },
+            migrationHint = "A screenshot utility rather than a management surface - Browser Rendering is a runtime API with nothing to administer. Enter a URL and Cloudflare renders the page at the edge. PDF rendering, scraping, and Puppeteer sessions aren't exposed. Each render bills against the account. Not verified against a live API call."
         )
     )
 
