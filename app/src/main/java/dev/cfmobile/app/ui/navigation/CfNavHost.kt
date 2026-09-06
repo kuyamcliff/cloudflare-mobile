@@ -66,6 +66,18 @@ import dev.cfmobile.app.ui.hyperdrive.HyperdriveScreen
 import dev.cfmobile.app.ui.hyperdrive.HyperdriveViewModel
 import dev.cfmobile.app.ui.vectorize.VectorizeScreen
 import dev.cfmobile.app.ui.vectorize.VectorizeViewModel
+import dev.cfmobile.app.ui.stream.StreamScreen
+import dev.cfmobile.app.ui.stream.StreamViewModel
+import dev.cfmobile.app.ui.images.ImagesScreen
+import dev.cfmobile.app.ui.images.ImagesViewModel
+import dev.cfmobile.app.ui.turnstile.TurnstileScreen
+import dev.cfmobile.app.ui.turnstile.TurnstileViewModel
+import dev.cfmobile.app.ui.logpush.LogpushScreen
+import dev.cfmobile.app.ui.logpush.LogpushViewModel
+import dev.cfmobile.app.ui.workersai.WorkersAiScreen
+import dev.cfmobile.app.ui.workersai.WorkersAiViewModel
+import dev.cfmobile.app.ui.deviceposture.DevicePostureScreen
+import dev.cfmobile.app.ui.deviceposture.DevicePostureViewModel
 import dev.cfmobile.app.ui.r2.R2Screen
 import dev.cfmobile.app.ui.r2.R2ViewModel
 import dev.cfmobile.app.ui.ratelimit.RateLimitScreen
@@ -280,6 +292,36 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
         accountScreen(Routes.VECTORIZE) { accountId ->
             val vm = viewModel<VectorizeViewModel>(factory = factoryOf { VectorizeViewModel(accountId, container.vectorizeRepository) })
             VectorizeScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.STREAM) { accountId ->
+            val vm = viewModel<StreamViewModel>(factory = factoryOf { StreamViewModel(accountId, container.streamRepository) })
+            StreamScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.IMAGES) { accountId ->
+            val vm = viewModel<ImagesViewModel>(factory = factoryOf { ImagesViewModel(accountId, container.imagesRepository) })
+            ImagesScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.TURNSTILE) { accountId ->
+            val vm = viewModel<TurnstileViewModel>(factory = factoryOf { TurnstileViewModel(accountId, container.turnstileRepository) })
+            TurnstileScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.LOGPUSH) { accountId ->
+            val vm = viewModel<LogpushViewModel>(factory = factoryOf { LogpushViewModel(accountId, container.logpushRepository) })
+            LogpushScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.WORKERS_AI) { accountId ->
+            val vm = viewModel<WorkersAiViewModel>(factory = factoryOf { WorkersAiViewModel(accountId, container.workersAiRepository) })
+            WorkersAiScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.DEVICE_POSTURE) { accountId ->
+            val vm = viewModel<DevicePostureViewModel>(factory = factoryOf { DevicePostureViewModel(accountId, container.devicePostureRepository) })
+            DevicePostureScreen(vm, onBack = { navController.popBackStack() })
         }
 
         val zoneScopedArgs = listOf(navArgument("zoneId") { type = NavType.StringType }, navArgument("zoneName") { type = NavType.StringType })

@@ -20,7 +20,13 @@ import dev.cfmobile.app.data.repository.DurableObjectsRepository
 import dev.cfmobile.app.data.repository.HyperdriveRepository
 import dev.cfmobile.app.data.repository.QueuesRepository
 import dev.cfmobile.app.data.repository.TunnelsRepository
+import dev.cfmobile.app.data.repository.DevicePostureRepository
+import dev.cfmobile.app.data.repository.ImagesRepository
+import dev.cfmobile.app.data.repository.LogpushRepository
+import dev.cfmobile.app.data.repository.StreamRepository
+import dev.cfmobile.app.data.repository.TurnstileRepository
 import dev.cfmobile.app.data.repository.VectorizeRepository
+import dev.cfmobile.app.data.repository.WorkersAiRepository
 import dev.cfmobile.app.data.repository.WorkflowsRepository
 import dev.cfmobile.app.data.repository.PagesRepository
 import dev.cfmobile.app.data.repository.WorkersRepository
@@ -68,6 +74,12 @@ class AppContainer(context: Context) {
     val workflowsRepository = WorkflowsRepository(api)
     val hyperdriveRepository = HyperdriveRepository(api)
     val vectorizeRepository = VectorizeRepository(api)
+    val streamRepository = StreamRepository(api)
+    val imagesRepository = ImagesRepository(api)
+    val turnstileRepository = TurnstileRepository(api)
+    val logpushRepository = LogpushRepository(api)
+    val workersAiRepository = WorkersAiRepository(api)
+    val devicePostureRepository = DevicePostureRepository(api)
     val wafRepository = WafRepository(api)
     val rateLimitRepository = RateLimitRepository(api)
     val transformRulesRepository = TransformRulesRepository(api)

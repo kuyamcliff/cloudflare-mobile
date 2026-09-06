@@ -300,8 +300,10 @@ object CapabilityRegistry {
             displayName = "Devices & Posture",
             description = "Enrolled devices and posture checks",
             scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P1
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            accountRoute = { accountId -> Routes.devicePosture(accountId) },
+            migrationHint = "Read-only inventory of enrolled devices and posture rules. Revoking a device or editing a posture rule isn't implemented - both are high-blast-radius changes that deserve more context than a list row. Not verified against a live API call."
         ),
         Capability(
             id = "account_members",
@@ -355,8 +357,10 @@ object CapabilityRegistry {
             displayName = "Workers AI",
             description = "Run AI models at the edge",
             scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P2
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            accountRoute = { accountId -> Routes.workersAi(accountId) },
+            migrationHint = "Read-only model catalogue. Running inference belongs in a Worker and bills per request, so this browses the available models rather than invoking them. Not verified against a live API call."
         ),
         Capability(
             id = "vectorize",
@@ -385,8 +389,11 @@ object CapabilityRegistry {
             displayName = "Stream",
             description = "Video hosting and delivery",
             scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P2
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.stream(accountId) },
+            migrationHint = "List, inspect, and delete videos. Uploading video from the device isn't implemented - that needs a media picker plus a resumable upload. Playback happens in Cloudflare's player, not in this app. Not verified against a live API call."
         ),
         Capability(
             id = "images",
@@ -394,8 +401,11 @@ object CapabilityRegistry {
             displayName = "Images",
             description = "Image storage, resizing, delivery",
             scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P2
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.images(accountId) },
+            migrationHint = "Inventory, quota, and delete. Uploading from the device gallery isn't implemented - that needs a picker and media permissions. Variant configuration isn't covered either. Not verified against a live API call."
         ),
         Capability(
             id = "email_routing",
@@ -412,8 +422,11 @@ object CapabilityRegistry {
             displayName = "Turnstile",
             description = "CAPTCHA alternative widget management",
             scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P2
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.turnstile(accountId) },
+            migrationHint = "Widget create/list/delete. Only the public sitekey is shown or copied - this app never reads a widget's secret key. Rotating a secret isn't implemented. Not verified against a live API call."
         ),
         Capability(
             id = "spectrum",
@@ -439,8 +452,11 @@ object CapabilityRegistry {
             displayName = "Logpush",
             description = "Bulk log export administration",
             scope = CapabilityScope.ACCOUNT,
-            status = CapabilityStatus.NOT_IMPLEMENTED,
-            roadmapPhase = RoadmapPhase.P2
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.logpush(accountId) },
+            migrationHint = "Account-level jobs: list, pause/resume, delete. Creating a job needs a destination string embedding storage credentials, so that stays in the dashboard; destinations shown here are truncated before their query string for the same reason. Zone-level jobs aren't listed. Not verified against a live API call."
         ),
         Capability(
             id = "billing",

@@ -520,4 +520,77 @@ interface CloudflareApi {
         @Path("accountId") accountId: String,
         @Path("indexName") indexName: String
     ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Stream (list/view/delete - uploading video from a phone isn't implemented) ----
+
+    @GET("accounts/{accountId}/stream")
+    suspend fun listStreamVideos(@Path("accountId") accountId: String): Response<CfEnvelope<List<StreamVideo>>>
+
+    @DELETE("accounts/{accountId}/stream/{videoId}")
+    suspend fun deleteStreamVideo(
+        @Path("accountId") accountId: String,
+        @Path("videoId") videoId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Images (list/delete + usage stats) ----
+
+    @GET("accounts/{accountId}/images/v1")
+    suspend fun listImages(@Path("accountId") accountId: String): Response<CfEnvelope<ImagesListResult>>
+
+    @GET("accounts/{accountId}/images/v1/stats")
+    suspend fun getImagesStats(@Path("accountId") accountId: String): Response<CfEnvelope<ImagesStats>>
+
+    @DELETE("accounts/{accountId}/images/v1/{imageId}")
+    suspend fun deleteImage(
+        @Path("accountId") accountId: String,
+        @Path("imageId") imageId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Turnstile ----
+
+    @GET("accounts/{accountId}/challenges/widgets")
+    suspend fun listTurnstileWidgets(@Path("accountId") accountId: String): Response<CfEnvelope<List<TurnstileWidget>>>
+
+    @POST("accounts/{accountId}/challenges/widgets")
+    suspend fun createTurnstileWidget(
+        @Path("accountId") accountId: String,
+        @Body widget: TurnstileWidgetCreate
+    ): Response<CfEnvelope<TurnstileWidget>>
+
+    @DELETE("accounts/{accountId}/challenges/widgets/{sitekey}")
+    suspend fun deleteTurnstileWidget(
+        @Path("accountId") accountId: String,
+        @Path("sitekey") sitekey: String
+    ): Response<CfEnvelope<TurnstileWidget>>
+
+    // ---- Logpush (list/enable/delete - creating a job carries destination credentials) ----
+
+    @GET("accounts/{accountId}/logpush/jobs")
+    suspend fun listLogpushJobs(@Path("accountId") accountId: String): Response<CfEnvelope<List<LogpushJob>>>
+
+    @PUT("accounts/{accountId}/logpush/jobs/{jobId}")
+    suspend fun updateLogpushJob(
+        @Path("accountId") accountId: String,
+        @Path("jobId") jobId: Long,
+        @Body update: LogpushJobUpdate
+    ): Response<CfEnvelope<LogpushJob>>
+
+    @DELETE("accounts/{accountId}/logpush/jobs/{jobId}")
+    suspend fun deleteLogpushJob(
+        @Path("accountId") accountId: String,
+        @Path("jobId") jobId: Long
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Workers AI (read-only model catalog) ----
+
+    @GET("accounts/{accountId}/ai/models/search")
+    suspend fun searchAiModels(@Path("accountId") accountId: String): Response<CfEnvelope<List<AiModel>>>
+
+    // ---- Zero Trust devices and posture rules (read-only) ----
+
+    @GET("accounts/{accountId}/devices")
+    suspend fun listEnrolledDevices(@Path("accountId") accountId: String): Response<CfEnvelope<List<EnrolledDevice>>>
+
+    @GET("accounts/{accountId}/devices/posture")
+    suspend fun listPostureRules(@Path("accountId") accountId: String): Response<CfEnvelope<List<PostureRule>>>
 }

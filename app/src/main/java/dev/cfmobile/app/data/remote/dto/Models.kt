@@ -525,6 +525,126 @@ data class GatewayRuleCreate(
 )
 
 @JsonClass(generateAdapter = true)
+data class StreamVideoStatus(
+    val state: String? = null,
+    @Json(name = "errorReasonText") val errorReasonText: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class StreamVideo(
+    val uid: String = "",
+    val status: StreamVideoStatus? = null,
+    /** Free-form user metadata; Cloudflare puts the display name under "name". Values are
+     *  typed [Any] because callers can store arbitrary JSON here. */
+    val meta: Map<String, Any?>? = null,
+    val created: String? = null,
+    val duration: Double? = null,
+    val size: Long? = null,
+    val thumbnail: String? = null,
+    val preview: String? = null,
+    @Json(name = "readyToStream") val readyToStream: Boolean? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class CfImage(
+    val id: String = "",
+    val filename: String? = null,
+    val uploaded: String? = null,
+    @Json(name = "requireSignedURLs") val requireSignedUrls: Boolean? = null,
+    val variants: List<String>? = null
+)
+
+/** Images' list response nests the array under "images", the same way R2 nests buckets. */
+@JsonClass(generateAdapter = true)
+data class ImagesListResult(
+    val images: List<CfImage> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class ImagesCount(
+    val allowed: Long? = null,
+    val current: Long? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ImagesStats(
+    val count: ImagesCount? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class TurnstileWidget(
+    val sitekey: String = "",
+    val name: String = "",
+    val domains: List<String> = emptyList(),
+    val mode: String? = null,
+    @Json(name = "created_on") val createdOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class TurnstileWidgetCreate(
+    val name: String,
+    val domains: List<String>,
+    val mode: String
+)
+
+@JsonClass(generateAdapter = true)
+data class LogpushJob(
+    val id: Long = 0,
+    val name: String? = null,
+    val dataset: String? = null,
+    val enabled: Boolean = false,
+    @Json(name = "destination_conf") val destinationConf: String? = null,
+    @Json(name = "last_complete") val lastComplete: String? = null,
+    @Json(name = "last_error") val lastError: String? = null,
+    @Json(name = "error_message") val errorMessage: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class LogpushJobUpdate(
+    val enabled: Boolean
+)
+
+@JsonClass(generateAdapter = true)
+data class AiModelTask(
+    val id: String? = null,
+    val name: String? = null,
+    val description: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AiModel(
+    val id: String = "",
+    val name: String = "",
+    val description: String? = null,
+    val task: AiModelTask? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class DeviceUser(
+    val email: String? = null,
+    val name: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class EnrolledDevice(
+    val id: String = "",
+    val name: String? = null,
+    @Json(name = "device_type") val deviceType: String? = null,
+    val version: String? = null,
+    @Json(name = "last_seen") val lastSeen: String? = null,
+    val user: DeviceUser? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PostureRule(
+    val id: String = "",
+    val name: String = "",
+    val type: String? = null,
+    val description: String? = null,
+    val schedule: String? = null
+)
+
+@JsonClass(generateAdapter = true)
 data class CfQueue(
     @Json(name = "queue_id") val queueId: String = "",
     @Json(name = "queue_name") val queueName: String = "",
