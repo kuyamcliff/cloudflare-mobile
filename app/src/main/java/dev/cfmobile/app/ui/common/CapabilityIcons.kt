@@ -3,6 +3,7 @@ package dev.cfmobile.app.ui.common
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.AltRoute
 import androidx.compose.material.icons.automirrored.filled.CallSplit
+import androidx.compose.material.icons.automirrored.filled.CallMissedOutgoing
 import androidx.compose.material.icons.automirrored.filled.ListAlt
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.automirrored.filled.Rule
@@ -21,12 +22,14 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Http
 import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Lan
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MonitorHeart
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Queue
@@ -39,6 +42,7 @@ import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.ui.graphics.vector.ImageVector
 import dev.cfmobile.app.core.capabilities.Capability
@@ -83,6 +87,11 @@ fun capabilityIcon(capability: Capability): ImageVector = when (capability.id) {
     "magic_network" -> Icons.Filled.Hub
     "logpush" -> Icons.Filled.Upload
     "billing" -> Icons.Filled.CreditCard
+    "api_tokens" -> Icons.Filled.VpnKey
+    "notifications" -> Icons.Filled.NotificationsActive
+    "bulk_redirects" -> Icons.AutoMirrored.Filled.CallMissedOutgoing
+    "registrar" -> Icons.Filled.Language
+    "web_analytics" -> Icons.Filled.Insights
     "access" -> Icons.Filled.Shield
     "gateway" -> Icons.Filled.Dns
     "gateway_lists" -> Icons.AutoMirrored.Filled.ListAlt

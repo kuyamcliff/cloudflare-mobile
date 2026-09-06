@@ -10,6 +10,11 @@ import dev.cfmobile.app.data.remote.NetworkModule
 import dev.cfmobile.app.data.repository.AccountMembersRepository
 import dev.cfmobile.app.data.repository.AccountsRepository
 import dev.cfmobile.app.data.repository.AnalyticsRepository
+import dev.cfmobile.app.data.repository.ApiTokensRepository
+import dev.cfmobile.app.data.repository.BulkRedirectsRepository
+import dev.cfmobile.app.data.repository.NotificationsRepository
+import dev.cfmobile.app.data.repository.RegistrarRepository
+import dev.cfmobile.app.data.repository.WebAnalyticsRepository
 import dev.cfmobile.app.data.repository.AuditLogsRepository
 import dev.cfmobile.app.data.repository.AuthRepository
 import dev.cfmobile.app.data.repository.D1Repository
@@ -109,4 +114,9 @@ class AppContainer(context: Context) {
     val rulesetPhaseRepository = RulesetPhaseRepository(api)
     val pageRulesRepository = PageRulesRepository(api)
     val analyticsRepository = AnalyticsRepository(api)
+    val apiTokensRepository = ApiTokensRepository(api)
+    val notificationsRepository = NotificationsRepository(api)
+    val bulkRedirectsRepository = BulkRedirectsRepository(api)
+    val registrarRepository = RegistrarRepository(api)
+    val webAnalyticsRepository = WebAnalyticsRepository(api)
 }

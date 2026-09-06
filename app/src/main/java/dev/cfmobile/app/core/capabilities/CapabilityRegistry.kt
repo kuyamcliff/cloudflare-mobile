@@ -634,6 +634,65 @@ object CapabilityRegistry {
             migrationHint = "Account-level jobs: list, pause/resume, delete. Creating a job needs a destination string embedding storage credentials, so that stays in the dashboard; destinations shown here are truncated before their query string for the same reason. Zone-level jobs aren't listed. Not verified against a live API call."
         ),
         Capability(
+            id = "api_tokens",
+            product = "Account",
+            displayName = "API Tokens",
+            description = "Review and revoke the account's API tokens",
+            scope = CapabilityScope.ACCOUNT,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.apiTokens(accountId) },
+            migrationHint = "Lists token metadata - name, status, issue and expiry dates, last use - and revokes a token. Creating or rolling a token isn't implemented: both return a token value, and building the permission-policy editor they need is a desktop-sized job. No token value is ever fetched or displayed, including the one this app signs in with. Reading this list needs a token carrying User API Tokens Read, which many tokens don't. Not verified against a live API call."
+        ),
+        Capability(
+            id = "notifications",
+            product = "Account",
+            displayName = "Notifications",
+            description = "Alert policies and where they notify",
+            scope = CapabilityScope.ACCOUNT,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.MEDIUM,
+            accountRoute = { accountId -> Routes.notifications(accountId) },
+            migrationHint = "Lists alert policies, silences or re-enables one, and deletes one. Creating a policy or editing its destinations isn't implemented - Cloudflare's alert types each carry their own filter shape. Destination counts are shown rather than the addresses themselves. Not verified against a live API call."
+        ),
+        Capability(
+            id = "bulk_redirects",
+            product = "Rules",
+            displayName = "Bulk Redirects",
+            description = "Account-wide redirect lists",
+            scope = CapabilityScope.ACCOUNT,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.bulkRedirects(accountId) },
+            migrationHint = "Lists redirect lists, shows the redirects inside one, creates an empty list, and deletes a list. Uploading redirects into a list isn't implemented - Cloudflare runs that as an asynchronous bulk operation with its own status polling. Deploying a list through the Bulk Redirect ruleset isn't implemented either. Not verified against a live API call."
+        ),
+        Capability(
+            id = "registrar",
+            product = "Account",
+            displayName = "Registrar",
+            description = "Domains registered through Cloudflare",
+            scope = CapabilityScope.ACCOUNT,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            accountRoute = { accountId -> Routes.registrar(accountId) },
+            migrationHint = "Read-only: registration status, expiry, auto-renew, and transfer lock. Every write this API offers either authorizes a charge (renewal, auto-renew) or moves a domain between registrars, so none is implemented - the same reason the Billing screen can't change a plan. Not verified against a live API call."
+        ),
+        Capability(
+            id = "web_analytics",
+            product = "Analytics",
+            displayName = "Web Analytics",
+            description = "Privacy-first RUM sites and their beacons",
+            scope = CapabilityScope.ACCOUNT,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.MEDIUM,
+            accountRoute = { accountId -> Routes.webAnalytics(accountId) },
+            migrationHint = "Lists RUM sites, adds one (auto-installed or with a snippet to copy), and deletes one. The analytics themselves aren't shown here - that's a GraphQL dataset of its own - and editing a site's host or install mode isn't implemented. Not verified against a live API call."
+        ),
+        Capability(
             id = "billing",
             product = "Account",
             displayName = "Billing & Plan",

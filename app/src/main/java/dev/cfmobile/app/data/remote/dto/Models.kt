@@ -1309,3 +1309,139 @@ data class PagesDeployment(
     @Json(name = "latest_stage") val latestStage: PagesDeploymentStage? = null,
     @Json(name = "deployment_trigger") val deploymentTrigger: PagesDeploymentTrigger? = null
 )
+
+// ---- Account-level products: API tokens, notifications, bulk redirects, registrar, RUM ----
+
+/** An API token as the tokens list reports it. The token's own value is never returned by any
+ *  list or read endpoint - only by the call that creates or rolls it, which this app doesn't
+ *  make. */
+@JsonClass(generateAdapter = true)
+data class ApiToken(
+    val id: String = "",
+    val name: String = "",
+    val status: String? = null,
+    @Json(name = "issued_on") val issuedOn: String? = null,
+    @Json(name = "modified_on") val modifiedOn: String? = null,
+    @Json(name = "expires_on") val expiresOn: String? = null,
+    @Json(name = "last_used_on") val lastUsedOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class NotificationMechanismTarget(
+    val id: String? = null,
+    val name: String? = null
+)
+
+/** Where a notification policy sends: email addresses, webhooks, and PagerDuty services, each
+ *  keyed by channel. */
+@JsonClass(generateAdapter = true)
+data class NotificationMechanisms(
+    val email: List<NotificationMechanismTarget>? = null,
+    val webhooks: List<NotificationMechanismTarget>? = null,
+    val pagerduty: List<NotificationMechanismTarget>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class NotificationPolicy(
+    val id: String = "",
+    val name: String = "",
+    val description: String? = null,
+    val enabled: Boolean = true,
+    @Json(name = "alert_type") val alertType: String? = null,
+    val mechanisms: NotificationMechanisms? = null,
+    val created: String? = null,
+    val modified: String? = null
+)
+
+/** Only the fields this app changes; Cloudflare merges a PATCH into the stored policy. */
+@JsonClass(generateAdapter = true)
+data class NotificationPolicyUpdate(val enabled: Boolean)
+
+/** An account-level Rules List. Bulk Redirects are the "redirect" kind; the same endpoint also
+ *  serves IP and hostname lists used by WAF rules. */
+@JsonClass(generateAdapter = true)
+data class RulesList(
+    val id: String = "",
+    val name: String = "",
+    val description: String? = null,
+    val kind: String = "",
+    @Json(name = "num_items") val numItems: Int? = null,
+    @Json(name = "created_on") val createdOn: String? = null,
+    @Json(name = "modified_on") val modifiedOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class RulesListCreate(
+    val name: String,
+    val kind: String,
+    val description: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class BulkRedirect(
+    @Json(name = "source_url") val sourceUrl: String = "",
+    @Json(name = "target_url") val targetUrl: String = "",
+    @Json(name = "status_code") val statusCode: Int? = null,
+    @Json(name = "preserve_query_string") val preserveQueryString: Boolean? = null,
+    @Json(name = "subpath_matching") val subpathMatching: Boolean? = null
+)
+
+/** One entry in a Rules List. Which field is populated depends on the list's kind. */
+@JsonClass(generateAdapter = true)
+data class RulesListItem(
+    val id: String = "",
+    val ip: String? = null,
+    val hostname: RulesListHostname? = null,
+    val redirect: BulkRedirect? = null,
+    val comment: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class RulesListHostname(@Json(name = "url_hostname") val urlHostname: String = "")
+
+/** A domain registered through Cloudflare Registrar. */
+@JsonClass(generateAdapter = true)
+data class RegistrarDomain(
+    val id: String = "",
+    val name: String = "",
+    @Json(name = "available") val available: Boolean? = null,
+    @Json(name = "auto_renew") val autoRenew: Boolean? = null,
+    val locked: Boolean? = null,
+    @Json(name = "current_registrar") val currentRegistrar: String? = null,
+    @Json(name = "expires_at") val expiresAt: String? = null,
+    @Json(name = "registry_statuses") val registryStatuses: String? = null,
+    @Json(name = "transfer_in") val transferIn: RegistrarTransfer? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class RegistrarTransfer(
+    @Json(name = "unlock_domain") val unlockDomain: String? = null,
+    @Json(name = "approve_transfer") val approveTransfer: String? = null,
+    @Json(name = "accept_foa") val acceptFoa: String? = null,
+    @Json(name = "enter_auth_code") val enterAuthCode: String? = null
+)
+
+/** A Web Analytics (RUM) site. [snippet] is the JavaScript tag to paste into a page. */
+@JsonClass(generateAdapter = true)
+data class RumSite(
+    @Json(name = "site_tag") val siteTag: String = "",
+    @Json(name = "site_token") val siteToken: String? = null,
+    val snippet: String? = null,
+    @Json(name = "auto_install") val autoInstall: Boolean? = null,
+    val created: String? = null,
+    val ruleset: RumRuleset? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class RumRuleset(
+    val id: String? = null,
+    @Json(name = "zone_name") val zoneName: String? = null,
+    val enabled: Boolean? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class RumSiteCreate(
+    val host: String,
+    @Json(name = "auto_install") val autoInstall: Boolean = true
+)
+

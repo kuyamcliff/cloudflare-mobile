@@ -904,4 +904,81 @@ interface CloudflareApi {
         @Path("accountId") accountId: String,
         @Body request: ScreenshotRequest
     ): Response<ResponseBody>
+
+    // ---- API tokens (user-scoped: metadata only, never a token's value) ----
+
+    /** Cloudflare returns only metadata here - the token value itself is returned exactly once,
+     *  by the call that creates or rolls it, which this app doesn't make. */
+    @GET("user/tokens")
+    suspend fun listApiTokens(): Response<CfEnvelope<List<ApiToken>>>
+
+    @DELETE("user/tokens/{tokenId}")
+    suspend fun deleteApiToken(@Path("tokenId") tokenId: String): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Notifications (alerting policies) ----
+
+    @GET("accounts/{accountId}/alerting/v3/policies")
+    suspend fun listNotificationPolicies(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<NotificationPolicy>>>
+
+    @PATCH("accounts/{accountId}/alerting/v3/policies/{policyId}")
+    suspend fun updateNotificationPolicy(
+        @Path("accountId") accountId: String,
+        @Path("policyId") policyId: String,
+        @Body update: NotificationPolicyUpdate
+    ): Response<CfEnvelope<NotificationPolicy>>
+
+    @DELETE("accounts/{accountId}/alerting/v3/policies/{policyId}")
+    suspend fun deleteNotificationPolicy(
+        @Path("accountId") accountId: String,
+        @Path("policyId") policyId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Account Rules Lists (Bulk Redirects are the "redirect" kind) ----
+
+    @GET("accounts/{accountId}/rules/lists")
+    suspend fun listRulesLists(@Path("accountId") accountId: String): Response<CfEnvelope<List<RulesList>>>
+
+    @GET("accounts/{accountId}/rules/lists/{listId}/items")
+    suspend fun listRulesListItems(
+        @Path("accountId") accountId: String,
+        @Path("listId") listId: String
+    ): Response<CfEnvelope<List<RulesListItem>>>
+
+    @POST("accounts/{accountId}/rules/lists")
+    suspend fun createRulesList(
+        @Path("accountId") accountId: String,
+        @Body list: RulesListCreate
+    ): Response<CfEnvelope<RulesList>>
+
+    @DELETE("accounts/{accountId}/rules/lists/{listId}")
+    suspend fun deleteRulesList(
+        @Path("accountId") accountId: String,
+        @Path("listId") listId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Registrar (read-only: renewals and transfers cost money) ----
+
+    @GET("accounts/{accountId}/registrar/domains")
+    suspend fun listRegistrarDomains(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<RegistrarDomain>>>
+
+    // ---- Web Analytics (RUM sites) ----
+
+    @GET("accounts/{accountId}/rum/site_info/list")
+    suspend fun listRumSites(@Path("accountId") accountId: String): Response<CfEnvelope<List<RumSite>>>
+
+    @POST("accounts/{accountId}/rum/site_info")
+    suspend fun createRumSite(
+        @Path("accountId") accountId: String,
+        @Body site: RumSiteCreate
+    ): Response<CfEnvelope<RumSite>>
+
+    @DELETE("accounts/{accountId}/rum/site_info/{siteTag}")
+    suspend fun deleteRumSite(
+        @Path("accountId") accountId: String,
+        @Path("siteTag") siteTag: String
+    ): Response<CfEnvelope<Map<String, String>>>
 }

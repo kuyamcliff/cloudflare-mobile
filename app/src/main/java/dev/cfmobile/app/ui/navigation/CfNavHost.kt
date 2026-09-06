@@ -58,6 +58,16 @@ import dev.cfmobile.app.ui.rules.OriginRulesScreen
 import dev.cfmobile.app.ui.rules.OriginRulesViewModel
 import dev.cfmobile.app.ui.rules.RedirectRulesScreen
 import dev.cfmobile.app.ui.rules.RedirectRulesViewModel
+import dev.cfmobile.app.ui.account.ApiTokensScreen
+import dev.cfmobile.app.ui.account.ApiTokensViewModel
+import dev.cfmobile.app.ui.account.BulkRedirectsScreen
+import dev.cfmobile.app.ui.account.BulkRedirectsViewModel
+import dev.cfmobile.app.ui.account.NotificationsScreen
+import dev.cfmobile.app.ui.account.NotificationsViewModel
+import dev.cfmobile.app.ui.account.RegistrarScreen
+import dev.cfmobile.app.ui.account.RegistrarViewModel
+import dev.cfmobile.app.ui.account.WebAnalyticsScreen
+import dev.cfmobile.app.ui.account.WebAnalyticsViewModel
 import dev.cfmobile.app.ui.zerotrust.AccessIdentityScreen
 import dev.cfmobile.app.ui.zerotrust.AccessIdentityViewModel
 import dev.cfmobile.app.ui.zerotrust.GatewayListsScreen
@@ -310,6 +320,42 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
                 factory = factoryOf { D1ConsoleViewModel(accountId, databaseId, container.d1Repository) }
             )
             D1ConsoleScreen(databaseName = databaseName, viewModel = vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.API_TOKENS) {
+            // User-scoped, not account-scoped: the token list belongs to whoever is signed in.
+            val vm = viewModel<ApiTokensViewModel>(
+                factory = factoryOf { ApiTokensViewModel(container.apiTokensRepository) }
+            )
+            ApiTokensScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.NOTIFICATIONS) { accountId ->
+            val vm = viewModel<NotificationsViewModel>(
+                factory = factoryOf { NotificationsViewModel(accountId, container.notificationsRepository) }
+            )
+            NotificationsScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.BULK_REDIRECTS) { accountId ->
+            val vm = viewModel<BulkRedirectsViewModel>(
+                factory = factoryOf { BulkRedirectsViewModel(accountId, container.bulkRedirectsRepository) }
+            )
+            BulkRedirectsScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.REGISTRAR) { accountId ->
+            val vm = viewModel<RegistrarViewModel>(
+                factory = factoryOf { RegistrarViewModel(accountId, container.registrarRepository) }
+            )
+            RegistrarScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.WEB_ANALYTICS) { accountId ->
+            val vm = viewModel<WebAnalyticsViewModel>(
+                factory = factoryOf { WebAnalyticsViewModel(accountId, container.webAnalyticsRepository) }
+            )
+            WebAnalyticsScreen(vm, onBack = { navController.popBackStack() })
         }
 
         accountScreen(Routes.GATEWAY_LISTS) { accountId ->
