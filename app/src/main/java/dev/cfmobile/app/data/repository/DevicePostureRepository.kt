@@ -5,10 +5,11 @@ import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.EnrolledDevice
 import dev.cfmobile.app.data.remote.dto.PostureRule
 import dev.cfmobile.app.data.remote.safeApiCall
+import dev.cfmobile.app.data.remote.safeApiCallUnit
 
-/** Read-only: enrolled WARP devices and the posture rules evaluated against them. Revoking a
- *  device or editing a posture rule isn't implemented - both are high-blast-radius changes
- *  that deserve a full screen's worth of context. */
+/** Enrolled WARP devices and the posture rules evaluated against them, plus revoking a
+ *  device's registration. Editing a posture rule isn't implemented - the rule types each carry
+ *  their own configuration shape. */
 class DevicePostureRepository(private val api: CloudflareApi) {
 
     suspend fun listDevices(accountId: String): ApiResult<List<EnrolledDevice>> =
@@ -16,4 +17,9 @@ class DevicePostureRepository(private val api: CloudflareApi) {
 
     suspend fun listPostureRules(accountId: String): ApiResult<List<PostureRule>> =
         safeApiCall { api.listPostureRules(accountId) }
+
+    /** Revokes one device's registration. The user has to re-enrol before that device can
+     *  reach anything behind Zero Trust again. */
+    suspend fun revokeDevice(accountId: String, deviceId: String): ApiResult<Unit> =
+        safeApiCallUnit { api.revokeDevices(accountId, listOf(deviceId)) }
 }

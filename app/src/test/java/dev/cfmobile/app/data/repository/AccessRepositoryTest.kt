@@ -81,4 +81,52 @@ class AccessRepositoryTest {
         assertThat(result).isInstanceOf(ApiResult.Failure::class.java)
         assertThat((result as ApiResult.Failure).message).contains("Application not found")
     }
+
+    @Test
+    fun `listIdentityProviders hits the account identity providers endpoint`() = runBlocking {
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[{"id":"p1","name":"PIN","type":"onetimepin"}]}"""))
+
+        val result = AccessRepository(testApi(server)).listIdentityProviders("acct1")
+
+        assertThat((result as ApiResult.Success).data.single().type).isEqualTo("onetimepin")
+        assertThat(server.takeRequest().path).isEqualTo("/accounts/acct1/access/identity_providers")
+    }
+
+    @Test
+    fun `createOneTimePinProvider sends an empty config, since that type has none`() = runBlocking {
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"id":"p1","name":"PIN","type":"onetimepin"}}"""))
+
+        AccessRepository(testApi(server)).createOneTimePinProvider("acct1", "PIN")
+
+        val body = server.takeRequest().body.readUtf8()
+        assertThat(body).contains("\"type\":\"onetimepin\"")
+        assertThat(body).contains("\"config\":{}")
+    }
+
+    @Test
+    fun `createServiceToken returns the client secret Cloudflare only sends once`() = runBlocking {
+        server.enqueue(
+            MockResponse().setBody(
+                """{"success":true,"errors":[],"result":{"id":"t1","name":"ci","client_id":"abc.access","client_secret":"s3cret"}}"""
+            )
+        )
+
+        val result = AccessRepository(testApi(server)).createServiceToken("acct1", "ci")
+
+        assertThat((result as ApiResult.Success).data.clientSecret).isEqualTo("s3cret")
+        val request = server.takeRequest()
+        assertThat(request.method).isEqualTo("POST")
+        assertThat(request.path).isEqualTo("/accounts/acct1/access/service_tokens")
+    }
+
+    @Test
+    fun `deleteServiceToken targets the token id`() = runBlocking {
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{}}"""))
+
+        AccessRepository(testApi(server)).deleteServiceToken("acct1", "t1")
+
+        val request = server.takeRequest()
+        assertThat(request.method).isEqualTo("DELETE")
+        assertThat(request.path).isEqualTo("/accounts/acct1/access/service_tokens/t1")
+    }
 }

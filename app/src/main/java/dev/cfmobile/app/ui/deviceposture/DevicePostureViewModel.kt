@@ -20,7 +20,9 @@ data class DevicePostureUiState(
     val tab: DevicePostureTab = DevicePostureTab.DEVICES,
     val devices: UiState<List<EnrolledDevice>> = UiState.Loading,
     val postureRules: UiState<List<PostureRule>> = UiState.Loading,
-    val isRefreshing: Boolean = false
+    val isRefreshing: Boolean = false,
+    val revokingId: String? = null,
+    val revokeError: String? = null
 )
 
 /** A device's own name is optional; fall back to the user it's enrolled to, then its id. */
@@ -64,4 +66,25 @@ class DevicePostureViewModel(
             _uiState.update { it.copy(isRefreshing = false) }
         }
     }
+
+    /**
+     * Revokes one device's Zero Trust registration. Its user has to re-enrol before that
+     * device can reach anything behind Zero Trust again, so the screen confirms first.
+     */
+    fun revoke(device: EnrolledDevice) {
+        _uiState.update { it.copy(revokingId = device.id, revokeError = null) }
+        viewModelScope.launch {
+            when (val result = repository.revokeDevice(accountId, device.id)) {
+                is ApiResult.Success -> {
+                    _uiState.update { it.copy(revokingId = null) }
+                    load(isRefresh = true)
+                }
+                is ApiResult.Failure -> _uiState.update {
+                    it.copy(revokingId = null, revokeError = result.message)
+                }
+            }
+        }
+    }
+
+    fun dismissRevokeError() = _uiState.update { it.copy(revokeError = null) }
 }

@@ -420,7 +420,19 @@ object CapabilityRegistry {
             roadmapPhase = RoadmapPhase.P1,
             destructiveRisk = DestructiveRisk.HIGH,
             accountRoute = { accountId -> Routes.access(accountId) },
-            migrationHint = "Applications with one inline policy each, covering only the common allow/block by email domain or specific addresses cases - identity providers, multi-policy apps, and non-email include rules (groups, IP ranges, service tokens) aren't implemented. Not verified against a live API call."
+            migrationHint = "Applications with one inline policy each, covering the common allow/block by email domain or specific addresses cases. Multi-policy apps and non-email include rules (groups, IP ranges, device posture) aren't implemented. Login methods and service tokens have their own screen - see the Access Identity capability. Not verified against a live API call."
+        ),
+        Capability(
+            id = "access_identity",
+            product = "Zero Trust",
+            displayName = "Access Identity",
+            description = "Login methods and service tokens",
+            scope = CapabilityScope.ACCOUNT,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.accessIdentity(accountId) },
+            migrationHint = "Lists every identity provider and lets you add Cloudflare's one-time PIN or delete any of them; an external provider (Google, Okta, SAML, ...) can't be created or edited here, because that means handling its client credentials, which this app deliberately never asks for. Service tokens can be created, listed, and deleted - the client secret is shown once, right after creation, and is never stored. Rotating a token isn't implemented. Not verified against a live API call."
         ),
         Capability(
             id = "gateway",
@@ -432,7 +444,19 @@ object CapabilityRegistry {
             roadmapPhase = RoadmapPhase.P1,
             destructiveRisk = DestructiveRisk.HIGH,
             accountRoute = { accountId -> Routes.gateway(accountId) },
-            migrationHint = "DNS policies only - block or allow traffic to a single domain. Network and HTTP policies, more complex Wirefilter expressions (categories, identity, device posture), and rule ordering aren't implemented. Not verified against a live API call."
+            migrationHint = "Block/allow policies for the DNS, HTTP, and network engines, each matching one hostname or destination IP. Richer Wirefilter expressions (categories, identity, device posture, list references), rule ordering, and editing an existing policy aren't implemented. Lists have their own screen - see the Gateway Lists capability. Not verified against a live API call."
+        ),
+        Capability(
+            id = "gateway_lists",
+            product = "Zero Trust",
+            displayName = "Gateway Lists",
+            description = "Reusable domain, URL, IP, serial, and email lists",
+            scope = CapabilityScope.ACCOUNT,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.MEDIUM,
+            accountRoute = { accountId -> Routes.gatewayLists(accountId) },
+            migrationHint = "Create a list with its entries pasted one per line, view a list's entries, and delete a list. Editing an existing list's entries isn't implemented - Cloudflare models that as a bulk patch, and doing it a row at a time on a phone would be worse than recreating the list. Not verified against a live API call."
         ),
         Capability(
             id = "tunnels",
@@ -455,7 +479,7 @@ object CapabilityRegistry {
             status = CapabilityStatus.IMPLEMENTED,
             roadmapPhase = RoadmapPhase.P1,
             accountRoute = { accountId -> Routes.devicePosture(accountId) },
-            migrationHint = "Read-only inventory of enrolled devices and posture rules. Revoking a device or editing a posture rule isn't implemented - both are high-blast-radius changes that deserve more context than a list row. Not verified against a live API call."
+            migrationHint = "Inventory of enrolled devices and posture rules, plus revoking a device's registration behind a confirmation. Editing a posture rule isn't implemented - each rule type carries its own configuration shape. Not verified against a live API call."
         ),
         Capability(
             id = "account_members",

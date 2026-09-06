@@ -629,6 +629,7 @@ data class GatewayRuleCreate(
     val name: String,
     val action: String,
     val traffic: String,
+    /** Which Gateway engine evaluates the policy: "dns", "http", or "l4". */
     val filters: List<String> = listOf("dns"),
     val description: String? = null
 )
@@ -1234,6 +1235,63 @@ data class AccessEmailDomainRule(val domain: String)
 
 @JsonClass(generateAdapter = true)
 data class AccessEmailRule(val email: String)
+
+/** An Access identity provider. Cloudflare's own one-time PIN provider has type "onetimepin"
+ *  and no configuration; every other type carries provider credentials this app never reads. */
+@JsonClass(generateAdapter = true)
+data class AccessIdentityProvider(
+    val id: String = "",
+    val name: String = "",
+    val type: String = ""
+)
+
+@JsonClass(generateAdapter = true)
+data class AccessIdentityProviderCreate(
+    val name: String,
+    val type: String,
+    /** Empty for one-time PIN, which is the only type this app can create. */
+    val config: Map<String, String> = emptyMap()
+)
+
+/**
+ * An Access service token. [clientSecret] is returned only in the response that creates the
+ * token - Cloudflare never sends it again, and it is not stored anywhere by this app.
+ */
+@JsonClass(generateAdapter = true)
+data class AccessServiceToken(
+    val id: String = "",
+    val name: String = "",
+    @Json(name = "client_id") val clientId: String? = null,
+    @Json(name = "client_secret") val clientSecret: String? = null,
+    @Json(name = "created_at") val createdAt: String? = null,
+    @Json(name = "expires_at") val expiresAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AccessServiceTokenCreate(val name: String)
+
+@JsonClass(generateAdapter = true)
+data class GatewayListItem(val value: String = "")
+
+/** A Zero Trust list. [count] is how many items it holds; the items themselves are a separate
+ *  request. */
+@JsonClass(generateAdapter = true)
+data class GatewayList(
+    val id: String = "",
+    val name: String = "",
+    val description: String? = null,
+    val type: String = "",
+    val count: Int? = null,
+    @Json(name = "created_at") val createdAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class GatewayListCreate(
+    val name: String,
+    val type: String,
+    val description: String? = null,
+    val items: List<GatewayListItem> = emptyList()
+)
 
 @JsonClass(generateAdapter = true)
 data class AccessPolicyCreate(

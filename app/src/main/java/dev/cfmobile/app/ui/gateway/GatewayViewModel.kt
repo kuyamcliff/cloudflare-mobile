@@ -19,9 +19,24 @@ enum class GatewayAction(val apiValue: String, val label: String) {
     ALLOW("allow", "Allow")
 }
 
+/**
+ * Which Gateway engine evaluates a policy. Each one matches on a different field, so the form
+ * asks for a hostname, a URL host, or a destination IP accordingly:
+ *
+ *  - DNS resolves names, so it matches the queried FQDN
+ *  - HTTP proxies requests, so it matches the request's host
+ *  - Network sees L4 traffic, so it matches the destination IP
+ */
+enum class GatewayFilter(val apiValue: String, val label: String, val fieldLabel: String, val placeholder: String) {
+    DNS("dns", "DNS", "Domain", "example.com"),
+    HTTP("http", "HTTP", "Host", "example.com"),
+    NETWORK("l4", "Network", "Destination IP", "203.0.113.10")
+}
+
 data class GatewayFormState(
     val name: String = "",
     val action: GatewayAction = GatewayAction.BLOCK,
+    val filter: GatewayFilter = GatewayFilter.DNS,
     val domain: String = "",
     val isSaving: Boolean = false,
     val error: String? = null
@@ -35,19 +50,36 @@ data class GatewayUiState(
 
 private val DOMAIN_REGEX = Regex("^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+$")
 
-fun validateGatewayForm(form: GatewayFormState): String? = when {
-    form.name.isBlank() -> "Policy name is required"
-    form.domain.isBlank() -> "Domain is required"
-    !form.domain.trim().matches(DOMAIN_REGEX) -> "Enter a valid domain, e.g. example.com"
-    else -> null
+private val IPV4_REGEX = Regex("^((25[0-5]|2[0-4]\\d|1?\\d?\\d)\\.){3}(25[0-5]|2[0-4]\\d|1?\\d?\\d)$")
+
+fun validateGatewayForm(form: GatewayFormState): String? {
+    if (form.name.isBlank()) return "Policy name is required"
+    val value = form.domain.trim()
+    if (value.isBlank()) return "${form.filter.fieldLabel} is required"
+    return when (form.filter) {
+        GatewayFilter.DNS, GatewayFilter.HTTP ->
+            if (value.matches(DOMAIN_REGEX)) null else "Enter a valid hostname, e.g. example.com"
+        // Only IPv4 is accepted here; a CIDR range or IPv6 destination needs the full
+        // expression editor this form doesn't have.
+        GatewayFilter.NETWORK ->
+            if (value.matches(IPV4_REGEX)) null else "Enter a single IPv4 address, e.g. 203.0.113.10"
+    }
 }
 
-/** Builds Cloudflare's Wirefilter expression for a single-domain DNS match - the common case
- *  this form supports. */
-fun buildGatewayTraffic(form: GatewayFormState): String = "dns.fqdn == \"${form.domain.trim()}\""
+/** Builds Cloudflare's Wirefilter expression for the single-value match each engine supports
+ *  here. Anything richer - categories, identity, device posture - is out of scope for this
+ *  form and disclosed as such. */
+fun buildGatewayTraffic(form: GatewayFormState): String {
+    val value = form.domain.trim()
+    return when (form.filter) {
+        GatewayFilter.DNS -> "dns.fqdn == \"$value\""
+        GatewayFilter.HTTP -> "http.request.host == \"$value\""
+        GatewayFilter.NETWORK -> "net.dst.ip == $value"
+    }
+}
 
-/** Zero Trust Gateway: DNS policies (block/allow a single domain) only - see
- *  CapabilityRegistry's migrationHint for what's out of scope. */
+/** Zero Trust Gateway: block/allow policies for the DNS, HTTP, and network engines, each
+ *  matching a single value - see CapabilityRegistry's migrationHint for what's out of scope. */
 class GatewayViewModel(
     private val accountId: String,
     private val repository: GatewayRepository
@@ -85,7 +117,12 @@ class GatewayViewModel(
         }
         updateForm { it.copy(isSaving = true, error = null) }
         viewModelScope.launch {
-            val rule = GatewayRuleCreate(name = form.name.trim(), action = form.action.apiValue, traffic = buildGatewayTraffic(form))
+            val rule = GatewayRuleCreate(
+                name = form.name.trim(),
+                action = form.action.apiValue,
+                traffic = buildGatewayTraffic(form),
+                filters = listOf(form.filter.apiValue)
+            )
             when (val result = repository.createRule(accountId, rule)) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(form = null) }

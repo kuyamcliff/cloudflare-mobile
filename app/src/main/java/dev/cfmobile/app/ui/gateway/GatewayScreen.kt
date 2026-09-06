@@ -119,13 +119,20 @@ private fun GatewayRuleRow(rule: GatewayRule, isDeleting: Boolean, onDelete: () 
 private fun CreateRuleSheet(form: GatewayFormState, onDismiss: () -> Unit, viewModel: GatewayViewModel) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Create DNS policy", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 10.dp))
+            Text("Create policy", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 10.dp))
             OutlinedTextField(
                 value = form.name,
                 onValueChange = { v -> viewModel.updateForm { it.copy(name = v) } },
                 label = { Text("Policy name") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
+            )
+            OptionRow(
+                title = "Engine",
+                currentValue = form.filter.name,
+                options = GatewayFilter.entries.map { it.name to it.label },
+                isSaving = false,
+                onSelect = { v -> viewModel.updateForm { it.copy(filter = GatewayFilter.valueOf(v)) } }
             )
             OptionRow(
                 title = "Action",
@@ -137,8 +144,8 @@ private fun CreateRuleSheet(form: GatewayFormState, onDismiss: () -> Unit, viewM
             OutlinedTextField(
                 value = form.domain,
                 onValueChange = { v -> viewModel.updateForm { it.copy(domain = v) } },
-                label = { Text("Domain") },
-                placeholder = { Text("malware.example.com") },
+                label = { Text(form.filter.fieldLabel) },
+                placeholder = { Text(form.filter.placeholder) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
             )

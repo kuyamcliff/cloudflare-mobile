@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.cfmobile.app.ui.common.EmptyState
+import dev.cfmobile.app.ui.common.DeletableListRow
 import dev.cfmobile.app.ui.common.ReadOnlyListRow
 import dev.cfmobile.app.ui.common.RefreshableStateContent
 
@@ -59,6 +60,14 @@ fun DevicePostureScreen(viewModel: DevicePostureViewModel, onBack: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
+            uiState.revokeError?.let { error ->
+                Text(
+                    error,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                )
+            }
             when (uiState.tab) {
                 DevicePostureTab.DEVICES -> RefreshableStateContent(
                     state = uiState.devices,
@@ -70,11 +79,16 @@ fun DevicePostureScreen(viewModel: DevicePostureViewModel, onBack: () -> Unit) {
                     } else {
                         LazyColumn(contentPadding = PaddingValues(bottom = 16.dp)) {
                             items(devices, key = { it.id }) { device ->
-                                ReadOnlyListRow(
+                                DeletableListRow(
                                     icon = Icons.Filled.Devices,
                                     title = deviceLabel(device),
                                     subtitle = listOfNotNull(device.deviceType, device.version).joinToString(" · ").ifBlank { null },
-                                    detail = device.lastSeen?.let { "Last seen $it" }
+                                    detail = device.lastSeen?.let { "Last seen $it" },
+                                    isDeleting = uiState.revokingId == device.id,
+                                    deleteContentDescription = "Revoke device",
+                                    confirmTitle = "Revoke this device?",
+                                    confirmText = "\"${deviceLabel(device)}\" loses access to everything behind Zero Trust until its user enrols again.",
+                                    onDelete = { viewModel.revoke(device) }
                                 )
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                             }

@@ -3,6 +3,8 @@ package dev.cfmobile.app.ui.common
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.AltRoute
 import androidx.compose.material.icons.automirrored.filled.CallSplit
+import androidx.compose.material.icons.automirrored.filled.ListAlt
+import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.automirrored.filled.Rule
 import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.Analytics
@@ -83,6 +85,8 @@ fun capabilityIcon(capability: Capability): ImageVector = when (capability.id) {
     "billing" -> Icons.Filled.CreditCard
     "access" -> Icons.Filled.Shield
     "gateway" -> Icons.Filled.Dns
+    "gateway_lists" -> Icons.AutoMirrored.Filled.ListAlt
+    "access_identity" -> Icons.AutoMirrored.Filled.Login
     "tunnels" -> Icons.Filled.Router
     "device_posture" -> Icons.Filled.Devices
     "worker_routes" -> Icons.AutoMirrored.Filled.AltRoute

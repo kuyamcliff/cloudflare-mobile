@@ -38,7 +38,7 @@ class GatewayViewModelTest {
     fun `validateGatewayForm requires a name and a valid domain`() {
         assertThat(validateGatewayForm(GatewayFormState())).isEqualTo("Policy name is required")
         assertThat(validateGatewayForm(GatewayFormState(name = "Block malware"))).isEqualTo("Domain is required")
-        assertThat(validateGatewayForm(GatewayFormState(name = "Block malware", domain = "not a domain"))).contains("valid domain")
+        assertThat(validateGatewayForm(GatewayFormState(name = "Block malware", domain = "not a domain"))).contains("valid hostname")
         assertThat(validateGatewayForm(GatewayFormState(name = "Block malware", domain = "malware.example.com"))).isNull()
     }
 

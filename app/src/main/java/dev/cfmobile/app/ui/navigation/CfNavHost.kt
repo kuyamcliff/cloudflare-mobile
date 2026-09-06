@@ -58,6 +58,10 @@ import dev.cfmobile.app.ui.rules.OriginRulesScreen
 import dev.cfmobile.app.ui.rules.OriginRulesViewModel
 import dev.cfmobile.app.ui.rules.RedirectRulesScreen
 import dev.cfmobile.app.ui.rules.RedirectRulesViewModel
+import dev.cfmobile.app.ui.zerotrust.AccessIdentityScreen
+import dev.cfmobile.app.ui.zerotrust.AccessIdentityViewModel
+import dev.cfmobile.app.ui.zerotrust.GatewayListsScreen
+import dev.cfmobile.app.ui.zerotrust.GatewayListsViewModel
 import dev.cfmobile.app.ui.workerroutes.WorkerRoutesScreen
 import dev.cfmobile.app.ui.workerroutes.WorkerRoutesViewModel
 import dev.cfmobile.app.ui.workers.WorkersScreen
@@ -306,6 +310,20 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
                 factory = factoryOf { D1ConsoleViewModel(accountId, databaseId, container.d1Repository) }
             )
             D1ConsoleScreen(databaseName = databaseName, viewModel = vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.GATEWAY_LISTS) { accountId ->
+            val vm = viewModel<GatewayListsViewModel>(
+                factory = factoryOf { GatewayListsViewModel(accountId, container.gatewayRepository) }
+            )
+            GatewayListsScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.ACCESS_IDENTITY) { accountId ->
+            val vm = viewModel<AccessIdentityViewModel>(
+                factory = factoryOf { AccessIdentityViewModel(accountId, container.accessRepository) }
+            )
+            AccessIdentityScreen(vm, onBack = { navController.popBackStack() })
         }
 
         composable(

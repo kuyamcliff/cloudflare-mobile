@@ -511,7 +511,42 @@ interface CloudflareApi {
         @Body policy: AccessPolicyCreate
     ): Response<CfEnvelope<Map<String, String>>>
 
-    // ---- Zero Trust Gateway (DNS policies - block/allow by domain, common case only) ----
+    @GET("accounts/{accountId}/access/identity_providers")
+    suspend fun listAccessIdentityProviders(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<AccessIdentityProvider>>>
+
+    @POST("accounts/{accountId}/access/identity_providers")
+    suspend fun createAccessIdentityProvider(
+        @Path("accountId") accountId: String,
+        @Body provider: AccessIdentityProviderCreate
+    ): Response<CfEnvelope<AccessIdentityProvider>>
+
+    @DELETE("accounts/{accountId}/access/identity_providers/{providerId}")
+    suspend fun deleteAccessIdentityProvider(
+        @Path("accountId") accountId: String,
+        @Path("providerId") providerId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    @GET("accounts/{accountId}/access/service_tokens")
+    suspend fun listAccessServiceTokens(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<AccessServiceToken>>>
+
+    /** The only response that ever carries the token's client secret. */
+    @POST("accounts/{accountId}/access/service_tokens")
+    suspend fun createAccessServiceToken(
+        @Path("accountId") accountId: String,
+        @Body token: AccessServiceTokenCreate
+    ): Response<CfEnvelope<AccessServiceToken>>
+
+    @DELETE("accounts/{accountId}/access/service_tokens/{tokenId}")
+    suspend fun deleteAccessServiceToken(
+        @Path("accountId") accountId: String,
+        @Path("tokenId") tokenId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Zero Trust Gateway (DNS, HTTP, and network policies plus lists) ----
 
     @GET("accounts/{accountId}/gateway/rules")
     suspend fun listGatewayRules(@Path("accountId") accountId: String): Response<CfEnvelope<List<GatewayRule>>>
@@ -526,6 +561,27 @@ interface CloudflareApi {
     suspend fun deleteGatewayRule(
         @Path("accountId") accountId: String,
         @Path("ruleId") ruleId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    @GET("accounts/{accountId}/gateway/lists")
+    suspend fun listGatewayLists(@Path("accountId") accountId: String): Response<CfEnvelope<List<GatewayList>>>
+
+    @GET("accounts/{accountId}/gateway/lists/{listId}/items")
+    suspend fun listGatewayListItems(
+        @Path("accountId") accountId: String,
+        @Path("listId") listId: String
+    ): Response<CfEnvelope<List<GatewayListItem>>>
+
+    @POST("accounts/{accountId}/gateway/lists")
+    suspend fun createGatewayList(
+        @Path("accountId") accountId: String,
+        @Body list: GatewayListCreate
+    ): Response<CfEnvelope<GatewayList>>
+
+    @DELETE("accounts/{accountId}/gateway/lists/{listId}")
+    suspend fun deleteGatewayList(
+        @Path("accountId") accountId: String,
+        @Path("listId") listId: String
     ): Response<CfEnvelope<Map<String, String>>>
 
     // ---- Zero Trust Tunnels (list/create/delete only - running one needs cloudflared) ----
@@ -677,10 +733,18 @@ interface CloudflareApi {
     @GET("accounts/{accountId}/ai/models/search")
     suspend fun searchAiModels(@Path("accountId") accountId: String): Response<CfEnvelope<List<AiModel>>>
 
-    // ---- Zero Trust devices and posture rules (read-only) ----
+    // ---- Zero Trust devices and posture rules (inventory plus device revoke) ----
 
     @GET("accounts/{accountId}/devices")
     suspend fun listEnrolledDevices(@Path("accountId") accountId: String): Response<CfEnvelope<List<EnrolledDevice>>>
+
+    /** Revokes the device's Zero Trust registration; the user has to re-enrol to reconnect.
+     *  Cloudflare takes a bare array of device ids. */
+    @POST("accounts/{accountId}/devices/revoke")
+    suspend fun revokeDevices(
+        @Path("accountId") accountId: String,
+        @Body deviceIds: List<String>
+    ): Response<CfEnvelope<Map<String, String>>>
 
     @GET("accounts/{accountId}/devices/posture")
     suspend fun listPostureRules(@Path("accountId") accountId: String): Response<CfEnvelope<List<PostureRule>>>
