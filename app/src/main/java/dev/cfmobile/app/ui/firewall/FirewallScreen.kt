@@ -10,11 +10,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
@@ -26,7 +28,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -45,18 +47,19 @@ import dev.cfmobile.app.data.remote.dto.AccessRule
 import dev.cfmobile.app.data.remote.dto.FirewallRule
 import dev.cfmobile.app.ui.common.EmptyState
 import dev.cfmobile.app.ui.common.StateContent
+import dev.cfmobile.app.ui.common.ZoneScopedTitle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FirewallScreen(viewModel: FirewallViewModel, onBack: () -> Unit) {
+fun FirewallScreen(viewModel: FirewallViewModel, zoneName: String, onBack: () -> Unit) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var tab by remember { mutableIntStateOf(0) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Firewall") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Back") } }
+                title = { ZoneScopedTitle("Firewall", zoneName) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") } }
             )
         },
         floatingActionButton = {
@@ -66,7 +69,7 @@ fun FirewallScreen(viewModel: FirewallViewModel, onBack: () -> Unit) {
         }
     ) { padding ->
         Column(Modifier.padding(padding)) {
-            TabRow(selectedTabIndex = tab) {
+            PrimaryTabRow(selectedTabIndex = tab) {
                 Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Firewall Rules") })
                 Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("IP Access Rules") })
             }
@@ -77,7 +80,7 @@ fun FirewallScreen(viewModel: FirewallViewModel, onBack: () -> Unit) {
                     } else {
                         LazyColumn(contentPadding = PaddingValues(bottom = 96.dp)) {
                             items(rules, key = { it.id }) { rule ->
-                                FirewallRuleRow(rule, onDelete = { viewModel.deleteRule(rule) })
+                                FirewallRuleRow(rule, zoneName = zoneName, onDelete = { viewModel.deleteRule(rule) })
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                             }
                         }
@@ -90,7 +93,7 @@ fun FirewallScreen(viewModel: FirewallViewModel, onBack: () -> Unit) {
                     } else {
                         LazyColumn(contentPadding = PaddingValues(bottom = 96.dp)) {
                             items(rules, key = { it.id }) { rule ->
-                                AccessRuleRow(rule, onDelete = { viewModel.deleteAccessRule(rule) })
+                                AccessRuleRow(rule, zoneName = zoneName, onDelete = { viewModel.deleteAccessRule(rule) })
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                             }
                         }
@@ -109,24 +112,48 @@ fun FirewallScreen(viewModel: FirewallViewModel, onBack: () -> Unit) {
 }
 
 @Composable
-private fun FirewallRuleRow(rule: FirewallRule, onDelete: () -> Unit) {
+private fun FirewallRuleRow(rule: FirewallRule, zoneName: String, onDelete: () -> Unit) {
+    var confirmDelete by remember { mutableStateOf(false) }
+
     Row(Modifier.fillMaxWidth().padding(16.dp, 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
         Column(Modifier.weight(1f)) {
             Text(rule.description?.ifBlank { rule.action } ?: rule.action, style = MaterialTheme.typography.bodyLarge)
             Text(rule.filter?.expression ?: "", style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
         }
-        IconButton(onClick = onDelete) { Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error) }
+        IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error) }
+    }
+
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text("Delete firewall rule?") },
+            text = { Text("This ${rule.action} rule will stop applying to $zoneName immediately.") },
+            confirmButton = { TextButton(onClick = { confirmDelete = false; onDelete() }) { Text("Delete") } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } }
+        )
     }
 }
 
 @Composable
-private fun AccessRuleRow(rule: AccessRule, onDelete: () -> Unit) {
+private fun AccessRuleRow(rule: AccessRule, zoneName: String, onDelete: () -> Unit) {
+    var confirmDelete by remember { mutableStateOf(false) }
+
     Row(Modifier.fillMaxWidth().padding(16.dp, 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
         Column(Modifier.weight(1f)) {
             Text(rule.configuration.value, style = MaterialTheme.typography.bodyLarge, fontFamily = FontFamily.Monospace)
             Text(rule.mode.replace("_", " ").replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        IconButton(onClick = onDelete) { Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error) }
+        IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error) }
+    }
+
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text("Delete IP access rule?") },
+            text = { Text("${rule.configuration.value} will no longer be ${rule.mode.replace("_", " ")}ed on $zoneName.") },
+            confirmButton = { TextButton(onClick = { confirmDelete = false; onDelete() }) { Text("Delete") } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } }
+        )
     }
 }
 
@@ -158,7 +185,7 @@ private fun FirewallRuleFormSheet(
                     readOnly = true,
                     label = { Text("Action") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor()
+                    modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                 )
                 ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                     listOf("block", "challenge", "js_challenge", "managed_challenge", "allow", "log").forEach { action ->
@@ -217,7 +244,7 @@ private fun AccessRuleFormSheet(
                     readOnly = true,
                     label = { Text("Mode") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor()
+                    modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                 )
                 ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                     listOf("block", "challenge", "js_challenge", "managed_challenge", "whitelist").forEach { mode ->

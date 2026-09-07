@@ -41,6 +41,33 @@ data class CfZone(
     val account: CfAccount? = null
 )
 
+/** Union of the `data` object shapes Cloudflare uses for record types that can't be expressed
+ *  as a plain `content` string (SRV, URI, TLSA/SMIMEA, NAPTR, SSHFP, CERT). Fields are all
+ *  optional and only the ones relevant to the record's `type` are populated - see
+ *  dev.cfmobile.app.ui.dns.buildDnsRecordWrite for which fields each type actually uses. */
+@JsonClass(generateAdapter = true)
+data class DnsRecordData(
+    val priority: Int? = null,
+    val weight: Int? = null,
+    val port: Int? = null,
+    val target: String? = null,
+    val content: String? = null,
+    val usage: Int? = null,
+    val selector: Int? = null,
+    @Json(name = "matching_type") val matchingType: Int? = null,
+    val certificate: String? = null,
+    val algorithm: Int? = null,
+    val type: Int? = null,
+    @Json(name = "key_tag") val keyTag: Int? = null,
+    val fingerprint: String? = null,
+    val order: Int? = null,
+    val preference: Int? = null,
+    val flags: String? = null,
+    val service: String? = null,
+    val regex: String? = null,
+    val replacement: String? = null
+)
+
 @JsonClass(generateAdapter = true)
 data class DnsRecord(
     val id: String = "",
@@ -49,8 +76,13 @@ data class DnsRecord(
     val content: String = "",
     val ttl: Int = 1,
     val proxied: Boolean? = null,
+    val proxiable: Boolean? = null,
     val priority: Int? = null,
-    val comment: String? = null
+    val comment: String? = null,
+    val tags: List<String> = emptyList(),
+    val data: DnsRecordData? = null,
+    @Json(name = "created_on") val createdOn: String? = null,
+    @Json(name = "modified_on") val modifiedOn: String? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -61,7 +93,25 @@ data class DnsRecordWrite(
     val ttl: Int,
     val proxied: Boolean? = null,
     val priority: Int? = null,
-    val comment: String? = null
+    val comment: String? = null,
+    val data: DnsRecordData? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class DnsBatchDeleteRef(val id: String)
+
+@JsonClass(generateAdapter = true)
+data class DnsBatchRequest(val deletes: List<DnsBatchDeleteRef>)
+
+@JsonClass(generateAdapter = true)
+data class DnsBatchResult(
+    val deletes: List<DnsRecord>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class DnsImportResult(
+    @Json(name = "recs_added") val recsAdded: Int = 0,
+    @Json(name = "total_records_parsed") val totalRecordsParsed: Int = 0
 )
 
 @JsonClass(generateAdapter = true)
@@ -146,6 +196,152 @@ data class AccessRuleWrite(
     val notes: String? = null
 )
 
+/** The rate-limiting-specific half of a Rulesets rule - present only for rules in the
+ *  "http_ratelimit" phase (PRD §9: threshold-based Rate Limiting). */
+@JsonClass(generateAdapter = true)
+data class RateLimit(
+    val characteristics: List<String> = listOf("ip.src"),
+    val period: Int = 60,
+    @Json(name = "requests_per_period") val requestsPerPeriod: Int = 100,
+    @Json(name = "mitigation_timeout") val mitigationTimeout: Int? = null
+)
+
+/** One side of a URI rewrite (path or query) - exactly one of [value] (static) or
+ *  [expression] (dynamic) is set, matching Cloudflare's "rewrite" action schema for the
+ *  "http_request_transform" phase (PRD §9: URL Rewrite Rules). */
+@JsonClass(generateAdapter = true)
+data class UriRewritePart(
+    val value: String? = null,
+    val expression: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class UriRewrite(
+    val path: UriRewritePart? = null,
+    val query: UriRewritePart? = null
+)
+
+/** One header change inside a "rewrite" action's `headers` map - keyed by header name.
+ *  `operation` is "set" or "remove"; "set" carries exactly one of [value] (static) or
+ *  [expression] (dynamic), "remove" carries neither (PRD §9: Request/Response Header
+ *  Transform Rules, phases "http_request_late_transform" / "http_response_headers_transform"). */
+@JsonClass(generateAdapter = true)
+data class HeaderModification(
+    val operation: String,
+    val value: String? = null,
+    val expression: String? = null
+)
+
+/** A redirect rule's static or dynamic target, inside `from_value`. */
+@JsonClass(generateAdapter = true)
+data class RedirectTargetUrl(
+    val value: String? = null,
+    val expression: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class RedirectFromValue(
+    @Json(name = "status_code") val statusCode: Int = 301,
+    @Json(name = "target_url") val targetUrl: RedirectTargetUrl = RedirectTargetUrl(),
+    @Json(name = "preserve_query_string") val preserveQueryString: Boolean? = null
+)
+
+/** An Origin Rule's replacement origin. Either field may be omitted to leave that half of the
+ *  origin as Cloudflare resolved it. */
+@JsonClass(generateAdapter = true)
+data class RuleOrigin(
+    val host: String? = null,
+    val port: Int? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class RuleSni(val value: String = "")
+
+/** A Cache Rule's TTL block. `mode` is Cloudflare's own vocabulary - "respect_origin",
+ *  "override_origin", or "bypass_by_default" - and `default` is the override in seconds,
+ *  meaningful only in "override_origin". */
+@JsonClass(generateAdapter = true)
+data class RuleTtl(
+    val mode: String = "respect_origin",
+    val default: Int? = null
+)
+
+/**
+ * The action-specific payload of a Rulesets rule. Every rules-engine family in this app writes
+ * into the same `action_parameters` object, so one wide type covers them all and Moshi omits
+ * whatever a given family leaves null:
+ *
+ *  - Transform Rules ("rewrite") populate [uri] or [headers]
+ *  - Redirect Rules ("redirect") populate [fromValue]
+ *  - Origin Rules ("route") populate [origin], [hostHeader], and/or [sni]
+ *  - Cache Rules ("set_cache_settings") populate [cache], [edgeTtl], [browserTtl]
+ *  - Managed WAF deployments ("execute") populate [id] with the managed ruleset's id
+ */
+@JsonClass(generateAdapter = true)
+data class RuleActionParameters(
+    val uri: UriRewrite? = null,
+    val headers: Map<String, HeaderModification>? = null,
+    @Json(name = "from_value") val fromValue: RedirectFromValue? = null,
+    val origin: RuleOrigin? = null,
+    @Json(name = "host_header") val hostHeader: String? = null,
+    val sni: RuleSni? = null,
+    val cache: Boolean? = null,
+    @Json(name = "edge_ttl") val edgeTtl: RuleTtl? = null,
+    @Json(name = "browser_ttl") val browserTtl: RuleTtl? = null,
+    val id: String? = null,
+    // A Config Rule ("set_config") writes the zone settings it overrides as direct keys here,
+    // one per setting, so each has to be its own field rather than a map.
+    @Json(name = "email_obfuscation") val emailObfuscation: Boolean? = null,
+    @Json(name = "hotlink_protection") val hotlinkProtection: Boolean? = null,
+    val mirage: Boolean? = null,
+    @Json(name = "rocket_loader") val rocketLoader: Boolean? = null,
+    @Json(name = "automatic_https_rewrites") val automaticHttpsRewrites: Boolean? = null,
+    val bic: Boolean? = null,
+    @Json(name = "disable_apps") val disableApps: Boolean? = null,
+    @Json(name = "disable_zaraz") val disableZaraz: Boolean? = null,
+    @Json(name = "disable_rum") val disableRum: Boolean? = null
+)
+
+/** One rule inside a Rulesets phase entrypoint. What it does is entirely determined by
+ *  which phase its ruleset belongs to plus [action]: a WAF Custom Rule (the modern
+ *  replacement for the legacy Firewall Rules engine [FirewallRule] models), a Rate Limiting
+ *  rule when [ratelimit] is present, or a Transform Rule (URL Rewrite / header modification)
+ *  when [actionParameters] is present. */
+@JsonClass(generateAdapter = true)
+data class RulesetRule(
+    val id: String = "",
+    val action: String = "block",
+    val expression: String = "",
+    val description: String? = null,
+    val enabled: Boolean = true,
+    val ratelimit: RateLimit? = null,
+    @Json(name = "action_parameters") val actionParameters: RuleActionParameters? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class RulesetRuleWrite(
+    val action: String,
+    val expression: String,
+    val description: String? = null,
+    val enabled: Boolean = true,
+    val ratelimit: RateLimit? = null,
+    @Json(name = "action_parameters") val actionParameters: RuleActionParameters? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class Ruleset(
+    val id: String = "",
+    val name: String? = null,
+    val description: String? = null,
+    /** "managed" for a Cloudflare-maintained ruleset, "zone"/"root" for one the account owns. */
+    val kind: String? = null,
+    val phase: String? = null,
+    val rules: List<RulesetRule> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class RulesetPhaseWrite(val rules: List<RulesetRuleWrite>)
+
 @JsonClass(generateAdapter = true)
 data class PageRuleTarget(
     val target: String = "url",
@@ -204,4 +400,2260 @@ data class AnalyticsMetric(
 @JsonClass(generateAdapter = true)
 data class AnalyticsUniques(
     val all: Double = 0.0
+)
+
+@JsonClass(generateAdapter = true)
+data class AccountRole(
+    val id: String = "",
+    val name: String = "",
+    val description: String = ""
+)
+
+@JsonClass(generateAdapter = true)
+data class AccountMemberUser(
+    val id: String = "",
+    val email: String = "",
+    @Json(name = "first_name") val firstName: String? = null,
+    @Json(name = "last_name") val lastName: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AccountMember(
+    val id: String = "",
+    val user: AccountMemberUser = AccountMemberUser(),
+    val status: String = "",
+    val roles: List<AccountRole> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class AccountMemberInvite(
+    val email: String,
+    val roles: List<String>
+)
+
+@JsonClass(generateAdapter = true)
+data class AuditLogActor(
+    val id: String? = null,
+    val email: String? = null,
+    val ip: String? = null,
+    val type: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AuditLogAction(
+    val type: String? = null,
+    val result: Boolean? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AuditLogResource(
+    val id: String? = null,
+    val type: String? = null,
+    val product: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AuditLogEntry(
+    val id: String = "",
+    val action: AuditLogAction? = null,
+    val actor: AuditLogActor? = null,
+    val resource: AuditLogResource? = null,
+    @Json(name = "when") val occurredAt: String? = null,
+    @Json(name = "newValue") val newValue: String? = null,
+    @Json(name = "oldValue") val oldValue: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class LoadBalancerOrigin(
+    val name: String = "",
+    val address: String = "",
+    val enabled: Boolean = true,
+    val weight: Double = 1.0
+)
+
+/** Pools and their origins are account-level, shared across every zone's load balancers -
+ *  unlike [LoadBalancer] itself, which is zone-scoped. Health check monitors aren't modeled
+ *  here (see LoadBalancingRepository); a pool works without one, just with no automatic
+ *  failover based on health. */
+@JsonClass(generateAdapter = true)
+data class LoadBalancerPool(
+    val id: String = "",
+    val name: String = "",
+    val enabled: Boolean = true,
+    val monitor: String? = null,
+    val origins: List<LoadBalancerOrigin> = emptyList(),
+    @Json(name = "minimum_origins") val minimumOrigins: Int = 1
+)
+
+@JsonClass(generateAdapter = true)
+data class LoadBalancerPoolWrite(
+    val name: String,
+    val enabled: Boolean = true,
+    val origins: List<LoadBalancerOrigin>,
+    @Json(name = "minimum_origins") val minimumOrigins: Int = 1,
+    /** The monitor to health-check this pool's origins with; null means no automatic failover. */
+    val monitor: String? = null
+)
+
+/** A health check monitor. Without one attached, a pool never marks an origin unhealthy, so
+ *  failover never happens. */
+@JsonClass(generateAdapter = true)
+data class LoadBalancerMonitor(
+    val id: String = "",
+    val type: String = "http",
+    val description: String? = null,
+    val method: String? = null,
+    val path: String? = null,
+    val port: Int? = null,
+    val interval: Int? = null,
+    val retries: Int? = null,
+    val timeout: Int? = null,
+    @Json(name = "expected_codes") val expectedCodes: String? = null,
+    @Json(name = "follow_redirects") val followRedirects: Boolean? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class LoadBalancerMonitorWrite(
+    val type: String,
+    val description: String? = null,
+    val method: String? = null,
+    val path: String? = null,
+    val port: Int? = null,
+    val interval: Int = 60,
+    val retries: Int = 2,
+    val timeout: Int = 5,
+    @Json(name = "expected_codes") val expectedCodes: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class LoadBalancer(
+    val id: String = "",
+    val name: String = "",
+    val enabled: Boolean = true,
+    val proxied: Boolean = true,
+    @Json(name = "default_pools") val defaultPools: List<String> = emptyList(),
+    @Json(name = "fallback_pool") val fallbackPool: String? = null,
+    val ttl: Int? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class LoadBalancerWrite(
+    val name: String,
+    val enabled: Boolean = true,
+    val proxied: Boolean = true,
+    @Json(name = "default_pools") val defaultPools: List<String>,
+    @Json(name = "fallback_pool") val fallbackPool: String,
+    val ttl: Int = 30
+)
+
+@JsonClass(generateAdapter = true)
+data class R2Bucket(
+    val name: String = "",
+    @Json(name = "creation_date") val creationDate: String? = null
+)
+
+/** R2's list-buckets response nests the array under "buckets" rather than returning it as
+ *  `result` directly - unlike almost every other Cloudflare v4 list endpoint this app calls. */
+@JsonClass(generateAdapter = true)
+data class R2BucketListResult(
+    val buckets: List<R2Bucket> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class R2BucketCreate(
+    val name: String
+)
+
+@JsonClass(generateAdapter = true)
+data class KvNamespace(
+    val id: String = "",
+    val title: String = ""
+)
+
+@JsonClass(generateAdapter = true)
+data class KvNamespaceCreate(
+    val title: String
+)
+
+@JsonClass(generateAdapter = true)
+data class KvKey(
+    val name: String = "",
+    val expiration: Long? = null,
+    val metadata: Map<String, Any?>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class D1QueryRequest(
+    val sql: String
+)
+
+@JsonClass(generateAdapter = true)
+data class D1QueryMeta(
+    val duration: Double? = null,
+    @Json(name = "rows_read") val rowsRead: Long? = null,
+    @Json(name = "rows_written") val rowsWritten: Long? = null,
+    @Json(name = "changed_db") val changedDb: Boolean? = null
+)
+
+/** One statement's outcome. `results` is null or empty for statements that don't return rows
+ *  (INSERT, CREATE TABLE, ...), which is a success, not an error. */
+@JsonClass(generateAdapter = true)
+data class D1QueryResult(
+    val success: Boolean = false,
+    val results: List<Map<String, Any?>>? = null,
+    val meta: D1QueryMeta? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class WorkerSchedule(
+    val cron: String = "",
+    @Json(name = "created_on") val createdOn: String? = null,
+    @Json(name = "modified_on") val modifiedOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class WorkerSchedules(
+    val schedules: List<WorkerSchedule> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class WorkerRoute(
+    val id: String = "",
+    val pattern: String = "",
+    val script: String? = null
+)
+
+/** Cloudflare treats an empty `script` as "no worker runs here", which is how a route is used
+ *  to carve an exception out of a broader pattern. */
+@JsonClass(generateAdapter = true)
+data class WorkerRouteWrite(
+    val pattern: String,
+    val script: String
+)
+
+@JsonClass(generateAdapter = true)
+data class D1Database(
+    val uuid: String = "",
+    val name: String = "",
+    val version: String? = null,
+    @Json(name = "num_tables") val numTables: Int? = null,
+    @Json(name = "file_size") val fileSize: Long? = null,
+    @Json(name = "created_at") val createdAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class D1DatabaseCreate(
+    val name: String
+)
+
+@JsonClass(generateAdapter = true)
+data class WorkerScript(
+    val id: String = "",
+    val etag: String? = null,
+    val handlers: List<String>? = null,
+    @Json(name = "usage_model") val usageModel: String? = null,
+    @Json(name = "created_on") val createdOn: String? = null,
+    @Json(name = "modified_on") val modifiedOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class GatewayRule(
+    val id: String = "",
+    val name: String = "",
+    val description: String? = null,
+    val enabled: Boolean = true,
+    val action: String = "",
+    val traffic: String? = null,
+    @Json(name = "created_at") val createdAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class GatewayRuleCreate(
+    val name: String,
+    val action: String,
+    val traffic: String,
+    /** Which Gateway engine evaluates the policy: "dns", "http", or "l4". */
+    val filters: List<String> = listOf("dns"),
+    val description: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class DnssecStatus(
+    val status: String? = null,
+    val algorithm: String? = null,
+    val digest: String? = null,
+    @Json(name = "digest_algorithm") val digestAlgorithm: String? = null,
+    @Json(name = "digest_type") val digestType: String? = null,
+    val ds: String? = null,
+    val flags: Int? = null,
+    @Json(name = "key_tag") val keyTag: Int? = null,
+    @Json(name = "key_type") val keyType: String? = null,
+    @Json(name = "public_key") val publicKey: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class DnssecUpdate(
+    val status: String
+)
+
+@JsonClass(generateAdapter = true)
+data class CustomHostnameSsl(
+    val status: String? = null,
+    val method: String? = null,
+    val type: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class CustomHostname(
+    val id: String = "",
+    val hostname: String = "",
+    val status: String? = null,
+    val ssl: CustomHostnameSsl? = null,
+    @Json(name = "created_at") val createdAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class CustomHostnameCreate(
+    val hostname: String,
+    val ssl: CustomHostnameSsl
+)
+
+@JsonClass(generateAdapter = true)
+data class CertificatePack(
+    val id: String = "",
+    val type: String? = null,
+    val status: String? = null,
+    val hosts: List<String> = emptyList(),
+    @Json(name = "certificate_authority") val certificateAuthority: String? = null,
+    @Json(name = "validity_days") val validityDays: Int? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class WaitingRoom(
+    val id: String = "",
+    val name: String = "",
+    val host: String = "",
+    val path: String? = null,
+    val suspended: Boolean = false,
+    @Json(name = "new_users_per_minute") val newUsersPerMinute: Int? = null,
+    @Json(name = "total_active_users") val totalActiveUsers: Int? = null,
+    @Json(name = "queue_all") val queueAll: Boolean? = null,
+    val description: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class WaitingRoomCreate(
+    val name: String,
+    val host: String,
+    val path: String,
+    @Json(name = "new_users_per_minute") val newUsersPerMinute: Int,
+    @Json(name = "total_active_users") val totalActiveUsers: Int
+)
+
+@JsonClass(generateAdapter = true)
+data class HealthCheck(
+    val id: String = "",
+    val name: String = "",
+    val address: String = "",
+    val type: String? = null,
+    val status: String? = null,
+    val description: String? = null,
+    val suspended: Boolean = false,
+    val interval: Int? = null,
+    val retries: Int? = null,
+    val timeout: Int? = null,
+    @Json(name = "failure_reason") val failureReason: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class HealthCheckCreate(
+    val name: String,
+    val address: String,
+    val type: String,
+    val description: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class EmailRoutingSettings(
+    val enabled: Boolean = false,
+    val name: String? = null,
+    val status: String? = null,
+    val created: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class EmailRoutingMatcher(
+    val type: String = "literal",
+    val field: String? = "to",
+    val value: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class EmailRoutingAction(
+    val type: String = "forward",
+    val value: List<String> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class EmailRoutingRule(
+    val tag: String = "",
+    val name: String? = null,
+    val enabled: Boolean = true,
+    val priority: Int? = null,
+    val matchers: List<EmailRoutingMatcher> = emptyList(),
+    val actions: List<EmailRoutingAction> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class EmailRoutingRuleCreate(
+    val name: String,
+    val enabled: Boolean,
+    val matchers: List<EmailRoutingMatcher>,
+    val actions: List<EmailRoutingAction>
+)
+
+@JsonClass(generateAdapter = true)
+data class SpectrumDns(
+    val type: String? = null,
+    val name: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class SpectrumApp(
+    val id: String = "",
+    val protocol: String? = null,
+    val dns: SpectrumDns? = null,
+    @Json(name = "origin_direct") val originDirect: List<String>? = null,
+    @Json(name = "traffic_type") val trafficType: String? = null,
+    @Json(name = "ip_firewall") val ipFirewall: Boolean? = null,
+    @Json(name = "created_on") val createdOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class MagicGreTunnel(
+    val id: String = "",
+    val name: String = "",
+    @Json(name = "cloudflare_gre_endpoint") val cloudflareEndpoint: String? = null,
+    @Json(name = "customer_gre_endpoint") val customerEndpoint: String? = null,
+    @Json(name = "interface_address") val interfaceAddress: String? = null,
+    val description: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class MagicGreTunnelList(
+    @Json(name = "gre_tunnels") val greTunnels: List<MagicGreTunnel> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class MagicIpsecTunnel(
+    val id: String = "",
+    val name: String = "",
+    @Json(name = "cloudflare_endpoint") val cloudflareEndpoint: String? = null,
+    @Json(name = "customer_endpoint") val customerEndpoint: String? = null,
+    @Json(name = "interface_address") val interfaceAddress: String? = null,
+    val description: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class MagicIpsecTunnelList(
+    @Json(name = "ipsec_tunnels") val ipsecTunnels: List<MagicIpsecTunnel> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class MagicRoute(
+    val id: String = "",
+    val prefix: String = "",
+    val nexthop: String? = null,
+    val priority: Int? = null,
+    val description: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class MagicRouteList(
+    val routes: List<MagicRoute> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class SubscriptionProduct(
+    val name: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class SubscriptionRatePlan(
+    val id: String? = null,
+    @Json(name = "public_name") val publicName: String? = null,
+    val currency: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AccountSubscription(
+    val id: String = "",
+    val state: String? = null,
+    val price: Double? = null,
+    val currency: String? = null,
+    val frequency: String? = null,
+    val product: SubscriptionProduct? = null,
+    @Json(name = "rate_plan") val ratePlan: SubscriptionRatePlan? = null,
+    @Json(name = "current_period_end") val currentPeriodEnd: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ScreenshotRequest(
+    val url: String
+)
+
+/** One WAF/firewall event from the firewallEventsAdaptive GraphQL dataset. Every field is
+ *  optional because which columns a plan may query varies. */
+@JsonClass(generateAdapter = true)
+data class FirewallEvent(
+    val datetime: String? = null,
+    val action: String? = null,
+    val source: String? = null,
+    val clientIP: String? = null,
+    val clientCountryName: String? = null,
+    val clientAsn: String? = null,
+    val clientRequestHTTPHost: String? = null,
+    val clientRequestPath: String? = null,
+    val clientRequestHTTPMethodName: String? = null,
+    val userAgent: String? = null,
+    val ruleId: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class FirewallEventsZone(
+    val firewallEventsAdaptive: List<FirewallEvent> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class FirewallEventsViewer(
+    val zones: List<FirewallEventsZone> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class FirewallEventsData(
+    val viewer: FirewallEventsViewer? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PageShieldSettings(
+    val enabled: Boolean = false,
+    @Json(name = "use_cloudflare_reporting_endpoint") val useCloudflareReportingEndpoint: Boolean? = null,
+    @Json(name = "use_connection_url_path") val useConnectionUrlPath: Boolean? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PageShieldSettingsUpdate(
+    val enabled: Boolean
+)
+
+@JsonClass(generateAdapter = true)
+data class PageShieldScript(
+    val id: String = "",
+    val url: String? = null,
+    val host: String? = null,
+    val status: String? = null,
+    @Json(name = "first_seen_at") val firstSeenAt: String? = null,
+    @Json(name = "last_seen_at") val lastSeenAt: String? = null,
+    @Json(name = "js_integrity_score") val jsIntegrityScore: Int? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PageShieldConnection(
+    val id: String = "",
+    val url: String? = null,
+    val host: String? = null,
+    @Json(name = "first_seen_at") val firstSeenAt: String? = null,
+    @Json(name = "last_seen_at") val lastSeenAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class DdosRule(
+    val id: String = "",
+    val description: String? = null,
+    val action: String? = null,
+    val enabled: Boolean = true,
+    val expression: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class DdosRuleset(
+    val id: String = "",
+    val name: String? = null,
+    val description: String? = null,
+    val phase: String? = null,
+    @Json(name = "last_updated") val lastUpdated: String? = null,
+    val rules: List<DdosRule> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class ApiOperation(
+    @Json(name = "operation_id") val operationId: String = "",
+    val method: String? = null,
+    val host: String? = null,
+    val endpoint: String? = null,
+    @Json(name = "last_updated") val lastUpdated: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class StreamVideoStatus(
+    val state: String? = null,
+    @Json(name = "errorReasonText") val errorReasonText: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class StreamVideo(
+    val uid: String = "",
+    val status: StreamVideoStatus? = null,
+    /** Free-form user metadata; Cloudflare puts the display name under "name". Values are
+     *  typed [Any] because callers can store arbitrary JSON here. */
+    val meta: Map<String, Any?>? = null,
+    val created: String? = null,
+    val duration: Double? = null,
+    val size: Long? = null,
+    val thumbnail: String? = null,
+    val preview: String? = null,
+    @Json(name = "readyToStream") val readyToStream: Boolean? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class CfImage(
+    val id: String = "",
+    val filename: String? = null,
+    val uploaded: String? = null,
+    @Json(name = "requireSignedURLs") val requireSignedUrls: Boolean? = null,
+    val variants: List<String>? = null
+)
+
+/** Images' list response nests the array under "images", the same way R2 nests buckets. */
+@JsonClass(generateAdapter = true)
+data class ImagesListResult(
+    val images: List<CfImage> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class ImagesCount(
+    val allowed: Long? = null,
+    val current: Long? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ImagesStats(
+    val count: ImagesCount? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class TurnstileWidget(
+    val sitekey: String = "",
+    val name: String = "",
+    val domains: List<String> = emptyList(),
+    val mode: String? = null,
+    @Json(name = "created_on") val createdOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class TurnstileWidgetCreate(
+    val name: String,
+    val domains: List<String>,
+    val mode: String
+)
+
+@JsonClass(generateAdapter = true)
+data class LogpushJob(
+    val id: Long = 0,
+    val name: String? = null,
+    val dataset: String? = null,
+    val enabled: Boolean = false,
+    @Json(name = "destination_conf") val destinationConf: String? = null,
+    @Json(name = "last_complete") val lastComplete: String? = null,
+    @Json(name = "last_error") val lastError: String? = null,
+    @Json(name = "error_message") val errorMessage: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class LogpushJobUpdate(
+    val enabled: Boolean
+)
+
+@JsonClass(generateAdapter = true)
+data class AiModelTask(
+    val id: String? = null,
+    val name: String? = null,
+    val description: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AiModel(
+    val id: String = "",
+    val name: String = "",
+    val description: String? = null,
+    val task: AiModelTask? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class DeviceUser(
+    val email: String? = null,
+    val name: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class EnrolledDevice(
+    val id: String = "",
+    val name: String? = null,
+    @Json(name = "device_type") val deviceType: String? = null,
+    val version: String? = null,
+    @Json(name = "last_seen") val lastSeen: String? = null,
+    val user: DeviceUser? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PostureRule(
+    val id: String = "",
+    val name: String = "",
+    val type: String? = null,
+    val description: String? = null,
+    val schedule: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class CfQueue(
+    @Json(name = "queue_id") val queueId: String = "",
+    @Json(name = "queue_name") val queueName: String = "",
+    @Json(name = "created_on") val createdOn: String? = null,
+    @Json(name = "producers_total_count") val producersCount: Int? = null,
+    @Json(name = "consumers_total_count") val consumersCount: Int? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class QueueCreate(
+    @Json(name = "queue_name") val queueName: String
+)
+
+@JsonClass(generateAdapter = true)
+data class DurableObjectNamespace(
+    val id: String = "",
+    val name: String = "",
+    val script: String? = null,
+    @Json(name = "class") val className: String? = null,
+    @Json(name = "use_sqlite") val useSqlite: Boolean? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class CfWorkflow(
+    val id: String = "",
+    val name: String = "",
+    @Json(name = "class_name") val className: String? = null,
+    @Json(name = "script_name") val scriptName: String? = null,
+    @Json(name = "created_on") val createdOn: String? = null,
+    @Json(name = "modified_on") val modifiedOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class WorkflowInstance(
+    val id: String = "",
+    val status: String? = null,
+    @Json(name = "version_id") val versionId: String? = null,
+    @Json(name = "created_on") val createdOn: String? = null,
+    @Json(name = "started_on") val startedOn: String? = null,
+    @Json(name = "ended_on") val endedOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class HyperdriveOrigin(
+    val host: String? = null,
+    val port: Int? = null,
+    val database: String? = null,
+    val scheme: String? = null,
+    val user: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class HyperdriveCaching(
+    val disabled: Boolean? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class HyperdriveConfig(
+    val id: String = "",
+    val name: String = "",
+    val origin: HyperdriveOrigin? = null,
+    val caching: HyperdriveCaching? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class VectorizeIndexConfig(
+    val dimensions: Int = 0,
+    val metric: String = ""
+)
+
+@JsonClass(generateAdapter = true)
+data class VectorizeIndex(
+    val name: String = "",
+    val description: String? = null,
+    val config: VectorizeIndexConfig? = null,
+    @Json(name = "created_on") val createdOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class VectorizeIndexCreate(
+    val name: String,
+    val config: VectorizeIndexConfig,
+    val description: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class CfTunnel(
+    val id: String = "",
+    val name: String = "",
+    val status: String? = null,
+    @Json(name = "tun_type") val tunType: String? = null,
+    @Json(name = "created_at") val createdAt: String? = null
+)
+
+/** Creates a remotely-managed tunnel (config_src "cloudflare") rather than a locally-managed
+ *  one, so no tunnel_secret needs to be generated on-device - see CapabilityRegistry's
+ *  migrationHint: this only registers the tunnel, running it still needs the cloudflared
+ *  daemon elsewhere. */
+@JsonClass(generateAdapter = true)
+data class TunnelCreate(
+    val name: String,
+    @Json(name = "config_src") val configSrc: String = "cloudflare"
+)
+
+@JsonClass(generateAdapter = true)
+data class PagesProject(
+    val name: String = "",
+    val subdomain: String? = null,
+    val domains: List<String>? = null,
+    @Json(name = "production_branch") val productionBranch: String? = null,
+    @Json(name = "created_on") val createdOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PagesDeploymentStage(
+    val name: String? = null,
+    val status: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PagesDeploymentTriggerMetadata(
+    val branch: String? = null,
+    @Json(name = "commit_hash") val commitHash: String? = null,
+    @Json(name = "commit_message") val commitMessage: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PagesDeploymentTrigger(
+    val metadata: PagesDeploymentTriggerMetadata? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AccessApplication(
+    val id: String = "",
+    val name: String = "",
+    val domain: String = "",
+    val aud: String? = null,
+    @Json(name = "created_at") val createdAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AccessApplicationCreate(
+    val name: String,
+    val domain: String,
+    val type: String = "self_hosted",
+    @Json(name = "session_duration") val sessionDuration: String = "24h"
+)
+
+/** Cloudflare's Access policy "include" entries are a discriminated union in the real API
+ *  (one populated key per object, e.g. {"email_domain":{"domain":"..."}} or
+ *  {"email":{"email":"..."}}) - modeled here as one class with nullable branches, relying on
+ *  Moshi's default of omitting null fields when writing JSON, rather than a custom adapter. */
+@JsonClass(generateAdapter = true)
+data class AccessPolicyIncludeRule(
+    @Json(name = "email_domain") val emailDomain: AccessEmailDomainRule? = null,
+    val email: AccessEmailRule? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AccessEmailDomainRule(val domain: String)
+
+@JsonClass(generateAdapter = true)
+data class AccessEmailRule(val email: String)
+
+/** An Access identity provider. Cloudflare's own one-time PIN provider has type "onetimepin"
+ *  and no configuration; every other type carries provider credentials this app never reads. */
+@JsonClass(generateAdapter = true)
+data class AccessIdentityProvider(
+    val id: String = "",
+    val name: String = "",
+    val type: String = ""
+)
+
+@JsonClass(generateAdapter = true)
+data class AccessIdentityProviderCreate(
+    val name: String,
+    val type: String,
+    /** Empty for one-time PIN, which is the only type this app can create. */
+    val config: Map<String, String> = emptyMap()
+)
+
+/**
+ * An Access service token. [clientSecret] is returned only in the response that creates the
+ * token - Cloudflare never sends it again, and it is not stored anywhere by this app.
+ */
+@JsonClass(generateAdapter = true)
+data class AccessServiceToken(
+    val id: String = "",
+    val name: String = "",
+    @Json(name = "client_id") val clientId: String? = null,
+    @Json(name = "client_secret") val clientSecret: String? = null,
+    @Json(name = "created_at") val createdAt: String? = null,
+    @Json(name = "expires_at") val expiresAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AccessServiceTokenCreate(val name: String)
+
+@JsonClass(generateAdapter = true)
+data class GatewayListItem(val value: String = "")
+
+/** A Zero Trust list. [count] is how many items it holds; the items themselves are a separate
+ *  request. */
+@JsonClass(generateAdapter = true)
+data class GatewayList(
+    val id: String = "",
+    val name: String = "",
+    val description: String? = null,
+    val type: String = "",
+    val count: Int? = null,
+    @Json(name = "created_at") val createdAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class GatewayListCreate(
+    val name: String,
+    val type: String,
+    val description: String? = null,
+    val items: List<GatewayListItem> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class AccessPolicyCreate(
+    val name: String,
+    val decision: String,
+    val include: List<AccessPolicyIncludeRule>
+)
+
+@JsonClass(generateAdapter = true)
+data class PagesDeployment(
+    val id: String = "",
+    val environment: String? = null,
+    val url: String? = null,
+    @Json(name = "created_on") val createdOn: String? = null,
+    @Json(name = "latest_stage") val latestStage: PagesDeploymentStage? = null,
+    @Json(name = "deployment_trigger") val deploymentTrigger: PagesDeploymentTrigger? = null
+)
+
+// ---- Account-level products: API tokens, notifications, bulk redirects, registrar, RUM ----
+
+/** An API token as the tokens list reports it. The token's own value is never returned by any
+ *  list or read endpoint - only by the call that creates or rolls it, which this app doesn't
+ *  make. */
+@JsonClass(generateAdapter = true)
+data class ApiToken(
+    val id: String = "",
+    val name: String = "",
+    val status: String? = null,
+    @Json(name = "issued_on") val issuedOn: String? = null,
+    @Json(name = "modified_on") val modifiedOn: String? = null,
+    @Json(name = "expires_on") val expiresOn: String? = null,
+    @Json(name = "last_used_on") val lastUsedOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class NotificationMechanismTarget(
+    val id: String? = null,
+    val name: String? = null
+)
+
+/** Where a notification policy sends: email addresses, webhooks, and PagerDuty services, each
+ *  keyed by channel. */
+@JsonClass(generateAdapter = true)
+data class NotificationMechanisms(
+    val email: List<NotificationMechanismTarget>? = null,
+    val webhooks: List<NotificationMechanismTarget>? = null,
+    val pagerduty: List<NotificationMechanismTarget>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class NotificationPolicy(
+    val id: String = "",
+    val name: String = "",
+    val description: String? = null,
+    val enabled: Boolean = true,
+    @Json(name = "alert_type") val alertType: String? = null,
+    val mechanisms: NotificationMechanisms? = null,
+    val created: String? = null,
+    val modified: String? = null
+)
+
+/** Only the fields this app changes; Cloudflare merges a PATCH into the stored policy. */
+@JsonClass(generateAdapter = true)
+data class NotificationPolicyUpdate(val enabled: Boolean)
+
+/** An account-level Rules List. Bulk Redirects are the "redirect" kind; the same endpoint also
+ *  serves IP and hostname lists used by WAF rules. */
+@JsonClass(generateAdapter = true)
+data class RulesList(
+    val id: String = "",
+    val name: String = "",
+    val description: String? = null,
+    val kind: String = "",
+    @Json(name = "num_items") val numItems: Int? = null,
+    @Json(name = "created_on") val createdOn: String? = null,
+    @Json(name = "modified_on") val modifiedOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class RulesListCreate(
+    val name: String,
+    val kind: String,
+    val description: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class BulkRedirect(
+    @Json(name = "source_url") val sourceUrl: String = "",
+    @Json(name = "target_url") val targetUrl: String = "",
+    @Json(name = "status_code") val statusCode: Int? = null,
+    @Json(name = "preserve_query_string") val preserveQueryString: Boolean? = null,
+    @Json(name = "subpath_matching") val subpathMatching: Boolean? = null
+)
+
+/** One entry in a Rules List. Which field is populated depends on the list's kind. */
+@JsonClass(generateAdapter = true)
+data class RulesListItem(
+    val id: String = "",
+    val ip: String? = null,
+    val hostname: RulesListHostname? = null,
+    val redirect: BulkRedirect? = null,
+    val comment: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class RulesListHostname(@Json(name = "url_hostname") val urlHostname: String = "")
+
+/** A domain registered through Cloudflare Registrar. */
+@JsonClass(generateAdapter = true)
+data class RegistrarDomain(
+    val id: String = "",
+    val name: String = "",
+    @Json(name = "available") val available: Boolean? = null,
+    @Json(name = "auto_renew") val autoRenew: Boolean? = null,
+    val locked: Boolean? = null,
+    @Json(name = "current_registrar") val currentRegistrar: String? = null,
+    @Json(name = "expires_at") val expiresAt: String? = null,
+    @Json(name = "registry_statuses") val registryStatuses: String? = null,
+    @Json(name = "transfer_in") val transferIn: RegistrarTransfer? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class RegistrarTransfer(
+    @Json(name = "unlock_domain") val unlockDomain: String? = null,
+    @Json(name = "approve_transfer") val approveTransfer: String? = null,
+    @Json(name = "accept_foa") val acceptFoa: String? = null,
+    @Json(name = "enter_auth_code") val enterAuthCode: String? = null
+)
+
+/** A Web Analytics (RUM) site. [snippet] is the JavaScript tag to paste into a page. */
+@JsonClass(generateAdapter = true)
+data class RumSite(
+    @Json(name = "site_tag") val siteTag: String = "",
+    @Json(name = "site_token") val siteToken: String? = null,
+    val snippet: String? = null,
+    @Json(name = "auto_install") val autoInstall: Boolean? = null,
+    val created: String? = null,
+    val ruleset: RumRuleset? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class RumRuleset(
+    val id: String? = null,
+    @Json(name = "zone_name") val zoneName: String? = null,
+    val enabled: Boolean? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class RumSiteCreate(
+    val host: String,
+    @Json(name = "auto_install") val autoInstall: Boolean = true
+)
+
+// ---- Zone-level products: snippets, cloud connector, Zaraz, custom error pages ----
+
+@JsonClass(generateAdapter = true)
+data class Snippet(
+    @Json(name = "snippet_name") val snippetName: String = "",
+    @Json(name = "created_on") val createdOn: String? = null,
+    @Json(name = "modified_on") val modifiedOn: String? = null
+)
+
+/** A rule deciding which requests run a snippet. Cloudflare stores these as one ordered list
+ *  per zone, replaced wholesale rather than edited one at a time. */
+@JsonClass(generateAdapter = true)
+data class SnippetRule(
+    val id: String? = null,
+    val expression: String = "",
+    @Json(name = "snippet_name") val snippetName: String = "",
+    val enabled: Boolean = true,
+    val description: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class SnippetRulesWrite(val rules: List<SnippetRule>)
+
+/** Cloud Connector sends matching requests to object storage instead of the origin. */
+@JsonClass(generateAdapter = true)
+data class CloudConnectorRule(
+    val id: String? = null,
+    val expression: String = "",
+    val provider: String = "",
+    val description: String? = null,
+    val enabled: Boolean = true,
+    val parameters: CloudConnectorParameters? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class CloudConnectorParameters(val host: String = "")
+
+/** One of Cloudflare's error page types. [state] is "default" or "customized"; [url] is the
+ *  page Cloudflare fetches the replacement HTML from. */
+@JsonClass(generateAdapter = true)
+data class CustomPage(
+    val id: String = "",
+    val description: String? = null,
+    val url: String? = null,
+    val state: String? = null,
+    @Json(name = "required_tokens") val requiredTokens: List<String>? = null,
+    @Json(name = "preview_target") val previewTarget: String? = null,
+    @Json(name = "modified_on") val modifiedOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class CustomPageWrite(
+    val url: String?,
+    val state: String
+)
+
+/** One third-party tool Zaraz loads. Cloudflare keys these by an opaque id in a map. */
+@JsonClass(generateAdapter = true)
+data class ZarazTool(
+    val name: String? = null,
+    val type: String? = null,
+    val enabled: Boolean? = null,
+    @Json(name = "defaultFields") val defaultFields: Map<String, Any?>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ZarazTrigger(
+    val name: String? = null,
+    val description: String? = null
+)
+
+/** The Zaraz configuration for a zone. Only the parts this app reports are modeled; the full
+ *  document is much larger and version-specific. */
+@JsonClass(generateAdapter = true)
+data class ZarazConfig(
+    val zarazVersion: Int? = null,
+    val debugKey: String? = null,
+    val tools: Map<String, ZarazTool>? = null,
+    val triggers: Map<String, ZarazTrigger>? = null,
+    val settings: ZarazSettings? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ZarazSettings(
+    val autoInjectScript: Boolean? = null,
+    val ecommerce: Boolean? = null,
+    val hideQueryParams: Boolean? = null,
+    val hideIPAddress: Boolean? = null,
+    val hideUserAgent: Boolean? = null,
+    val hideExternalReferer: Boolean? = null
+)
+
+/** Super Bot Fight Mode and its free-tier sibling live in the same bot_management document,
+ *  so one type covers both; which fields Cloudflare accepts depends on the zone's plan. */
+@JsonClass(generateAdapter = true)
+data class BotManagementConfig(
+    @Json(name = "fight_mode") val fightMode: Boolean? = null,
+    @Json(name = "sbfm_definitely_automated") val definitelyAutomated: String? = null,
+    @Json(name = "sbfm_likely_automated") val likelyAutomated: String? = null,
+    @Json(name = "sbfm_verified_bots") val verifiedBots: String? = null,
+    @Json(name = "sbfm_static_resource_protection") val staticResourceProtection: Boolean? = null,
+    @Json(name = "optimize_wordpress") val optimizeWordpress: Boolean? = null,
+    @Json(name = "using_latest_model") val usingLatestModel: Boolean? = null,
+    @Json(name = "auto_update_model") val autoUpdateModel: Boolean? = null,
+    @Json(name = "suppress_session_score") val suppressSessionScore: Boolean? = null
+)
+
+/** A Page Shield policy: an allow-list expression deciding which scripts may run. */
+@JsonClass(generateAdapter = true)
+data class PageShieldPolicy(
+    val id: String = "",
+    val action: String = "allow",
+    val description: String? = null,
+    val enabled: Boolean = true,
+    val expression: String = "",
+    val value: String = ""
+)
+
+@JsonClass(generateAdapter = true)
+data class PageShieldPolicyWrite(
+    val action: String,
+    val description: String? = null,
+    val enabled: Boolean = true,
+    val expression: String,
+    val value: String
+)
+
+/** A destination address email routing can forward to. Cloudflare only delivers to an address
+ *  once its owner has clicked the verification link. */
+@JsonClass(generateAdapter = true)
+data class EmailDestinationAddress(
+    val tag: String = "",
+    val email: String = "",
+    val verified: String? = null,
+    val created: String? = null,
+    val modified: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class EmailDestinationCreate(val email: String)
+
+@JsonClass(generateAdapter = true)
+data class EmailCatchAllAction(
+    val type: String = "drop",
+    val value: List<String> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class EmailCatchAllMatcher(val type: String = "all")
+
+/** What happens to mail sent to an address with no matching rule. */
+@JsonClass(generateAdapter = true)
+data class EmailCatchAll(
+    val tag: String? = null,
+    val name: String? = null,
+    val enabled: Boolean = false,
+    val actions: List<EmailCatchAllAction> = emptyList(),
+    val matchers: List<EmailCatchAllMatcher> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class EmailCatchAllWrite(
+    val enabled: Boolean,
+    val actions: List<EmailCatchAllAction>,
+    val matchers: List<EmailCatchAllMatcher> = listOf(EmailCatchAllMatcher())
+)
+
+/** Sent to change a Workflow instance's state; Cloudflare takes the verb as a status. */
+@JsonClass(generateAdapter = true)
+data class WorkflowInstanceStatusWrite(val status: String)
+
+// ---- Zone security depth: lockdowns, UA rules, mTLS, origin pulls, nameservers, holds ----
+
+@JsonClass(generateAdapter = true)
+data class LockdownConfiguration(
+    val target: String = "ip",
+    val value: String = ""
+)
+
+@JsonClass(generateAdapter = true)
+data class LockdownUrl(val url: String = "")
+
+/**
+ * A Zone Lockdown: the listed URLs are reachable only from the listed addresses. This is the
+ * legacy firewall product, not a Rulesets phase, which is why it has its own shape.
+ */
+@JsonClass(generateAdapter = true)
+data class ZoneLockdown(
+    val id: String = "",
+    val description: String? = null,
+    val paused: Boolean = false,
+    val urls: List<String> = emptyList(),
+    val configurations: List<LockdownConfiguration> = emptyList(),
+    @Json(name = "created_on") val createdOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ZoneLockdownWrite(
+    val description: String? = null,
+    val paused: Boolean = false,
+    val urls: List<String>,
+    val configurations: List<LockdownConfiguration>
+)
+
+@JsonClass(generateAdapter = true)
+data class UserAgentRuleConfiguration(
+    val target: String = "ua",
+    val value: String = ""
+)
+
+/** A User Agent Blocking rule - matches the UA header exactly and applies one action. */
+@JsonClass(generateAdapter = true)
+data class UserAgentRule(
+    val id: String = "",
+    val description: String? = null,
+    val mode: String = "block",
+    val paused: Boolean = false,
+    val configuration: UserAgentRuleConfiguration = UserAgentRuleConfiguration()
+)
+
+@JsonClass(generateAdapter = true)
+data class UserAgentRuleWrite(
+    val mode: String,
+    val configuration: UserAgentRuleConfiguration,
+    val description: String? = null,
+    val paused: Boolean = false
+)
+
+/** A client certificate the zone will accept for mTLS. The private key is generated by the
+ *  caller and never returned by Cloudflare. */
+@JsonClass(generateAdapter = true)
+data class ClientCertificate(
+    val id: String = "",
+    val certificate: String? = null,
+    @Json(name = "common_name") val commonName: String? = null,
+    val status: String? = null,
+    @Json(name = "expires_on") val expiresOn: String? = null,
+    @Json(name = "issuer") val issuer: String? = null,
+    @Json(name = "serial_number") val serialNumber: String? = null
+)
+
+/** Whether the zone asks origins to present Cloudflare's client certificate. */
+@JsonClass(generateAdapter = true)
+data class OriginTlsClientAuthSettings(val enabled: Boolean = false)
+
+@JsonClass(generateAdapter = true)
+data class TotalTlsSettings(
+    val enabled: Boolean = false,
+    @Json(name = "certificate_authority") val certificateAuthority: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class TotalTlsWrite(
+    val enabled: Boolean,
+    @Json(name = "certificate_authority") val certificateAuthority: String? = null
+)
+
+/** A set of nameservers a zone or account uses instead of Cloudflare's assigned pair. */
+@JsonClass(generateAdapter = true)
+data class CustomNameserver(
+    val id: String? = null,
+    @Json(name = "ns_name") val nsName: String? = null,
+    @Json(name = "ns_set") val nsSet: Int? = null,
+    val status: String? = null,
+    val zoneTag: String? = null
+)
+
+/** Zone custom-nameserver configuration: which set the zone uses, and whether it's on. */
+@JsonClass(generateAdapter = true)
+data class ZoneCustomNameservers(
+    val enabled: Boolean? = null,
+    @Json(name = "ns_set") val nsSet: Int? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ZoneCustomNameserversWrite(
+    val enabled: Boolean,
+    @Json(name = "ns_set") val nsSet: Int? = null
+)
+
+/** A zone hold stops the same domain being added to another Cloudflare account. */
+@JsonClass(generateAdapter = true)
+data class ZoneHold(
+    val hold: Boolean = false,
+    @Json(name = "include_subdomains") val includeSubdomains: Boolean? = null,
+    @Json(name = "hold_after") val holdAfter: String? = null
+)
+
+// ---- Cache and performance depth: Argo, tiered cache, cache reserve, managed transforms ----
+
+/** Argo Smart Routing and the tiered-cache toggles share this shape: one `value` of "on" or
+ *  "off" under their own endpoint rather than under /settings. */
+@JsonClass(generateAdapter = true)
+data class ArgoSetting(
+    val id: String? = null,
+    val value: String? = null,
+    val editable: Boolean? = null,
+    @Json(name = "modified_on") val modifiedOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ArgoSettingWrite(val value: String)
+
+/** Cache Reserve and the regional/smart tiered cache toggles report a boolean-ish value the
+ *  same way, but under /cache. */
+@JsonClass(generateAdapter = true)
+data class CacheSetting(
+    val id: String? = null,
+    val value: String? = null,
+    @Json(name = "modified_on") val modifiedOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class CacheSettingWrite(val value: String)
+
+/** One of Cloudflare's managed header transforms - a header it can add or remove for you
+ *  without writing a Transform Rule. */
+@JsonClass(generateAdapter = true)
+data class ManagedHeader(
+    val id: String = "",
+    val enabled: Boolean = false,
+    @Json(name = "has_conflict") val hasConflict: Boolean? = null,
+    @Json(name = "conflicts_with") val conflictsWith: List<String>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ManagedHeaders(
+    @Json(name = "managed_request_headers") val requestHeaders: List<ManagedHeader> = emptyList(),
+    @Json(name = "managed_response_headers") val responseHeaders: List<ManagedHeader> = emptyList()
+)
+
+/** How the zone normalizes incoming URLs before rules and cache lookups see them. */
+@JsonClass(generateAdapter = true)
+data class UrlNormalization(
+    val type: String? = null,
+    val scope: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class UrlNormalizationWrite(
+    val type: String,
+    val scope: String
+)
+
+// ---- Storage and compute depth: R2 config, Worker secrets/domains, Pages domains, consumers ----
+
+@JsonClass(generateAdapter = true)
+data class R2CorsAllowed(
+    val origins: List<String> = emptyList(),
+    val methods: List<String> = emptyList(),
+    val headers: List<String>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class R2CorsRule(
+    val id: String? = null,
+    val allowed: R2CorsAllowed = R2CorsAllowed(),
+    @Json(name = "maxAgeSeconds") val maxAgeSeconds: Int? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class R2CorsRules(val rules: List<R2CorsRule> = emptyList())
+
+/** How long after upload an object is deleted, or moved to infrequent access. */
+@JsonClass(generateAdapter = true)
+data class R2LifecycleCondition(
+    @Json(name = "maxAge") val maxAge: Int? = null,
+    val date: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class R2LifecycleDeleteAction(
+    val condition: R2LifecycleCondition = R2LifecycleCondition()
+)
+
+@JsonClass(generateAdapter = true)
+data class R2LifecycleConditions(
+    val prefix: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class R2LifecycleRule(
+    val id: String = "",
+    val enabled: Boolean = true,
+    val conditions: R2LifecycleConditions? = null,
+    @Json(name = "deleteObjectsTransition") val deleteTransition: R2LifecycleDeleteAction? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class R2LifecycleRules(val rules: List<R2LifecycleRule> = emptyList())
+
+/** A hostname serving a bucket's objects publicly. */
+@JsonClass(generateAdapter = true)
+data class R2CustomDomain(
+    val domain: String = "",
+    val enabled: Boolean = true,
+    val status: R2CustomDomainStatus? = null,
+    @Json(name = "zoneName") val zoneName: String? = null,
+    @Json(name = "minTLS") val minTls: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class R2CustomDomainStatus(
+    val ownership: String? = null,
+    val ssl: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class R2CustomDomains(val domains: List<R2CustomDomain> = emptyList())
+
+/** Whether the bucket answers on its r2.dev development URL. */
+@JsonClass(generateAdapter = true)
+data class R2ManagedDomain(
+    val enabled: Boolean = false,
+    val domain: String? = null,
+    @Json(name = "bucketId") val bucketId: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class R2ManagedDomainWrite(val enabled: Boolean)
+
+/** A Worker secret. Cloudflare returns the name and type only - never the value. */
+@JsonClass(generateAdapter = true)
+data class WorkerSecret(
+    val name: String = "",
+    val type: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class WorkerSecretWrite(
+    val name: String,
+    val text: String,
+    val type: String = "secret_text"
+)
+
+/** A hostname bound directly to a Worker, as opposed to a route on a zone. */
+@JsonClass(generateAdapter = true)
+data class WorkerDomain(
+    val id: String = "",
+    val hostname: String = "",
+    val service: String? = null,
+    val environment: String? = null,
+    @Json(name = "zone_id") val zoneId: String? = null,
+    @Json(name = "zone_name") val zoneName: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class WorkerDomainWrite(
+    @Json(name = "zone_id") val zoneId: String,
+    val hostname: String,
+    val service: String,
+    val environment: String = "production"
+)
+
+/** One deployment of a Worker script - which version is live and how traffic is split. */
+@JsonClass(generateAdapter = true)
+data class WorkerDeployment(
+    val id: String = "",
+    val source: String? = null,
+    val strategy: String? = null,
+    @Json(name = "created_on") val createdOn: String? = null,
+    @Json(name = "author_email") val authorEmail: String? = null,
+    val annotations: Map<String, String>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class WorkerDeployments(
+    val deployments: List<WorkerDeployment> = emptyList()
+)
+
+/** A Pages project's custom domain and where its verification has got to. */
+@JsonClass(generateAdapter = true)
+data class PagesDomain(
+    val id: String = "",
+    val name: String = "",
+    val status: String? = null,
+    @Json(name = "verification_data") val verificationData: PagesDomainVerification? = null,
+    @Json(name = "created_on") val createdOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PagesDomainVerification(
+    val status: String? = null,
+    @Json(name = "error_message") val errorMessage: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PagesDomainCreate(val name: String)
+
+/** A Worker consuming a queue, with the batching settings that decide how it's called. */
+@JsonClass(generateAdapter = true)
+data class QueueConsumer(
+    @Json(name = "consumer_id") val consumerId: String? = null,
+    @Json(name = "script_name") val scriptName: String? = null,
+    val type: String? = null,
+    val settings: QueueConsumerSettings? = null,
+    @Json(name = "dead_letter_queue") val deadLetterQueue: String? = null,
+    @Json(name = "created_on") val createdOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class QueueConsumerSettings(
+    @Json(name = "batch_size") val batchSize: Int? = null,
+    @Json(name = "max_retries") val maxRetries: Int? = null,
+    @Json(name = "max_wait_time_ms") val maxWaitTimeMs: Int? = null,
+    @Json(name = "max_concurrency") val maxConcurrency: Int? = null
+)
+
+// ---- Zero Trust breadth: groups, mTLS, bookmarks, tags, locations, WARP, tunnel routing ----
+
+/** A reusable Access group - the same include rules a policy uses, named and shared. */
+@JsonClass(generateAdapter = true)
+data class AccessGroup(
+    val id: String = "",
+    val name: String = "",
+    val include: List<AccessPolicyIncludeRule> = emptyList(),
+    val exclude: List<AccessPolicyIncludeRule>? = null,
+    val require: List<AccessPolicyIncludeRule>? = null,
+    @Json(name = "created_at") val createdAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AccessGroupWrite(
+    val name: String,
+    val include: List<AccessPolicyIncludeRule>
+)
+
+/** A root certificate Access will accept client certificates from. */
+@JsonClass(generateAdapter = true)
+data class AccessMtlsCertificate(
+    val id: String = "",
+    val name: String? = null,
+    val fingerprint: String? = null,
+    @Json(name = "associated_hostnames") val associatedHostnames: List<String>? = null,
+    @Json(name = "expires_on") val expiresOn: String? = null
+)
+
+/** A link on the Zero Trust launchpad - an app users can reach but Access doesn't guard. */
+@JsonClass(generateAdapter = true)
+data class AccessBookmark(
+    val id: String = "",
+    val name: String? = null,
+    val domain: String? = null,
+    @Json(name = "app_launcher_visible") val appLauncherVisible: Boolean? = null,
+    @Json(name = "logo_url") val logoUrl: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AccessBookmarkWrite(
+    val name: String,
+    val domain: String,
+    @Json(name = "app_launcher_visible") val appLauncherVisible: Boolean = true
+)
+
+/** A tag used to group Access applications on the launchpad. */
+@JsonClass(generateAdapter = true)
+data class AccessTag(
+    val name: String = "",
+    @Json(name = "app_count") val appCount: Int? = null,
+    @Json(name = "created_at") val createdAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AccessTagWrite(val name: String)
+
+/** A Gateway DNS location: the resolver addresses a network sends its DNS queries to. */
+@JsonClass(generateAdapter = true)
+data class GatewayLocation(
+    val id: String = "",
+    val name: String = "",
+    @Json(name = "doh_subdomain") val dohSubdomain: String? = null,
+    @Json(name = "client_default") val clientDefault: Boolean? = null,
+    @Json(name = "ecs_support") val ecsSupport: Boolean? = null,
+    val networks: List<GatewayLocationNetwork>? = null,
+    @Json(name = "ip") val ip: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class GatewayLocationNetwork(
+    val id: String? = null,
+    val network: String = ""
+)
+
+@JsonClass(generateAdapter = true)
+data class GatewayLocationWrite(
+    val name: String,
+    @Json(name = "client_default") val clientDefault: Boolean = false,
+    val networks: List<GatewayLocationNetwork> = emptyList()
+)
+
+/** A WARP device settings profile - which traffic the client sends through Cloudflare. */
+@JsonClass(generateAdapter = true)
+data class DeviceSettingsPolicy(
+    @Json(name = "policy_id") val policyId: String? = null,
+    val name: String? = null,
+    val description: String? = null,
+    val enabled: Boolean? = null,
+    val default: Boolean? = null,
+    val precedence: Int? = null,
+    val match: String? = null,
+    @Json(name = "service_mode_v2") val serviceMode: DeviceServiceMode? = null,
+    @Json(name = "switch_locked") val switchLocked: Boolean? = null,
+    @Json(name = "auto_connect") val autoConnect: Int? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class DeviceServiceMode(
+    val mode: String? = null,
+    val port: Int? = null
+)
+
+/** A private network route reachable through a Cloudflare Tunnel. */
+@JsonClass(generateAdapter = true)
+data class TunnelRoute(
+    val id: String = "",
+    val network: String = "",
+    @Json(name = "tunnel_id") val tunnelId: String? = null,
+    @Json(name = "tunnel_name") val tunnelName: String? = null,
+    val comment: String? = null,
+    @Json(name = "virtual_network_id") val virtualNetworkId: String? = null,
+    @Json(name = "created_at") val createdAt: String? = null,
+    @Json(name = "deleted_at") val deletedAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class TunnelRouteWrite(
+    val network: String,
+    @Json(name = "tunnel_id") val tunnelId: String,
+    val comment: String? = null,
+    @Json(name = "virtual_network_id") val virtualNetworkId: String? = null
+)
+
+/** A virtual network, which lets overlapping private ranges coexist behind different tunnels. */
+@JsonClass(generateAdapter = true)
+data class VirtualNetwork(
+    val id: String = "",
+    val name: String = "",
+    val comment: String? = null,
+    @Json(name = "is_default_network") val isDefault: Boolean? = null,
+    @Json(name = "created_at") val createdAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class VirtualNetworkWrite(
+    val name: String,
+    val comment: String? = null,
+    @Json(name = "is_default") val isDefault: Boolean = false
+)
+
+// ---- Account platform: AI Gateway, Calls, Pipelines, Secrets Store, DNS Firewall ----
+
+/** An AI Gateway: a proxy in front of model providers that caches, rate-limits, and logs. */
+@JsonClass(generateAdapter = true)
+data class AiGateway(
+    val id: String = "",
+    @Json(name = "cache_ttl") val cacheTtl: Int? = null,
+    @Json(name = "cache_invalidate_on_update") val cacheInvalidateOnUpdate: Boolean? = null,
+    @Json(name = "collect_logs") val collectLogs: Boolean? = null,
+    @Json(name = "rate_limiting_interval") val rateLimitingInterval: Int? = null,
+    @Json(name = "rate_limiting_limit") val rateLimitingLimit: Int? = null,
+    @Json(name = "rate_limiting_technique") val rateLimitingTechnique: String? = null,
+    @Json(name = "created_at") val createdAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AiGatewayWrite(
+    val id: String,
+    @Json(name = "cache_ttl") val cacheTtl: Int = 0,
+    @Json(name = "cache_invalidate_on_update") val cacheInvalidateOnUpdate: Boolean = false,
+    @Json(name = "collect_logs") val collectLogs: Boolean = true,
+    @Json(name = "rate_limiting_interval") val rateLimitingInterval: Int = 0,
+    @Json(name = "rate_limiting_limit") val rateLimitingLimit: Int = 0,
+    @Json(name = "rate_limiting_technique") val rateLimitingTechnique: String = "fixed"
+)
+
+/** A Calls application - the credentials a client uses to reach Cloudflare's SFU or TURN. */
+@JsonClass(generateAdapter = true)
+data class CallsApp(
+    val uid: String = "",
+    val name: String? = null,
+    val created: String? = null,
+    val modified: String? = null,
+    /** Returned only when the app is created; never readable afterwards. */
+    val secret: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class CallsAppWrite(val name: String)
+
+/** A Pipeline: an HTTP or Worker source feeding batched records into R2. */
+@JsonClass(generateAdapter = true)
+data class Pipeline(
+    val id: String = "",
+    val name: String = "",
+    val endpoint: String? = null,
+    val version: Int? = null
+)
+
+/** A store in the account's Secrets Store. */
+@JsonClass(generateAdapter = true)
+data class SecretStore(
+    val id: String = "",
+    val name: String = "",
+    val created: String? = null,
+    val modified: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class SecretStoreWrite(val name: String)
+
+/** One secret inside a store. As everywhere else, the value is never returned. */
+@JsonClass(generateAdapter = true)
+data class StoredSecret(
+    val id: String = "",
+    val name: String = "",
+    val comment: String? = null,
+    val status: String? = null,
+    val scopes: List<String>? = null,
+    val created: String? = null
+)
+
+/** A DNS Firewall cluster: Cloudflare's resolvers fronting your own authoritative servers. */
+@JsonClass(generateAdapter = true)
+data class DnsFirewallCluster(
+    val id: String = "",
+    val name: String = "",
+    @Json(name = "dns_firewall_ips") val dnsFirewallIps: List<String>? = null,
+    @Json(name = "upstream_ips") val upstreamIps: List<String>? = null,
+    @Json(name = "minimum_cache_ttl") val minimumCacheTtl: Int? = null,
+    @Json(name = "maximum_cache_ttl") val maximumCacheTtl: Int? = null,
+    @Json(name = "deprecate_any_requests") val deprecateAnyRequests: Boolean? = null,
+    @Json(name = "ratelimit") val rateLimit: Int? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class DnsFirewallClusterWrite(
+    val name: String,
+    @Json(name = "upstream_ips") val upstreamIps: List<String>
+)
+
+/** A webhook destination an alert policy can notify. */
+@JsonClass(generateAdapter = true)
+data class NotificationWebhook(
+    val id: String = "",
+    val name: String? = null,
+    val url: String? = null,
+    val type: String? = null,
+    @Json(name = "last_success") val lastSuccess: String? = null,
+    @Json(name = "last_failure") val lastFailure: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class NotificationWebhookWrite(
+    val name: String,
+    val url: String,
+    /** Cloudflare's own value for a plain HTTP webhook, as opposed to a Slack or Teams one. */
+    val secret: String? = null
+)
+
+/** One alert Cloudflare actually sent, from the notification history. */
+@JsonClass(generateAdapter = true)
+data class NotificationHistoryEntry(
+    val id: String = "",
+    val name: String? = null,
+    val description: String? = null,
+    @Json(name = "alert_type") val alertType: String? = null,
+    val mechanism: String? = null,
+    @Json(name = "mechanism_type") val mechanismType: String? = null,
+    val sent: String? = null
+)
+
+
+// ---- Addressing (BYOIP prefixes, address maps) and Magic WAN sites ----
+
+/** A BYOIP prefix: address space the account owns, brought onto Cloudflare's network. */
+@JsonClass(generateAdapter = true)
+data class AddressingPrefix(
+    val id: String = "",
+    val cidr: String = "",
+    val description: String? = null,
+    val asn: Int? = null,
+    /** Cloudflare has verified the letter of authorization for this prefix. */
+    val approved: String? = null,
+    /** Whether Cloudflare is currently announcing the prefix over BGP. */
+    val advertised: Boolean? = null,
+    @Json(name = "advertised_modified_at") val advertisedModifiedAt: String? = null,
+    @Json(name = "on_demand_enabled") val onDemandEnabled: Boolean? = null,
+    /** Set once the prefix is locked to on-demand off; advertisement can't be toggled then. */
+    @Json(name = "on_demand_locked") val onDemandLocked: Boolean? = null,
+    @Json(name = "loa_document_id") val loaDocumentId: String? = null,
+    @Json(name = "created_at") val createdAt: String? = null,
+    @Json(name = "modified_at") val modifiedAt: String? = null
+)
+
+/** The BGP advertisement state of a prefix, read and written on its own sub-resource. */
+@JsonClass(generateAdapter = true)
+data class PrefixBgpStatus(
+    val advertised: Boolean? = null,
+    @Json(name = "advertised_modified_at") val advertisedModifiedAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PrefixBgpStatusWrite(val advertised: Boolean)
+
+@JsonClass(generateAdapter = true)
+data class PrefixDescriptionWrite(val description: String)
+
+/** An address map: a set of Cloudflare anycast IPs bound to specific zones or accounts. */
+@JsonClass(generateAdapter = true)
+data class AddressMap(
+    val id: String = "",
+    val description: String? = null,
+    val enabled: Boolean? = null,
+    @Json(name = "default_sni") val defaultSni: String? = null,
+    @Json(name = "can_delete") val canDelete: Boolean? = null,
+    @Json(name = "can_modify_ips") val canModifyIps: Boolean? = null,
+    val ips: List<AddressMapIp>? = null,
+    val memberships: List<AddressMapMembership>? = null,
+    @Json(name = "created_at") val createdAt: String? = null,
+    @Json(name = "modified_at") val modifiedAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AddressMapIp(val ip: String = "", @Json(name = "created_at") val createdAt: String? = null)
+
+@JsonClass(generateAdapter = true)
+data class AddressMapMembership(
+    val identifier: String = "",
+    /** "zone" or "account" - what the map is bound to. */
+    val kind: String? = null,
+    @Json(name = "can_delete") val canDelete: Boolean? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AddressMapWrite(
+    val description: String? = null,
+    val enabled: Boolean = false
+)
+
+@JsonClass(generateAdapter = true)
+data class AddressMapUpdate(
+    val description: String? = null,
+    val enabled: Boolean? = null
+)
+
+/** A Magic WAN site: one physical location behind a Magic WAN connector. */
+@JsonClass(generateAdapter = true)
+data class MagicSite(
+    val id: String = "",
+    val name: String? = null,
+    val description: String? = null,
+    /** "primary" / "secondary" high-availability mode, when the site has two connectors. */
+    @Json(name = "ha_mode") val haMode: Boolean? = null,
+    @Json(name = "connector_id") val connectorId: String? = null,
+    @Json(name = "secondary_connector_id") val secondaryConnectorId: String? = null,
+    val location: MagicSiteLocation? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class MagicSiteLocation(val lat: String? = null, val lon: String? = null)
+
+/** A LAN behind a site - the customer-side network Magic WAN routes to. */
+@JsonClass(generateAdapter = true)
+data class MagicSiteLan(
+    val id: String = "",
+    val name: String? = null,
+    val physport: Int? = null,
+    @Json(name = "vlan_tag") val vlanTag: Int? = null,
+    @Json(name = "static_addressing") val staticAddressing: MagicStaticAddressing? = null,
+    @Json(name = "ha_link") val haLink: Boolean? = null
+)
+
+/** A WAN on a site - the internet-facing side of the connector. */
+@JsonClass(generateAdapter = true)
+data class MagicSiteWan(
+    val id: String = "",
+    val name: String? = null,
+    val physport: Int? = null,
+    @Json(name = "vlan_tag") val vlanTag: Int? = null,
+    val priority: Int? = null,
+    @Json(name = "static_addressing") val staticAddressing: MagicStaticAddressing? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class MagicStaticAddressing(
+    val address: String? = null,
+    @Json(name = "gateway_address") val gatewayAddress: String? = null,
+    @Json(name = "secondary_address") val secondaryAddress: String? = null
+)
+
+/** Cloudflare wraps these lists under their own key, the way the tunnel lists are wrapped. */
+@JsonClass(generateAdapter = true)
+data class MagicSiteLanList(val lans: List<MagicSiteLan> = emptyList())
+
+@JsonClass(generateAdapter = true)
+data class MagicSiteWanList(val wans: List<MagicSiteWan> = emptyList())
+
+@JsonClass(generateAdapter = true)
+data class MagicRouteWrite(
+    val prefix: String,
+    val nexthop: String,
+    val priority: Int,
+    val description: String? = null,
+    val weight: Int? = null
+)
+
+/** A route create answers with the routes it made, not with a bare object. */
+@JsonClass(generateAdapter = true)
+data class MagicRouteWriteResult(val routes: List<MagicRoute> = emptyList())
+
+/** A route delete answers with the route it removed. */
+@JsonClass(generateAdapter = true)
+data class MagicRouteDeleteResult(
+    val deleted: Boolean = false,
+    @Json(name = "deleted_route") val deletedRoute: MagicRoute? = null
+)
+
+// ---- Media depth: Stream live inputs and watermarks, Images variants and keys ----
+
+/** A Stream live input: the RTMPS/SRT endpoint a broadcaster pushes to. */
+@JsonClass(generateAdapter = true)
+data class StreamLiveInput(
+    val uid: String = "",
+    val meta: Map<String, String>? = null,
+    val created: String? = null,
+    val modified: String? = null,
+    /** "off", "automatic" - whether Cloudflare records the broadcast for replay. */
+    val recording: StreamRecording? = null,
+    val status: StreamLiveInputStatus? = null,
+    /** Carries the stream key, so it is only ever read for the copy dialog. */
+    val rtmps: StreamProtocolEndpoint? = null,
+    val srt: StreamProtocolEndpoint? = null,
+    @Json(name = "webRTC") val webRtc: StreamProtocolEndpoint? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class StreamRecording(
+    val mode: String? = null,
+    @Json(name = "timeoutSeconds") val timeoutSeconds: Int? = null,
+    @Json(name = "requireSignedURLs") val requireSignedUrls: Boolean? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class StreamLiveInputStatus(
+    val current: StreamLiveInputState? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class StreamLiveInputState(
+    val reason: String? = null,
+    val state: String? = null,
+    @Json(name = "statusEnteredAt") val statusEnteredAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class StreamProtocolEndpoint(
+    val url: String? = null,
+    /** The push credential. Shown only in the input's own sheet, never in a list row. */
+    @Json(name = "streamKey") val streamKey: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class StreamLiveInputWrite(
+    val meta: Map<String, String>,
+    val recording: StreamRecording
+)
+
+/** Cloudflare wraps the live input list under its own key. */
+@JsonClass(generateAdapter = true)
+data class StreamLiveInputList(
+    @Json(name = "liveInputs") val liveInputs: List<StreamLiveInput> = emptyList()
+)
+
+/** A watermark profile that can be burned into a video at upload time. */
+@JsonClass(generateAdapter = true)
+data class StreamWatermark(
+    val uid: String = "",
+    val name: String? = null,
+    val position: String? = null,
+    val opacity: Double? = null,
+    val padding: Double? = null,
+    val scale: Double? = null,
+    val size: Long? = null,
+    val height: Int? = null,
+    val width: Int? = null,
+    @Json(name = "downloadedFrom") val downloadedFrom: String? = null,
+    val created: String? = null
+)
+
+/** A caption track on one video. */
+@JsonClass(generateAdapter = true)
+data class StreamCaption(
+    val language: String = "",
+    val label: String? = null,
+    val generated: Boolean? = null,
+    val status: String? = null
+)
+
+/** A Stream signing key. The private half exists only in the create response. */
+@JsonClass(generateAdapter = true)
+data class StreamSigningKey(
+    val id: String = "",
+    val created: String? = null,
+    /** Returned once, when the key is created. */
+    val pem: String? = null,
+    val jwk: String? = null
+)
+
+/** A named Images variant: the resize and fit rules a delivery URL can ask for. */
+@JsonClass(generateAdapter = true)
+data class ImageVariant(
+    val id: String = "",
+    val options: ImageVariantOptions? = null,
+    @Json(name = "neverRequireSignedURLs") val neverRequireSignedUrls: Boolean? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ImageVariantOptions(
+    /** "scale-down", "contain", "cover", "crop", "pad". */
+    val fit: String = "scale-down",
+    val width: Int = 0,
+    val height: Int = 0,
+    val metadata: String = "none"
+)
+
+@JsonClass(generateAdapter = true)
+data class ImageVariantWrite(
+    val id: String,
+    val options: ImageVariantOptions,
+    @Json(name = "neverRequireSignedURLs") val neverRequireSignedUrls: Boolean = false
+)
+
+/** The variants list arrives as an object keyed by variant id, not as an array. */
+@JsonClass(generateAdapter = true)
+data class ImageVariantsResult(
+    val variants: Map<String, ImageVariant> = emptyMap()
+)
+
+@JsonClass(generateAdapter = true)
+data class ImageVariantResult(val variant: ImageVariant? = null)
+
+/** An Images signing key, used to sign delivery URLs for private images. */
+@JsonClass(generateAdapter = true)
+data class ImageSigningKey(
+    val name: String = "",
+    val value: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ImageSigningKeysResult(val keys: List<ImageSigningKey> = emptyList())
+
+/** The response to rotating a Turnstile widget's secret - the only time this app sees one. */
+@JsonClass(generateAdapter = true)
+data class TurnstileRotateResult(
+    val sitekey: String = "",
+    val secret: String? = null,
+    val name: String? = null
+)
+
+// ---- Diagnostics: request tracer, Web3, Waiting Room events, zone DNS settings ----
+
+@JsonClass(generateAdapter = true)
+data class TraceRequest(
+    val url: String,
+    val method: String = "GET",
+    val protocol: String = "HTTP/1.1",
+    val context: TraceContext? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class TraceContext(
+    @Json(name = "bot_score") val botScore: Int? = null,
+    @Json(name = "threat_score") val threatScore: Int? = null,
+    @Json(name = "skip_challenge") val skipChallenge: Boolean? = null
+)
+
+/** What Cloudflare's own pipeline did with the request, step by step. */
+@JsonClass(generateAdapter = true)
+data class TraceResult(
+    val trace: List<TraceStep> = emptyList(),
+    @Json(name = "status_code") val statusCode: Int? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class TraceStep(
+    val step: Int? = null,
+    /** "request_trace", "rate_limit", "waf", "page_rule", "worker" and so on. */
+    val trace: String? = null,
+    val action: String? = null,
+    val description: String? = null,
+    val matched: Boolean? = null,
+    @Json(name = "step_name") val stepName: String? = null,
+    val value: String? = null
+)
+
+/** A Web3 gateway hostname: an IPFS or Ethereum gateway served on your own domain. */
+@JsonClass(generateAdapter = true)
+data class Web3Hostname(
+    val id: String = "",
+    val name: String = "",
+    val description: String? = null,
+    /** "ethereum", "ipfs", or "ipfs_universal_path". */
+    val target: String? = null,
+    val status: String? = null,
+    val dnslink: String? = null,
+    @Json(name = "created_on") val createdOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class Web3HostnameWrite(
+    val name: String,
+    val target: String,
+    val description: String? = null,
+    val dnslink: String? = null
+)
+
+/** A scheduled Waiting Room event: a window with its own thresholds. */
+@JsonClass(generateAdapter = true)
+data class WaitingRoomEvent(
+    val id: String = "",
+    val name: String = "",
+    val description: String? = null,
+    @Json(name = "event_start_time") val eventStartTime: String? = null,
+    @Json(name = "event_end_time") val eventEndTime: String? = null,
+    @Json(name = "prequeue_start_time") val prequeueStartTime: String? = null,
+    @Json(name = "new_users_per_minute") val newUsersPerMinute: Int? = null,
+    @Json(name = "total_active_users") val totalActiveUsers: Int? = null,
+    @Json(name = "queueing_method") val queueingMethod: String? = null,
+    @Json(name = "shuffle_at_event_start") val shuffleAtEventStart: Boolean? = null,
+    val suspended: Boolean? = null,
+    @Json(name = "created_on") val createdOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class WaitingRoomEventWrite(
+    val name: String,
+    @Json(name = "event_start_time") val eventStartTime: String,
+    @Json(name = "event_end_time") val eventEndTime: String,
+    val description: String? = null,
+    @Json(name = "new_users_per_minute") val newUsersPerMinute: Int? = null,
+    @Json(name = "total_active_users") val totalActiveUsers: Int? = null
+)
+
+/** Zone-wide DNS behaviour, separate from the individual records. */
+@JsonClass(generateAdapter = true)
+data class ZoneDnsSettings(
+    @Json(name = "flatten_all_cnames") val flattenAllCnames: Boolean? = null,
+    @Json(name = "foundation_dns") val foundationDns: Boolean? = null,
+    @Json(name = "multi_provider") val multiProvider: Boolean? = null,
+    @Json(name = "secondary_overrides") val secondaryOverrides: Boolean? = null,
+    @Json(name = "ns_ttl") val nsTtl: Int? = null,
+    @Json(name = "zone_mode") val zoneMode: String? = null,
+    val nameservers: ZoneNameserverSettings? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ZoneNameserverSettings(
+    val type: String? = null,
+    @Json(name = "ns_set") val nsSet: Int? = null
+)
+
+/** Only the fields being changed are sent; Cloudflare merges the rest. */
+@JsonClass(generateAdapter = true)
+data class ZoneDnsSettingsUpdate(
+    @Json(name = "flatten_all_cnames") val flattenAllCnames: Boolean? = null,
+    @Json(name = "foundation_dns") val foundationDns: Boolean? = null,
+    @Json(name = "multi_provider") val multiProvider: Boolean? = null,
+    @Json(name = "secondary_overrides") val secondaryOverrides: Boolean? = null
 )

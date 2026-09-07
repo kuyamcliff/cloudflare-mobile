@@ -74,6 +74,9 @@ fun ToggleRow(
     subtitle: String? = null,
     checked: Boolean,
     isSaving: Boolean,
+    /** Set false when the setting can't be changed yet - the row still shows its current
+     *  state rather than disappearing. */
+    enabled: Boolean = true,
     onToggle: (Boolean) -> Unit
 ) {
     Row(
@@ -90,7 +93,7 @@ fun ToggleRow(
         if (isSaving) {
             CircularProgressIndicator(Modifier.padding(end = 4.dp))
         } else {
-            Switch(checked = checked, onCheckedChange = onToggle)
+            Switch(checked = checked, enabled = enabled, onCheckedChange = onToggle)
         }
     }
 }

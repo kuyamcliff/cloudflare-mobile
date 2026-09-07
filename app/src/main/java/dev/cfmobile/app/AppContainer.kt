@@ -1,31 +1,160 @@
 package dev.cfmobile.app
 
 import android.content.Context
-import dev.cfmobile.app.data.local.TokenStore
+import dev.cfmobile.app.core.security.AppLockPreferences
+import dev.cfmobile.app.core.security.AppLockState
+import dev.cfmobile.app.data.local.AccountStore
+import dev.cfmobile.app.data.local.db.CfDatabase
+import dev.cfmobile.app.data.local.db.ZonesCache
 import dev.cfmobile.app.data.remote.NetworkModule
+import dev.cfmobile.app.data.repository.AccountMembersRepository
 import dev.cfmobile.app.data.repository.AccountsRepository
+import dev.cfmobile.app.data.repository.AddressingRepository
+import dev.cfmobile.app.data.repository.AiGatewayRepository
 import dev.cfmobile.app.data.repository.AnalyticsRepository
+import dev.cfmobile.app.data.repository.ApiTokensRepository
+import dev.cfmobile.app.data.repository.BotManagementRepository
+import dev.cfmobile.app.data.repository.CallsRepository
+import dev.cfmobile.app.data.repository.DiagnosticsRepository
+import dev.cfmobile.app.data.repository.DnsFirewallRepository
+import dev.cfmobile.app.data.repository.MagicFirewallRepository
+import dev.cfmobile.app.data.repository.Web3Repository
+import dev.cfmobile.app.data.repository.ZoneDnsSettingsRepository
+import dev.cfmobile.app.data.repository.BulkRedirectsRepository
+import dev.cfmobile.app.data.repository.CloudConnectorRepository
+import dev.cfmobile.app.data.repository.CustomPagesRepository
+import dev.cfmobile.app.data.repository.NotificationsRepository
+import dev.cfmobile.app.data.repository.MutualTlsRepository
+import dev.cfmobile.app.data.repository.PerformanceRepository
+import dev.cfmobile.app.data.repository.PipelinesRepository
+import dev.cfmobile.app.data.repository.RegistrarRepository
+import dev.cfmobile.app.data.repository.SecretsStoreRepository
+import dev.cfmobile.app.data.repository.SnippetsRepository
+import dev.cfmobile.app.data.repository.WebAnalyticsRepository
+import dev.cfmobile.app.data.repository.ZarazRepository
+import dev.cfmobile.app.data.repository.ZoneFirewallLegacyRepository
+import dev.cfmobile.app.data.repository.ZoneOwnershipRepository
+import dev.cfmobile.app.data.repository.AuditLogsRepository
 import dev.cfmobile.app.data.repository.AuthRepository
+import dev.cfmobile.app.data.repository.D1Repository
 import dev.cfmobile.app.data.repository.DnsRepository
+import dev.cfmobile.app.data.repository.AccessRepository
+import dev.cfmobile.app.data.repository.GatewayRepository
+import dev.cfmobile.app.data.repository.DurableObjectsRepository
+import dev.cfmobile.app.data.repository.HyperdriveRepository
+import dev.cfmobile.app.data.repository.QueuesRepository
+import dev.cfmobile.app.data.repository.TunnelsRepository
+import dev.cfmobile.app.data.repository.DevicePostureRepository
+import dev.cfmobile.app.data.repository.ImagesRepository
+import dev.cfmobile.app.data.repository.LogpushRepository
+import dev.cfmobile.app.data.repository.StreamRepository
+import dev.cfmobile.app.data.repository.TurnstileRepository
+import dev.cfmobile.app.data.repository.VectorizeRepository
+import dev.cfmobile.app.data.repository.ApiShieldRepository
+import dev.cfmobile.app.data.repository.DdosRepository
+import dev.cfmobile.app.data.repository.PageShieldRepository
+import dev.cfmobile.app.data.repository.BillingRepository
+import dev.cfmobile.app.data.repository.BrowserRenderingRepository
+import dev.cfmobile.app.data.repository.EmailRoutingRepository
+import dev.cfmobile.app.data.repository.MagicNetworkRepository
+import dev.cfmobile.app.data.repository.CertificatesRepository
+import dev.cfmobile.app.data.repository.HealthChecksRepository
+import dev.cfmobile.app.data.repository.SecurityEventsRepository
+import dev.cfmobile.app.data.repository.WaitingRoomRepository
+import dev.cfmobile.app.data.repository.SpectrumRepository
+import dev.cfmobile.app.data.repository.WorkersAiRepository
+import dev.cfmobile.app.data.repository.WorkflowsRepository
+import dev.cfmobile.app.data.repository.PagesRepository
+import dev.cfmobile.app.data.repository.WorkersRepository
 import dev.cfmobile.app.data.repository.FirewallRepository
+import dev.cfmobile.app.data.repository.KvRepository
+import dev.cfmobile.app.data.repository.LoadBalancingRepository
 import dev.cfmobile.app.data.repository.PageRulesRepository
+import dev.cfmobile.app.data.repository.R2Repository
+import dev.cfmobile.app.data.repository.RateLimitRepository
+import dev.cfmobile.app.data.repository.RulesetPhaseRepository
+import dev.cfmobile.app.data.repository.WafRepository
 import dev.cfmobile.app.data.repository.ZoneSettingsRepository
 import dev.cfmobile.app.data.repository.ZonesRepository
 
 /** Simple hand-rolled service locator: this app is small enough that a DI framework would
  *  add more ceremony than it saves. Every repository is built once and shared. */
 class AppContainer(context: Context) {
-    val tokenStore = TokenStore.create(context.applicationContext)
+    val accountStore = AccountStore.create(context.applicationContext)
+    val appLockState = AppLockState(AppLockPreferences.create(context.applicationContext))
+    private val database = CfDatabase.create(context.applicationContext)
 
-    private val api = NetworkModule.createApi { tokenStore.getActive()?.token }
+    private val api = NetworkModule.createApi { accountStore.getActiveToken() }
     private val verifierApi = NetworkModule.createVerifierApi()
 
-    val authRepository = AuthRepository(verifierApi, tokenStore)
+    val authRepository = AuthRepository(verifierApi, accountStore)
     val accountsRepository = AccountsRepository(api)
+    val accountMembersRepository = AccountMembersRepository(api)
+    val auditLogsRepository = AuditLogsRepository(api)
     val zonesRepository = ZonesRepository(api)
+    val zonesCache = ZonesCache(database.zoneDao())
     val dnsRepository = DnsRepository(api)
     val zoneSettingsRepository = ZoneSettingsRepository(api)
     val firewallRepository = FirewallRepository(api)
+    val loadBalancingRepository = LoadBalancingRepository(api)
+    val r2Repository = R2Repository(api)
+    val kvRepository = KvRepository(api)
+    val d1Repository = D1Repository(api)
+    val workersRepository = WorkersRepository(api)
+    val pagesRepository = PagesRepository(api)
+    val accessRepository = AccessRepository(api)
+    val gatewayRepository = GatewayRepository(api)
+    val tunnelsRepository = TunnelsRepository(api)
+    val queuesRepository = QueuesRepository(api)
+    val durableObjectsRepository = DurableObjectsRepository(api)
+    val workflowsRepository = WorkflowsRepository(api)
+    val hyperdriveRepository = HyperdriveRepository(api)
+    val vectorizeRepository = VectorizeRepository(api)
+    val streamRepository = StreamRepository(api)
+    val imagesRepository = ImagesRepository(api)
+    val turnstileRepository = TurnstileRepository(api)
+    val logpushRepository = LogpushRepository(api)
+    val workersAiRepository = WorkersAiRepository(api)
+    val devicePostureRepository = DevicePostureRepository(api)
+    val securityEventsRepository = SecurityEventsRepository(api)
+    val pageShieldRepository = PageShieldRepository(api)
+    val ddosRepository = DdosRepository(api)
+    val apiShieldRepository = ApiShieldRepository(api)
+    val emailRoutingRepository = EmailRoutingRepository(api)
+    val spectrumRepository = SpectrumRepository(api)
+    val magicNetworkRepository = MagicNetworkRepository(api)
+    val billingRepository = BillingRepository(api)
+    val browserRenderingRepository = BrowserRenderingRepository(api)
+    val certificatesRepository = CertificatesRepository(api)
+    val waitingRoomRepository = WaitingRoomRepository(api)
+    val healthChecksRepository = HealthChecksRepository(api)
+    val wafRepository = WafRepository(api)
+    val rateLimitRepository = RateLimitRepository(api)
+    val rulesetPhaseRepository = RulesetPhaseRepository(api)
     val pageRulesRepository = PageRulesRepository(api)
     val analyticsRepository = AnalyticsRepository(api)
+    val apiTokensRepository = ApiTokensRepository(api)
+    val notificationsRepository = NotificationsRepository(api)
+    val bulkRedirectsRepository = BulkRedirectsRepository(api)
+    val registrarRepository = RegistrarRepository(api)
+    val webAnalyticsRepository = WebAnalyticsRepository(api)
+    val snippetsRepository = SnippetsRepository(api)
+    val cloudConnectorRepository = CloudConnectorRepository(api)
+    val customPagesRepository = CustomPagesRepository(api)
+    val zarazRepository = ZarazRepository(api)
+    val botManagementRepository = BotManagementRepository(api)
+    val zoneFirewallLegacyRepository = ZoneFirewallLegacyRepository(api)
+    val mutualTlsRepository = MutualTlsRepository(api)
+    val zoneOwnershipRepository = ZoneOwnershipRepository(api)
+    val performanceRepository = PerformanceRepository(api)
+    val aiGatewayRepository = AiGatewayRepository(api)
+    val callsRepository = CallsRepository(api)
+    val pipelinesRepository = PipelinesRepository(api)
+    val secretsStoreRepository = SecretsStoreRepository(api)
+    val dnsFirewallRepository = DnsFirewallRepository(api)
+    val addressingRepository = AddressingRepository(api)
+    val magicFirewallRepository = MagicFirewallRepository(api)
+    val diagnosticsRepository = DiagnosticsRepository(api)
+    val web3Repository = Web3Repository(api)
+    val zoneDnsSettingsRepository = ZoneDnsSettingsRepository(api)
 }

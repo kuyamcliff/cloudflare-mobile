@@ -2,6 +2,7 @@ package dev.cfmobile.app.ui.zonedetail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.cfmobile.app.core.errors.ErrorClassifier
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.dto.CfZone
 import dev.cfmobile.app.data.repository.ZonesRepository
@@ -19,6 +20,9 @@ class ZoneMenuViewModel(
     private val _state = MutableStateFlow<UiState<CfZone>>(UiState.Loading)
     val state: StateFlow<UiState<CfZone>> = _state.asStateFlow()
 
+    private val _lastUpdatedAt = MutableStateFlow<Long?>(null)
+    val lastUpdatedAt: StateFlow<Long?> = _lastUpdatedAt.asStateFlow()
+
     init {
         load()
     }
@@ -27,8 +31,11 @@ class ZoneMenuViewModel(
         _state.value = UiState.Loading
         viewModelScope.launch {
             _state.value = when (val result = repository.getZone(zoneId)) {
-                is ApiResult.Success -> UiState.Data(result.data)
-                is ApiResult.Failure -> UiState.Error(result.message)
+                is ApiResult.Success -> {
+                    _lastUpdatedAt.value = System.currentTimeMillis()
+                    UiState.Data(result.data)
+                }
+                is ApiResult.Failure -> UiState.Error(ErrorClassifier.classify(result))
             }
         }
     }

@@ -1,30 +1,32 @@
 package dev.cfmobile.app.data.repository
 
-import dev.cfmobile.app.data.local.SavedToken
-import dev.cfmobile.app.data.local.TokenStore
+import dev.cfmobile.app.data.local.AccountStore
+import dev.cfmobile.app.data.local.AccountSummary
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.safeApiCall
 
 /**
- * Verifying and switching between locally-stored API tokens. [tokenStore] is the only place
- * a token is persisted, and only after [verifierApi] confirms it's valid - a mistyped token
- * is never written to disk.
+ * Verifying and switching between locally-connected Cloudflare accounts. [accountStore] is
+ * the only place a token is persisted, and only after [verifierApi] confirms it's valid - a
+ * mistyped token is never written to disk. Everything this repository exposes is an
+ * [AccountSummary] (label/email/id only) - the raw token never flows into ViewModel or UI
+ * state (PRD §83).
  */
 class AuthRepository(
     private val verifierApi: CloudflareApi,
-    private val tokenStore: TokenStore
+    private val accountStore: AccountStore
 ) {
-    val savedTokens: List<SavedToken> get() = tokenStore.getAll()
-    val activeToken: SavedToken? get() = tokenStore.getActive()
+    val savedAccounts: List<AccountSummary> get() = accountStore.getAll()
+    val activeAccount: AccountSummary? get() = accountStore.getActive()
 
-    suspend fun addToken(label: String, rawToken: String): ApiResult<SavedToken> {
+    suspend fun addToken(label: String, rawToken: String): ApiResult<AccountSummary> {
         val trimmed = rawToken.trim()
         if (trimmed.isEmpty()) return ApiResult.Failure("Enter an API token")
 
         return when (val result = verify(trimmed)) {
             is ApiResult.Success -> {
-                val saved = tokenStore.add(label = label.ifBlank { "Cloudflare account" }, token = trimmed)
+                val saved = accountStore.add(label = label.ifBlank { "Cloudflare account" }, token = trimmed)
                 ApiResult.Success(saved)
             }
             is ApiResult.Failure -> result
@@ -52,9 +54,9 @@ class AuthRepository(
         return userTokenCheck as ApiResult.Failure
     }
 
-    fun switchTo(id: String) = tokenStore.setActive(id)
+    fun switchTo(id: String) = accountStore.setActive(id)
 
-    fun removeToken(id: String) = tokenStore.remove(id)
+    fun removeAccount(id: String) = accountStore.remove(id)
 
-    fun signOutAll() = tokenStore.clearAll()
+    fun signOutAll() = accountStore.clearAll()
 }
