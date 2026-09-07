@@ -22,10 +22,14 @@ import dev.cfmobile.app.ui.caching.CachingScreen
 import dev.cfmobile.app.ui.caching.CachingViewModel
 import dev.cfmobile.app.ui.dashboard.DashboardScreen
 import dev.cfmobile.app.ui.dashboard.DashboardViewModel
+import dev.cfmobile.app.ui.addressing.AddressingScreen
+import dev.cfmobile.app.ui.addressing.AddressingViewModel
 import dev.cfmobile.app.ui.dns.DnsFirewallScreen
 import dev.cfmobile.app.ui.dns.DnsFirewallViewModel
 import dev.cfmobile.app.ui.dns.DnsScreen
 import dev.cfmobile.app.ui.dns.DnsViewModel
+import dev.cfmobile.app.ui.magicfirewall.MagicFirewallScreen
+import dev.cfmobile.app.ui.magicfirewall.MagicFirewallViewModel
 import dev.cfmobile.app.ui.firewall.FirewallScreen
 import dev.cfmobile.app.ui.firewall.FirewallViewModel
 import dev.cfmobile.app.ui.login.LoginScreen
@@ -452,6 +456,20 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
                 factory = factoryOf { DnsFirewallViewModel(accountId, container.dnsFirewallRepository) }
             )
             DnsFirewallScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.ADDRESSING) { accountId ->
+            val vm = viewModel<AddressingViewModel>(
+                factory = factoryOf { AddressingViewModel(accountId, container.addressingRepository) }
+            )
+            AddressingScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.MAGIC_FIREWALL) { accountId ->
+            val vm = viewModel<MagicFirewallViewModel>(
+                factory = factoryOf { MagicFirewallViewModel(accountId, container.magicFirewallRepository) }
+            )
+            MagicFirewallScreen(vm, onBack = { navController.popBackStack() })
         }
 
         accountScreen(Routes.ACCESS_DIRECTORY) { accountId ->

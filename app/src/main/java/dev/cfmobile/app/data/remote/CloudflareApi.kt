@@ -1663,6 +1663,133 @@ interface CloudflareApi {
         @Path("secretId") secretId: String
     ): Response<CfEnvelope<Map<String, String>>>
 
+    // ---- Addressing: BYOIP prefixes and address maps ----
+
+    @GET("accounts/{accountId}/addressing/prefixes")
+    suspend fun listAddressingPrefixes(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<AddressingPrefix>>>
+
+    @PATCH("accounts/{accountId}/addressing/prefixes/{prefixId}")
+    suspend fun updatePrefixDescription(
+        @Path("accountId") accountId: String,
+        @Path("prefixId") prefixId: String,
+        @Body body: PrefixDescriptionWrite
+    ): Response<CfEnvelope<AddressingPrefix>>
+
+    /** Advertisement lives on its own sub-resource rather than on the prefix, because turning
+     *  it on or off is what actually moves traffic. */
+    @GET("accounts/{accountId}/addressing/prefixes/{prefixId}/bgp/status")
+    suspend fun getPrefixBgpStatus(
+        @Path("accountId") accountId: String,
+        @Path("prefixId") prefixId: String
+    ): Response<CfEnvelope<PrefixBgpStatus>>
+
+    @PATCH("accounts/{accountId}/addressing/prefixes/{prefixId}/bgp/status")
+    suspend fun setPrefixBgpStatus(
+        @Path("accountId") accountId: String,
+        @Path("prefixId") prefixId: String,
+        @Body body: PrefixBgpStatusWrite
+    ): Response<CfEnvelope<PrefixBgpStatus>>
+
+    @GET("accounts/{accountId}/addressing/address_maps")
+    suspend fun listAddressMaps(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<AddressMap>>>
+
+    /** The list omits ips and memberships; only the single-map read carries them. */
+    @GET("accounts/{accountId}/addressing/address_maps/{addressMapId}")
+    suspend fun getAddressMap(
+        @Path("accountId") accountId: String,
+        @Path("addressMapId") addressMapId: String
+    ): Response<CfEnvelope<AddressMap>>
+
+    @POST("accounts/{accountId}/addressing/address_maps")
+    suspend fun createAddressMap(
+        @Path("accountId") accountId: String,
+        @Body body: AddressMapWrite
+    ): Response<CfEnvelope<AddressMap>>
+
+    @PATCH("accounts/{accountId}/addressing/address_maps/{addressMapId}")
+    suspend fun updateAddressMap(
+        @Path("accountId") accountId: String,
+        @Path("addressMapId") addressMapId: String,
+        @Body body: AddressMapUpdate
+    ): Response<CfEnvelope<AddressMap>>
+
+    @DELETE("accounts/{accountId}/addressing/address_maps/{addressMapId}")
+    suspend fun deleteAddressMap(
+        @Path("accountId") accountId: String,
+        @Path("addressMapId") addressMapId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Magic WAN sites, static routes, and Magic Firewall ----
+
+    @GET("accounts/{accountId}/magic/sites")
+    suspend fun listMagicSites(@Path("accountId") accountId: String): Response<CfEnvelope<List<MagicSite>>>
+
+    @GET("accounts/{accountId}/magic/sites/{siteId}/lans")
+    suspend fun listMagicSiteLans(
+        @Path("accountId") accountId: String,
+        @Path("siteId") siteId: String
+    ): Response<CfEnvelope<MagicSiteLanList>>
+
+    @GET("accounts/{accountId}/magic/sites/{siteId}/wans")
+    suspend fun listMagicSiteWans(
+        @Path("accountId") accountId: String,
+        @Path("siteId") siteId: String
+    ): Response<CfEnvelope<MagicSiteWanList>>
+
+    /** Answers with the routes it created, since one call can add several. */
+    @POST("accounts/{accountId}/magic/routes")
+    suspend fun createMagicRoute(
+        @Path("accountId") accountId: String,
+        @Body route: MagicRouteWrite
+    ): Response<CfEnvelope<MagicRouteWriteResult>>
+
+    @DELETE("accounts/{accountId}/magic/routes/{routeId}")
+    suspend fun deleteMagicRoute(
+        @Path("accountId") accountId: String,
+        @Path("routeId") routeId: String
+    ): Response<CfEnvelope<MagicRouteDeleteResult>>
+
+    /** Magic Firewall is the Rulesets engine at account scope, phase "magic_transit".
+     *  404s until the account has its first rule, the same as a zone phase does. */
+    @GET("accounts/{accountId}/rulesets/phases/{phase}/entrypoint")
+    suspend fun getAccountPhaseRuleset(
+        @Path("accountId") accountId: String,
+        @Path("phase") phase: String
+    ): Response<CfEnvelope<Ruleset>>
+
+    @PUT("accounts/{accountId}/rulesets/phases/{phase}/entrypoint")
+    suspend fun putAccountPhaseRuleset(
+        @Path("accountId") accountId: String,
+        @Path("phase") phase: String,
+        @Body body: RulesetPhaseWrite
+    ): Response<CfEnvelope<Ruleset>>
+
+    @POST("accounts/{accountId}/rulesets/{rulesetId}/rules")
+    suspend fun addAccountRulesetRule(
+        @Path("accountId") accountId: String,
+        @Path("rulesetId") rulesetId: String,
+        @Body rule: RulesetRuleWrite
+    ): Response<CfEnvelope<Ruleset>>
+
+    @PATCH("accounts/{accountId}/rulesets/{rulesetId}/rules/{ruleId}")
+    suspend fun updateAccountRulesetRule(
+        @Path("accountId") accountId: String,
+        @Path("rulesetId") rulesetId: String,
+        @Path("ruleId") ruleId: String,
+        @Body rule: RulesetRuleWrite
+    ): Response<CfEnvelope<Ruleset>>
+
+    @DELETE("accounts/{accountId}/rulesets/{rulesetId}/rules/{ruleId}")
+    suspend fun deleteAccountRulesetRule(
+        @Path("accountId") accountId: String,
+        @Path("rulesetId") rulesetId: String,
+        @Path("ruleId") ruleId: String
+    ): Response<CfEnvelope<Ruleset>>
+
     // ---- DNS Firewall and notification destinations ----
 
     @GET("accounts/{accountId}/dns_firewall")

@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.GppGood
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Http
@@ -113,6 +114,8 @@ fun capabilityIcon(capability: Capability): ImageVector = when (capability.id) {
     "access_directory" -> Icons.Filled.Group
     "platform" -> Icons.Filled.Widgets
     "dns_firewall" -> Icons.Filled.GppGood
+    "addressing" -> Icons.Filled.Lan
+    "magic_firewall" -> Icons.Filled.FilterAlt
     "zero_trust_network" -> Icons.Filled.Hub
     "tunnels" -> Icons.Filled.Router
     "device_posture" -> Icons.Filled.Devices

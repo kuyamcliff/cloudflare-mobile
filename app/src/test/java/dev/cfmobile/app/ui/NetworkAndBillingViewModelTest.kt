@@ -160,19 +160,22 @@ class NetworkAndBillingViewModelTest {
     }
 
     @Test
-    fun `magic network loads all three lists in one pass`() = runTest {
+    fun `magic network loads all four lists in one pass`() = runTest {
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"gre_tunnels":[{"id":"g1","name":"a"}]}}"""))
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"ipsec_tunnels":[]}}"""))
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"routes":[{"id":"r1","prefix":"10.0.0.0/8"}]}}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[{"id":"s1","name":"Berlin"}]}"""))
 
         val vm = MagicNetworkViewModel("acct1", MagicNetworkRepository(testApi(server)))
         val state = vm.uiState.first {
-            it.greTunnels !is UiState.Loading && it.ipsecTunnels !is UiState.Loading && it.routes !is UiState.Loading
+            it.greTunnels !is UiState.Loading && it.ipsecTunnels !is UiState.Loading &&
+                it.routes !is UiState.Loading && it.sites !is UiState.Loading
         }
 
         assertThat((state.greTunnels as UiState.Data).value).hasSize(1)
         assertThat((state.ipsecTunnels as UiState.Data).value).isEmpty()
         assertThat((state.routes as UiState.Data).value).hasSize(1)
+        assertThat((state.sites as UiState.Data).value.single().name).isEqualTo("Berlin")
         assertThat(state.isRefreshing).isFalse()
     }
 

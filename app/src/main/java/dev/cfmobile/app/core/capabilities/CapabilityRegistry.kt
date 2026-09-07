@@ -756,13 +756,38 @@ object CapabilityRegistry {
         Capability(
             id = "magic_network",
             product = "Network",
-            displayName = "Magic Firewall / WAN / Transit",
-            description = "Network-layer routing and protection",
+            displayName = "Magic WAN",
+            description = "Tunnels, static routes, and connector sites",
             scope = CapabilityScope.ACCOUNT,
             status = CapabilityStatus.IMPLEMENTED,
             roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.HIGH,
             accountRoute = { accountId -> Routes.magicNetwork(accountId) },
-            migrationHint = "Read-only inventory of GRE tunnels, IPsec tunnels, and static routes. Changing network routing isn't offered from a phone, and Magic Firewall rulesets aren't covered. These are Enterprise features, so most accounts will see empty lists. Not verified against a live API call."
+            migrationHint = "Four tabs. GRE and IPsec tunnels stay read-only on purpose: a tunnel carries the interface addresses and health checks of a physical link, and a wrong value takes a site offline until someone is at a console. Static routes are list, add and delete - one prefix pointed at one next hop is the change that gets made under pressure, and the delete confirmation says whose traffic stops. Sites are read-only with their LAN and WAN interfaces behind a tap; adding one means registering connector hardware. Editing a route, and a site's interface addressing, aren't implemented. Magic Firewall has its own screen. These are Enterprise features, so most accounts will see empty lists. Not verified against a live API call."
+        ),
+        Capability(
+            id = "magic_firewall",
+            product = "Network",
+            displayName = "Magic Firewall",
+            description = "Packet filtering in front of Magic Transit",
+            scope = CapabilityScope.ACCOUNT,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.magicFirewall(accountId) },
+            migrationHint = "The Rulesets engine at account scope, phase magic_transit - the same list/add/edit/delete/enable cycle as the zone rule screens. Block, log and allow are the actions Cloudflare offers here; there is no challenge or redirect, since this filter sees packets rather than requests. Expressions are typed as text: there is no field builder, and no validation beyond requiring one. Reordering rules isn't implemented - a new rule is appended after the existing ones - and neither is the managed ruleset deployment that Enterprise accounts can layer on top. Deleting a rule can silently start admitting traffic the rule was dropping, which the confirmation says. Not verified against a live API call."
+        ),
+        Capability(
+            id = "addressing",
+            product = "Network",
+            displayName = "Addressing",
+            description = "BYOIP prefixes and address maps",
+            scope = CapabilityScope.ACCOUNT,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.addressing(accountId) },
+            migrationHint = "Two tabs. Prefixes lists the account's BYOIP space and switches each prefix's BGP announcement on or off - the one thing here worth doing from a phone. Adding a prefix isn't implemented: it needs a signed letter of authorization and Cloudflare's approval first. The switch is left visible but inert when Cloudflare would refuse the change (prefix not approved, on-demand not enabled, or control locked), with the reason on the row, rather than being hidden or failing on tap. Editing a prefix's description isn't wired to the UI. Address Maps lists maps, creates one, enables or disables one, and deletes one; tapping a map fetches its addresses and bindings, which the list response omits. Adding or removing a map's IPs and its zone or account bindings isn't implemented - each is a separate per-member endpoint and getting the set wrong takes zones off those addresses. Not verified against a live API call."
         ),
         Capability(
             id = "logpush",

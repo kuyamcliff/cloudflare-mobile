@@ -2259,3 +2259,148 @@ data class NotificationHistoryEntry(
     val sent: String? = null
 )
 
+
+// ---- Addressing (BYOIP prefixes, address maps) and Magic WAN sites ----
+
+/** A BYOIP prefix: address space the account owns, brought onto Cloudflare's network. */
+@JsonClass(generateAdapter = true)
+data class AddressingPrefix(
+    val id: String = "",
+    val cidr: String = "",
+    val description: String? = null,
+    val asn: Int? = null,
+    /** Cloudflare has verified the letter of authorization for this prefix. */
+    val approved: String? = null,
+    /** Whether Cloudflare is currently announcing the prefix over BGP. */
+    val advertised: Boolean? = null,
+    @Json(name = "advertised_modified_at") val advertisedModifiedAt: String? = null,
+    @Json(name = "on_demand_enabled") val onDemandEnabled: Boolean? = null,
+    /** Set once the prefix is locked to on-demand off; advertisement can't be toggled then. */
+    @Json(name = "on_demand_locked") val onDemandLocked: Boolean? = null,
+    @Json(name = "loa_document_id") val loaDocumentId: String? = null,
+    @Json(name = "created_at") val createdAt: String? = null,
+    @Json(name = "modified_at") val modifiedAt: String? = null
+)
+
+/** The BGP advertisement state of a prefix, read and written on its own sub-resource. */
+@JsonClass(generateAdapter = true)
+data class PrefixBgpStatus(
+    val advertised: Boolean? = null,
+    @Json(name = "advertised_modified_at") val advertisedModifiedAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PrefixBgpStatusWrite(val advertised: Boolean)
+
+@JsonClass(generateAdapter = true)
+data class PrefixDescriptionWrite(val description: String)
+
+/** An address map: a set of Cloudflare anycast IPs bound to specific zones or accounts. */
+@JsonClass(generateAdapter = true)
+data class AddressMap(
+    val id: String = "",
+    val description: String? = null,
+    val enabled: Boolean? = null,
+    @Json(name = "default_sni") val defaultSni: String? = null,
+    @Json(name = "can_delete") val canDelete: Boolean? = null,
+    @Json(name = "can_modify_ips") val canModifyIps: Boolean? = null,
+    val ips: List<AddressMapIp>? = null,
+    val memberships: List<AddressMapMembership>? = null,
+    @Json(name = "created_at") val createdAt: String? = null,
+    @Json(name = "modified_at") val modifiedAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AddressMapIp(val ip: String = "", @Json(name = "created_at") val createdAt: String? = null)
+
+@JsonClass(generateAdapter = true)
+data class AddressMapMembership(
+    val identifier: String = "",
+    /** "zone" or "account" - what the map is bound to. */
+    val kind: String? = null,
+    @Json(name = "can_delete") val canDelete: Boolean? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AddressMapWrite(
+    val description: String? = null,
+    val enabled: Boolean = false
+)
+
+@JsonClass(generateAdapter = true)
+data class AddressMapUpdate(
+    val description: String? = null,
+    val enabled: Boolean? = null
+)
+
+/** A Magic WAN site: one physical location behind a Magic WAN connector. */
+@JsonClass(generateAdapter = true)
+data class MagicSite(
+    val id: String = "",
+    val name: String? = null,
+    val description: String? = null,
+    /** "primary" / "secondary" high-availability mode, when the site has two connectors. */
+    @Json(name = "ha_mode") val haMode: Boolean? = null,
+    @Json(name = "connector_id") val connectorId: String? = null,
+    @Json(name = "secondary_connector_id") val secondaryConnectorId: String? = null,
+    val location: MagicSiteLocation? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class MagicSiteLocation(val lat: String? = null, val lon: String? = null)
+
+/** A LAN behind a site - the customer-side network Magic WAN routes to. */
+@JsonClass(generateAdapter = true)
+data class MagicSiteLan(
+    val id: String = "",
+    val name: String? = null,
+    val physport: Int? = null,
+    @Json(name = "vlan_tag") val vlanTag: Int? = null,
+    @Json(name = "static_addressing") val staticAddressing: MagicStaticAddressing? = null,
+    @Json(name = "ha_link") val haLink: Boolean? = null
+)
+
+/** A WAN on a site - the internet-facing side of the connector. */
+@JsonClass(generateAdapter = true)
+data class MagicSiteWan(
+    val id: String = "",
+    val name: String? = null,
+    val physport: Int? = null,
+    @Json(name = "vlan_tag") val vlanTag: Int? = null,
+    val priority: Int? = null,
+    @Json(name = "static_addressing") val staticAddressing: MagicStaticAddressing? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class MagicStaticAddressing(
+    val address: String? = null,
+    @Json(name = "gateway_address") val gatewayAddress: String? = null,
+    @Json(name = "secondary_address") val secondaryAddress: String? = null
+)
+
+/** Cloudflare wraps these lists under their own key, the way the tunnel lists are wrapped. */
+@JsonClass(generateAdapter = true)
+data class MagicSiteLanList(val lans: List<MagicSiteLan> = emptyList())
+
+@JsonClass(generateAdapter = true)
+data class MagicSiteWanList(val wans: List<MagicSiteWan> = emptyList())
+
+@JsonClass(generateAdapter = true)
+data class MagicRouteWrite(
+    val prefix: String,
+    val nexthop: String,
+    val priority: Int,
+    val description: String? = null,
+    val weight: Int? = null
+)
+
+/** A route create answers with the routes it made, not with a bare object. */
+@JsonClass(generateAdapter = true)
+data class MagicRouteWriteResult(val routes: List<MagicRoute> = emptyList())
+
+/** A route delete answers with the route it removed. */
+@JsonClass(generateAdapter = true)
+data class MagicRouteDeleteResult(
+    val deleted: Boolean = false,
+    @Json(name = "deleted_route") val deletedRoute: MagicRoute? = null
+)
