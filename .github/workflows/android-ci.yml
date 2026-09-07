@@ -1,10 +1,4 @@
-# Runs the JVM-level test/build/lint pipeline on every push and PR.
-#
-# Deliberately NOT included: macrobenchmarks and Baseline Profile generation. Both require
-# running instrumented tests on a physical device or emulator via the Macrobenchmark
-# library, which this job doesn't provision. Add a `benchmark` module plus a device/
-# emulator-backed job (e.g. reactivecircus/android-emulator-runner) before relying on
-# either - see the README's "Continuous integration" section.
+# Production Android verification: JVM tests, lint, emulator UI tests, debug + release APKs.
 name: Android CI
 
 on:
@@ -12,8 +6,11 @@ on:
     branches: [main, master]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
-  build-and-test:
+  build-test-lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,15 +31,35 @@ jobs:
       - name: Assemble debug APK
         run: ./gradlew assembleDebug --stacktrace
 
+      - name: Assemble release APK
+        run: ./gradlew assembleRelease --stacktrace
+
       - name: Lint
         run: ./gradlew lintDebug --stacktrace
 
-      - name: Upload test results
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloudflare-mobile-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloudflare-mobile-release-apk
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload unit-test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: unit-test-results
           path: app/build/reports/tests/testDebugUnitTest/
+          if-no-files-found: warn
           retention-days: 14
 
       - name: Upload lint report
@@ -51,4 +68,46 @@ jobs:
         with:
           name: lint-report
           path: app/build/reports/lint-results-debug.html
+          if-no-files-found: warn
+          retention-days: 14
+
+  instrumentation:
+    needs: build-test-lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run Compose/UI tests on Android Emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: Pixel 6
+          cores: 2
+          ram-size: 4096M
+          heap-size: 512M
+          disable-animations: true
+          script: ./gradlew connectedDebugAndroidTest --stacktrace
+
+      - name: Upload instrumentation results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: instrumentation-results
+          path: |
+            app/build/outputs/androidTest-results/
+            app/build/reports/androidTests/
+          if-no-files-found: warn
           retention-days: 14
