@@ -1445,3 +1445,95 @@ data class RumSiteCreate(
     @Json(name = "auto_install") val autoInstall: Boolean = true
 )
 
+// ---- Zone-level products: snippets, cloud connector, Zaraz, custom error pages ----
+
+@JsonClass(generateAdapter = true)
+data class Snippet(
+    @Json(name = "snippet_name") val snippetName: String = "",
+    @Json(name = "created_on") val createdOn: String? = null,
+    @Json(name = "modified_on") val modifiedOn: String? = null
+)
+
+/** A rule deciding which requests run a snippet. Cloudflare stores these as one ordered list
+ *  per zone, replaced wholesale rather than edited one at a time. */
+@JsonClass(generateAdapter = true)
+data class SnippetRule(
+    val id: String? = null,
+    val expression: String = "",
+    @Json(name = "snippet_name") val snippetName: String = "",
+    val enabled: Boolean = true,
+    val description: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class SnippetRulesWrite(val rules: List<SnippetRule>)
+
+/** Cloud Connector sends matching requests to object storage instead of the origin. */
+@JsonClass(generateAdapter = true)
+data class CloudConnectorRule(
+    val id: String? = null,
+    val expression: String = "",
+    val provider: String = "",
+    val description: String? = null,
+    val enabled: Boolean = true,
+    val parameters: CloudConnectorParameters? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class CloudConnectorParameters(val host: String = "")
+
+/** One of Cloudflare's error page types. [state] is "default" or "customized"; [url] is the
+ *  page Cloudflare fetches the replacement HTML from. */
+@JsonClass(generateAdapter = true)
+data class CustomPage(
+    val id: String = "",
+    val description: String? = null,
+    val url: String? = null,
+    val state: String? = null,
+    @Json(name = "required_tokens") val requiredTokens: List<String>? = null,
+    @Json(name = "preview_target") val previewTarget: String? = null,
+    @Json(name = "modified_on") val modifiedOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class CustomPageWrite(
+    val url: String?,
+    val state: String
+)
+
+/** One third-party tool Zaraz loads. Cloudflare keys these by an opaque id in a map. */
+@JsonClass(generateAdapter = true)
+data class ZarazTool(
+    val name: String? = null,
+    val type: String? = null,
+    val enabled: Boolean? = null,
+    @Json(name = "defaultFields") val defaultFields: Map<String, Any?>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ZarazTrigger(
+    val name: String? = null,
+    val description: String? = null
+)
+
+/** The Zaraz configuration for a zone. Only the parts this app reports are modeled; the full
+ *  document is much larger and version-specific. */
+@JsonClass(generateAdapter = true)
+data class ZarazConfig(
+    val zarazVersion: Int? = null,
+    val debugKey: String? = null,
+    val tools: Map<String, ZarazTool>? = null,
+    val triggers: Map<String, ZarazTrigger>? = null,
+    val settings: ZarazSettings? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ZarazSettings(
+    val autoInjectScript: Boolean? = null,
+    val ecommerce: Boolean? = null,
+    val hideQueryParams: Boolean? = null,
+    val hideIPAddress: Boolean? = null,
+    val hideUserAgent: Boolean? = null,
+    val hideExternalReferer: Boolean? = null
+)
+

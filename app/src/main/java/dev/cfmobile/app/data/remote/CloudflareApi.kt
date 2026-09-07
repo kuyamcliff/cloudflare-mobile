@@ -981,4 +981,65 @@ interface CloudflareApi {
         @Path("accountId") accountId: String,
         @Path("siteTag") siteTag: String
     ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Snippets (list, read source, delete; plus the rules that run them) ----
+
+    @GET("zones/{zoneId}/snippets")
+    suspend fun listSnippets(@Path("zoneId") zoneId: String): Response<CfEnvelope<List<Snippet>>>
+
+    /** Returns the snippet's JavaScript, as a file rather than as the JSON envelope. */
+    @GET("zones/{zoneId}/snippets/{snippetName}/content")
+    suspend fun getSnippetContent(
+        @Path("zoneId") zoneId: String,
+        @Path("snippetName") snippetName: String
+    ): Response<ResponseBody>
+
+    @DELETE("zones/{zoneId}/snippets/{snippetName}")
+    suspend fun deleteSnippet(
+        @Path("zoneId") zoneId: String,
+        @Path("snippetName") snippetName: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    @GET("zones/{zoneId}/snippets/snippet_rules")
+    suspend fun listSnippetRules(@Path("zoneId") zoneId: String): Response<CfEnvelope<List<SnippetRule>>>
+
+    /** Replaces the zone's whole snippet-rule list; Cloudflare has no per-rule endpoint here. */
+    @PUT("zones/{zoneId}/snippets/snippet_rules")
+    suspend fun putSnippetRules(
+        @Path("zoneId") zoneId: String,
+        @Body rules: SnippetRulesWrite
+    ): Response<CfEnvelope<List<SnippetRule>>>
+
+    // ---- Cloud Connector ----
+
+    @GET("zones/{zoneId}/cloud_connector/rules")
+    suspend fun listCloudConnectorRules(
+        @Path("zoneId") zoneId: String
+    ): Response<CfEnvelope<List<CloudConnectorRule>>>
+
+    /** Also a whole-list replace - the same read-modify-write shape as snippet rules. */
+    @PUT("zones/{zoneId}/cloud_connector/rules")
+    suspend fun putCloudConnectorRules(
+        @Path("zoneId") zoneId: String,
+        @Body rules: List<CloudConnectorRule>
+    ): Response<CfEnvelope<List<CloudConnectorRule>>>
+
+    // ---- Custom error pages ----
+
+    @GET("zones/{zoneId}/custom_pages")
+    suspend fun listCustomPages(@Path("zoneId") zoneId: String): Response<CfEnvelope<List<CustomPage>>>
+
+    /** Takes a pre-encoded body: reverting a page means sending `"url": null` explicitly, and
+     *  Moshi drops null fields by default (see CustomPagesRepository). */
+    @PUT("zones/{zoneId}/custom_pages/{pageId}")
+    suspend fun updateCustomPage(
+        @Path("zoneId") zoneId: String,
+        @Path("pageId") pageId: String,
+        @Body page: RequestBody
+    ): Response<CfEnvelope<CustomPage>>
+
+    // ---- Zaraz (read-only) ----
+
+    @GET("zones/{zoneId}/settings/zaraz/config")
+    suspend fun getZarazConfig(@Path("zoneId") zoneId: String): Response<CfEnvelope<ZarazConfig>>
 }

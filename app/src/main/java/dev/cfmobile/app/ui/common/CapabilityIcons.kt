@@ -3,6 +3,7 @@ package dev.cfmobile.app.ui.common
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.AltRoute
 import androidx.compose.material.icons.automirrored.filled.CallSplit
+import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.automirrored.filled.CallMissedOutgoing
 import androidx.compose.material.icons.automirrored.filled.ListAlt
 import androidx.compose.material.icons.automirrored.filled.Login
@@ -12,6 +13,8 @@ import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Api
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material.icons.filled.Dns
@@ -92,6 +95,10 @@ fun capabilityIcon(capability: Capability): ImageVector = when (capability.id) {
     "bulk_redirects" -> Icons.AutoMirrored.Filled.CallMissedOutgoing
     "registrar" -> Icons.Filled.Language
     "web_analytics" -> Icons.Filled.Insights
+    "snippets" -> Icons.Filled.Code
+    "cloud_connector" -> Icons.Filled.CloudSync
+    "custom_pages" -> Icons.AutoMirrored.Filled.Article
+    "zaraz" -> Icons.Filled.Extension
     "access" -> Icons.Filled.Shield
     "gateway" -> Icons.Filled.Dns
     "gateway_lists" -> Icons.AutoMirrored.Filled.ListAlt

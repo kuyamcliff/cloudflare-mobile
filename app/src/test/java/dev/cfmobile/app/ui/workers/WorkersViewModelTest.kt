@@ -2,6 +2,7 @@ package dev.cfmobile.app.ui.workers
 
 import com.google.common.truth.Truth.assertThat
 import dev.cfmobile.app.MainDispatcherRule
+import dev.cfmobile.app.data.remote.extractMultipartContent
 import dev.cfmobile.app.data.remote.testApi
 import dev.cfmobile.app.data.repository.WorkersRepository
 import dev.cfmobile.app.ui.common.UiState
@@ -60,14 +61,14 @@ class WorkersViewModelTest {
     }
 
     @Test
-    fun `extractWorkerSource returns a plain script unchanged`() {
+    fun `extractMultipartContent returns a plain script unchanged`() {
         val script = "export default { fetch() { return new Response('hi') } }"
 
-        assertThat(extractWorkerSource(script)).isEqualTo(script)
+        assertThat(extractMultipartContent(script)).isEqualTo(script)
     }
 
     @Test
-    fun `extractWorkerSource pulls the code out of a module worker's multipart body`() {
+    fun `extractMultipartContent pulls the code out of a module worker's multipart body`() {
         val body = listOf(
             "--boundary123",
             "Content-Disposition: form-data; name=\"worker.js\"; filename=\"worker.js\"",
@@ -77,7 +78,7 @@ class WorkersViewModelTest {
             "--boundary123--"
         ).joinToString("\n")
 
-        val source = extractWorkerSource(body)
+        val source = extractMultipartContent(body)
 
         assertThat(source).contains("export default { fetch() {} }")
         assertThat(source).doesNotContain("Content-Disposition")

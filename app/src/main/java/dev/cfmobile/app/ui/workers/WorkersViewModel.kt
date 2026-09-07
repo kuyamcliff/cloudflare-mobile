@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.cfmobile.app.core.errors.ErrorClassifier
 import dev.cfmobile.app.data.remote.ApiResult
+import dev.cfmobile.app.data.remote.extractMultipartContent
 import dev.cfmobile.app.data.remote.dto.WorkerSchedule
 import dev.cfmobile.app.data.remote.dto.WorkerScript
 import dev.cfmobile.app.data.repository.WorkersRepository
@@ -31,24 +32,6 @@ data class WorkersUiState(
     val deletingId: String? = null,
     val detail: WorkerDetailState? = null
 )
-
-/** A module Worker's source comes back as a multipart body rather than bare JavaScript.
- *  Showing the raw body would bury the code under MIME boundaries, so the parts are split out
- *  and the JavaScript ones concatenated. A body that isn't multipart is returned unchanged. */
-fun extractWorkerSource(body: String): String {
-    val boundaryLine = body.lineSequence().firstOrNull()?.trim().orEmpty()
-    if (!boundaryLine.startsWith("--")) return body
-    return body.split(boundaryLine)
-        .mapNotNull { part ->
-            // Each part is headers, a blank line, then content.
-            val separator = part.indexOf("\n\n").takeIf { it >= 0 }
-                ?: part.indexOf("\r\n\r\n").takeIf { it >= 0 }
-                ?: return@mapNotNull null
-            part.substring(separator).trim().takeIf { it.isNotBlank() && it != "--" }
-        }
-        .joinToString("\n\n")
-        .ifBlank { body }
-}
 
 /** List/inspect/delete - editing or deploying script code needs an editor and bundler
  *  that don't belong on mobile, see CapabilityRegistry's migrationHint. */
@@ -99,7 +82,7 @@ class WorkersViewModel(
                 state.copy(
                     detail = detail.copy(
                         isLoading = false,
-                        source = source?.let(::extractWorkerSource),
+                        source = source?.let(::extractMultipartContent),
                         sourceError = (sourceResult as? ApiResult.Failure)?.message,
                         schedules = schedules.orEmpty(),
                         schedulesError = (schedulesResult as? ApiResult.Failure)?.message

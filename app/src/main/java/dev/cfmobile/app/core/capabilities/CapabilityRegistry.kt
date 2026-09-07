@@ -240,6 +240,53 @@ object CapabilityRegistry {
             migrationHint = "The zone-setting side of caching; cache level, browser TTL, development mode and purge live under Caching. Tiered Cache, Cache Reserve, and Argo have their own endpoints and aren't covered. Not verified against a live API call."
         ),
         Capability(
+            id = "snippets",
+            product = "Develop",
+            displayName = "Snippets",
+            description = "Small JavaScript programs run on matching requests",
+            scope = CapabilityScope.ZONE,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.HIGH,
+            zoneRoute = { zoneId, zoneName -> Routes.snippets(zoneId, zoneName) },
+            migrationHint = "Lists snippets, shows a snippet's source read-only, deletes one, and enables, disables, or deletes the rules that decide when a snippet runs. Uploading snippet code isn't implemented - the same limit as Workers, and Cloudflare wants the code as a multipart upload alongside a metadata document. Creating a rule or reordering rules isn't implemented either: Cloudflare replaces the zone's whole rule list on write. Not verified against a live API call."
+        ),
+        Capability(
+            id = "cloud_connector",
+            product = "Rules",
+            displayName = "Cloud Connector",
+            description = "Route matching requests to object storage",
+            scope = CapabilityScope.ZONE,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P1,
+            destructiveRisk = DestructiveRisk.HIGH,
+            zoneRoute = { zoneId, zoneName -> Routes.cloudConnector(zoneId, zoneName) },
+            migrationHint = "Create, edit, enable, and delete rules pointing matching requests at R2, S3, Azure, or Google Cloud Storage. Cloudflare replaces the zone's whole rule list on every write, so a change made here from a stale list would drop rules added elsewhere in between - the response is used as the new truth. Rule ordering isn't editable. Not verified against a live API call."
+        ),
+        Capability(
+            id = "custom_pages",
+            product = "Security",
+            displayName = "Error Pages",
+            description = "Custom error and challenge pages",
+            scope = CapabilityScope.ZONE,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.MEDIUM,
+            zoneRoute = { zoneId, zoneName -> Routes.customPages(zoneId, zoneName) },
+            migrationHint = "Points a page type at HTML you host over HTTPS, or reverts it to Cloudflare's default. The page's HTML lives at that URL, not in this app, and Cloudflare requires it to contain the substitution tokens it lists - which this app shows but can't check for you. Not verified against a live API call."
+        ),
+        Capability(
+            id = "zaraz",
+            product = "Analytics",
+            displayName = "Zaraz",
+            description = "Third-party tools loaded on the edge",
+            scope = CapabilityScope.ZONE,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            zoneRoute = { zoneId, zoneName -> Routes.zaraz(zoneId, zoneName) },
+            migrationHint = "Read-only: which tools and triggers are configured, and which parts of a visitor's request Zaraz forwards to them. Editing isn't implemented because Cloudflare replaces the entire configuration document on write and this app models only part of it - a save would risk dropping fields it never parsed. Publishing and the configuration history aren't implemented either. Not verified against a live API call."
+        ),
+        Capability(
             id = "analytics",
             product = "Analytics",
             displayName = "Analytics",

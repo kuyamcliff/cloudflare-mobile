@@ -68,6 +68,14 @@ import dev.cfmobile.app.ui.account.RegistrarScreen
 import dev.cfmobile.app.ui.account.RegistrarViewModel
 import dev.cfmobile.app.ui.account.WebAnalyticsScreen
 import dev.cfmobile.app.ui.account.WebAnalyticsViewModel
+import dev.cfmobile.app.ui.zoneproducts.CloudConnectorScreen
+import dev.cfmobile.app.ui.zoneproducts.CloudConnectorViewModel
+import dev.cfmobile.app.ui.zoneproducts.CustomPagesScreen
+import dev.cfmobile.app.ui.zoneproducts.CustomPagesViewModel
+import dev.cfmobile.app.ui.zoneproducts.SnippetsScreen
+import dev.cfmobile.app.ui.zoneproducts.SnippetsViewModel
+import dev.cfmobile.app.ui.zoneproducts.ZarazScreen
+import dev.cfmobile.app.ui.zoneproducts.ZarazViewModel
 import dev.cfmobile.app.ui.zerotrust.AccessIdentityScreen
 import dev.cfmobile.app.ui.zerotrust.AccessIdentityViewModel
 import dev.cfmobile.app.ui.zerotrust.GatewayListsScreen
@@ -501,6 +509,34 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
                 )
                 ZoneSettingsGroupScreen(title, zoneName, vm, onBack = { navController.popBackStack() })
             }
+        }
+
+        composable(Routes.SNIPPETS, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<SnippetsViewModel>(factory = factoryOf { SnippetsViewModel(zoneId, container.snippetsRepository) })
+            SnippetsScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.CLOUD_CONNECTOR, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<CloudConnectorViewModel>(factory = factoryOf { CloudConnectorViewModel(zoneId, container.cloudConnectorRepository) })
+            CloudConnectorScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.CUSTOM_PAGES, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<CustomPagesViewModel>(factory = factoryOf { CustomPagesViewModel(zoneId, container.customPagesRepository) })
+            CustomPagesScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.ZARAZ, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<ZarazViewModel>(factory = factoryOf { ZarazViewModel(zoneId, container.zarazRepository) })
+            ZarazScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
         }
 
         composable(Routes.REDIRECT_RULES, arguments = zoneScopedArgs) { backStackEntry ->

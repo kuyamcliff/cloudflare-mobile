@@ -70,6 +70,10 @@ object Routes {
     const val WAITING_ROOM = "zone/{zoneId}/{zoneName}/waitingroom"
     const val HEALTH_CHECKS = "zone/{zoneId}/{zoneName}/healthchecks"
     const val WORKER_ROUTES = "zone/{zoneId}/{zoneName}/workerroutes"
+    const val SNIPPETS = "zone/{zoneId}/{zoneName}/snippets"
+    const val CLOUD_CONNECTOR = "zone/{zoneId}/{zoneName}/cloudconnector"
+    const val CUSTOM_PAGES = "zone/{zoneId}/{zoneName}/custompages"
+    const val ZARAZ = "zone/{zoneId}/{zoneName}/zaraz"
     const val ANALYTICS = "zone/{zoneId}/{zoneName}/analytics"
     const val BOT_MANAGEMENT = "zone/{zoneId}/{zoneName}/botmanagement"
 
@@ -145,6 +149,10 @@ object Routes {
     fun waitingRoom(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/waitingroom"
     fun healthChecks(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/healthchecks"
     fun workerRoutes(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/workerroutes"
+    fun snippets(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/snippets"
+    fun cloudConnector(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/cloudconnector"
+    fun customPages(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/custompages"
+    fun zaraz(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/zaraz"
     fun analytics(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/analytics"
     fun botManagement(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/botmanagement"
 }
