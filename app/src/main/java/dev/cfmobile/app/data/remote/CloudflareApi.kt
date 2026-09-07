@@ -1266,4 +1266,70 @@ interface CloudflareApi {
 
     @DELETE("zones/{zoneId}/hold")
     suspend fun removeZoneHold(@Path("zoneId") zoneId: String): Response<CfEnvelope<ZoneHold>>
+
+    // ---- Argo, tiered cache, cache reserve, managed transforms, URL normalization ----
+
+    @GET("zones/{zoneId}/argo/smart_routing")
+    suspend fun getArgoSmartRouting(@Path("zoneId") zoneId: String): Response<CfEnvelope<ArgoSetting>>
+
+    @PATCH("zones/{zoneId}/argo/smart_routing")
+    suspend fun updateArgoSmartRouting(
+        @Path("zoneId") zoneId: String,
+        @Body setting: ArgoSettingWrite
+    ): Response<CfEnvelope<ArgoSetting>>
+
+    @GET("zones/{zoneId}/argo/tiered_caching")
+    suspend fun getTieredCaching(@Path("zoneId") zoneId: String): Response<CfEnvelope<ArgoSetting>>
+
+    @PATCH("zones/{zoneId}/argo/tiered_caching")
+    suspend fun updateTieredCaching(
+        @Path("zoneId") zoneId: String,
+        @Body setting: ArgoSettingWrite
+    ): Response<CfEnvelope<ArgoSetting>>
+
+    @GET("zones/{zoneId}/cache/cache_reserve")
+    suspend fun getCacheReserve(@Path("zoneId") zoneId: String): Response<CfEnvelope<CacheSetting>>
+
+    @PATCH("zones/{zoneId}/cache/cache_reserve")
+    suspend fun updateCacheReserve(
+        @Path("zoneId") zoneId: String,
+        @Body setting: CacheSettingWrite
+    ): Response<CfEnvelope<CacheSetting>>
+
+    @GET("zones/{zoneId}/cache/regional_tiered_cache")
+    suspend fun getRegionalTieredCache(@Path("zoneId") zoneId: String): Response<CfEnvelope<CacheSetting>>
+
+    @PATCH("zones/{zoneId}/cache/regional_tiered_cache")
+    suspend fun updateRegionalTieredCache(
+        @Path("zoneId") zoneId: String,
+        @Body setting: CacheSettingWrite
+    ): Response<CfEnvelope<CacheSetting>>
+
+    @GET("zones/{zoneId}/cache/tiered_cache_smart_topology_enable")
+    suspend fun getSmartTieredCache(@Path("zoneId") zoneId: String): Response<CfEnvelope<CacheSetting>>
+
+    @PATCH("zones/{zoneId}/cache/tiered_cache_smart_topology_enable")
+    suspend fun updateSmartTieredCache(
+        @Path("zoneId") zoneId: String,
+        @Body setting: CacheSettingWrite
+    ): Response<CfEnvelope<CacheSetting>>
+
+    @GET("zones/{zoneId}/managed_headers")
+    suspend fun getManagedHeaders(@Path("zoneId") zoneId: String): Response<CfEnvelope<ManagedHeaders>>
+
+    /** Cloudflare replaces both header lists on write, so the caller sends the whole document. */
+    @PATCH("zones/{zoneId}/managed_headers")
+    suspend fun updateManagedHeaders(
+        @Path("zoneId") zoneId: String,
+        @Body headers: ManagedHeaders
+    ): Response<CfEnvelope<ManagedHeaders>>
+
+    @GET("zones/{zoneId}/url_normalization")
+    suspend fun getUrlNormalization(@Path("zoneId") zoneId: String): Response<CfEnvelope<UrlNormalization>>
+
+    @PUT("zones/{zoneId}/url_normalization")
+    suspend fun updateUrlNormalization(
+        @Path("zoneId") zoneId: String,
+        @Body settings: UrlNormalizationWrite
+    ): Response<CfEnvelope<UrlNormalization>>
 }

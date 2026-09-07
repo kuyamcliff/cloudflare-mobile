@@ -50,7 +50,11 @@ import dev.cfmobile.app.ui.d1.D1ConsoleScreen
 import dev.cfmobile.app.ui.d1.D1ConsoleViewModel
 import dev.cfmobile.app.ui.d1.D1Screen
 import dev.cfmobile.app.ui.d1.D1ViewModel
+import dev.cfmobile.app.ui.performance.PerformanceScreen
+import dev.cfmobile.app.ui.performance.PerformanceViewModel
 import dev.cfmobile.app.ui.rules.CacheRulesScreen
+import dev.cfmobile.app.ui.rules.ConfigRulesScreen
+import dev.cfmobile.app.ui.rules.ConfigRulesViewModel
 import dev.cfmobile.app.ui.rules.CacheRulesViewModel
 import dev.cfmobile.app.ui.rules.ManagedRulesetsScreen
 import dev.cfmobile.app.ui.rules.ManagedRulesetsViewModel
@@ -515,6 +519,20 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
                 )
                 ZoneSettingsGroupScreen(title, zoneName, vm, onBack = { navController.popBackStack() })
             }
+        }
+
+        composable(Routes.CONFIG_RULES, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<ConfigRulesViewModel>(factory = factoryOf { ConfigRulesViewModel(zoneId, container.rulesetPhaseRepository) })
+            ConfigRulesScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.PERFORMANCE, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<PerformanceViewModel>(factory = factoryOf { PerformanceViewModel(zoneId, container.performanceRepository) })
+            PerformanceScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
         }
 
         composable(Routes.LEGACY_FIREWALL, arguments = zoneScopedArgs) { backStackEntry ->

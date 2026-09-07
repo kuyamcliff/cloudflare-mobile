@@ -105,6 +105,7 @@ class ZoneSecurityViewModelTest {
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"enabled":true}}"""))
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[{"id":"s1"}]}"""))
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[{"id":"c1"}]}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}""")) // policies
 
         val vm = PageShieldViewModel("zone1", PageShieldRepository(testApi(server)))
         val state = vm.uiState.first { it.scripts !is UiState.Loading && it.connections !is UiState.Loading }
@@ -119,8 +120,11 @@ class ZoneSecurityViewModelTest {
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"enabled":true}}"""))
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}""")) // policies
         val vm = PageShieldViewModel("zone1", PageShieldRepository(testApi(server)))
-        vm.uiState.first { it.scripts !is UiState.Loading && it.connections !is UiState.Loading }
+        // Await the whole init chain, policies included: the toggle's own request would
+        // otherwise race the still-in-flight policies call for the next queued response.
+        vm.uiState.first { it.policies !is UiState.Loading }
 
         server.enqueue(
             MockResponse().setResponseCode(403)

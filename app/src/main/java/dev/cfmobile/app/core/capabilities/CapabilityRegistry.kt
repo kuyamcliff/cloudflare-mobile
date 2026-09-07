@@ -144,6 +144,18 @@ object CapabilityRegistry {
             migrationHint = "Shows which managed rulesets are deployed on the zone and lets you deploy, disable, or remove one whole ruleset. Per-rule overrides, sensitivity and paranoia levels, and scoping a deployment to an expression aren't implemented - a deployment made here applies to all traffic. Not verified against a live API call."
         ),
         Capability(
+            id = "config_rules",
+            product = "Rules",
+            displayName = "Config Rules",
+            description = "Override a zone setting for matching traffic",
+            scope = CapabilityScope.ZONE,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.MEDIUM,
+            zoneRoute = { zoneId, zoneName -> Routes.configRules(zoneId, zoneName) },
+            migrationHint = "Create, edit, enable, and delete rules that override one zone setting for matching requests. Cloudflare allows several settings in a single rule; this form edits one per rule, which is the honest fit for a phone. The SSL-mode override and Polish level aren't offered because they take a value rather than a switch. Not verified against a live API call."
+        ),
+        Capability(
             id = "page_rules",
             product = "Page Rules",
             displayName = "Page Rules",
@@ -262,6 +274,18 @@ object CapabilityRegistry {
             destructiveRisk = DestructiveRisk.LOW,
             zoneRoute = { id, name -> Routes.scrapeShield(id, name) },
             migrationHint = "Not verified against a live API call."
+        ),
+        Capability(
+            id = "performance",
+            product = "Speed",
+            displayName = "Routing & Cache",
+            description = "Argo, tiered cache, cache reserve, managed transforms",
+            scope = CapabilityScope.ZONE,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.MEDIUM,
+            zoneRoute = { zoneId, zoneName -> Routes.performance(zoneId, zoneName) },
+            migrationHint = "The routing and caching controls that live outside /zones/{id}/settings and so can't use the declarative settings machinery: Argo Smart Routing and Tiered Caching, Cache Reserve, smart and regional tiered cache, managed header transforms, and URL normalization. A control the zone's plan doesn't include isn't rendered at all - it's listed as unavailable instead of shown as a dead switch. Cache Reserve is billed storage, which the row says. Not verified against a live API call."
         ),
         Capability(
             id = "cache_behaviour",

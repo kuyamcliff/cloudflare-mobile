@@ -288,7 +288,18 @@ data class RuleActionParameters(
     val cache: Boolean? = null,
     @Json(name = "edge_ttl") val edgeTtl: RuleTtl? = null,
     @Json(name = "browser_ttl") val browserTtl: RuleTtl? = null,
-    val id: String? = null
+    val id: String? = null,
+    // A Config Rule ("set_config") writes the zone settings it overrides as direct keys here,
+    // one per setting, so each has to be its own field rather than a map.
+    @Json(name = "email_obfuscation") val emailObfuscation: Boolean? = null,
+    @Json(name = "hotlink_protection") val hotlinkProtection: Boolean? = null,
+    val mirage: Boolean? = null,
+    @Json(name = "rocket_loader") val rocketLoader: Boolean? = null,
+    @Json(name = "automatic_https_rewrites") val automaticHttpsRewrites: Boolean? = null,
+    val bic: Boolean? = null,
+    @Json(name = "disable_apps") val disableApps: Boolean? = null,
+    @Json(name = "disable_zaraz") val disableZaraz: Boolean? = null,
+    @Json(name = "disable_rum") val disableRum: Boolean? = null
 )
 
 /** One rule inside a Rulesets phase entrypoint. What it does is entirely determined by
@@ -1763,5 +1774,61 @@ data class ZoneHold(
     val hold: Boolean = false,
     @Json(name = "include_subdomains") val includeSubdomains: Boolean? = null,
     @Json(name = "hold_after") val holdAfter: String? = null
+)
+
+// ---- Cache and performance depth: Argo, tiered cache, cache reserve, managed transforms ----
+
+/** Argo Smart Routing and the tiered-cache toggles share this shape: one `value` of "on" or
+ *  "off" under their own endpoint rather than under /settings. */
+@JsonClass(generateAdapter = true)
+data class ArgoSetting(
+    val id: String? = null,
+    val value: String? = null,
+    val editable: Boolean? = null,
+    @Json(name = "modified_on") val modifiedOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ArgoSettingWrite(val value: String)
+
+/** Cache Reserve and the regional/smart tiered cache toggles report a boolean-ish value the
+ *  same way, but under /cache. */
+@JsonClass(generateAdapter = true)
+data class CacheSetting(
+    val id: String? = null,
+    val value: String? = null,
+    @Json(name = "modified_on") val modifiedOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class CacheSettingWrite(val value: String)
+
+/** One of Cloudflare's managed header transforms - a header it can add or remove for you
+ *  without writing a Transform Rule. */
+@JsonClass(generateAdapter = true)
+data class ManagedHeader(
+    val id: String = "",
+    val enabled: Boolean = false,
+    @Json(name = "has_conflict") val hasConflict: Boolean? = null,
+    @Json(name = "conflicts_with") val conflictsWith: List<String>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ManagedHeaders(
+    @Json(name = "managed_request_headers") val requestHeaders: List<ManagedHeader> = emptyList(),
+    @Json(name = "managed_response_headers") val responseHeaders: List<ManagedHeader> = emptyList()
+)
+
+/** How the zone normalizes incoming URLs before rules and cache lookups see them. */
+@JsonClass(generateAdapter = true)
+data class UrlNormalization(
+    val type: String? = null,
+    val scope: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class UrlNormalizationWrite(
+    val type: String,
+    val scope: String
 )
 

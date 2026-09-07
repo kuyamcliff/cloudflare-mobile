@@ -17,6 +17,7 @@ import dev.cfmobile.app.data.repository.CloudConnectorRepository
 import dev.cfmobile.app.data.repository.CustomPagesRepository
 import dev.cfmobile.app.data.repository.NotificationsRepository
 import dev.cfmobile.app.data.repository.MutualTlsRepository
+import dev.cfmobile.app.data.repository.PerformanceRepository
 import dev.cfmobile.app.data.repository.RegistrarRepository
 import dev.cfmobile.app.data.repository.SnippetsRepository
 import dev.cfmobile.app.data.repository.WebAnalyticsRepository
@@ -135,4 +136,5 @@ class AppContainer(context: Context) {
     val zoneFirewallLegacyRepository = ZoneFirewallLegacyRepository(api)
     val mutualTlsRepository = MutualTlsRepository(api)
     val zoneOwnershipRepository = ZoneOwnershipRepository(api)
+    val performanceRepository = PerformanceRepository(api)
 }
