@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.GppGood
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Http
 import androidx.compose.material.icons.filled.Hub
@@ -48,6 +49,7 @@ import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -109,6 +111,8 @@ fun capabilityIcon(capability: Capability): ImageVector = when (capability.id) {
     "gateway_lists" -> Icons.AutoMirrored.Filled.ListAlt
     "access_identity" -> Icons.AutoMirrored.Filled.Login
     "access_directory" -> Icons.Filled.Group
+    "platform" -> Icons.Filled.Widgets
+    "dns_firewall" -> Icons.Filled.GppGood
     "zero_trust_network" -> Icons.Filled.Hub
     "tunnels" -> Icons.Filled.Router
     "device_posture" -> Icons.Filled.Devices

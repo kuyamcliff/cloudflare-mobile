@@ -1018,7 +1018,7 @@ interface CloudflareApi {
         @Body request: ScreenshotRequest
     ): Response<ResponseBody>
 
-    // ---- API tokens (user-scoped: metadata only, never a token's value) ----
+    // ---- API tokens (metadata only, never a token's value) ----
 
     /** Cloudflare returns only metadata here - the token value itself is returned exactly once,
      *  by the call that creates or rolls it, which this app doesn't make. */
@@ -1027,6 +1027,19 @@ interface CloudflareApi {
 
     @DELETE("user/tokens/{tokenId}")
     suspend fun deleteApiToken(@Path("tokenId") tokenId: String): Response<CfEnvelope<Map<String, String>>>
+
+    /** Account-owned tokens (the `cfat_` kind) are a separate collection from a user's own -
+     *  they belong to the account and survive the person who made them leaving it. */
+    @GET("accounts/{accountId}/tokens")
+    suspend fun listAccountApiTokens(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<ApiToken>>>
+
+    @DELETE("accounts/{accountId}/tokens/{tokenId}")
+    suspend fun deleteAccountApiToken(
+        @Path("accountId") accountId: String,
+        @Path("tokenId") tokenId: String
+    ): Response<CfEnvelope<Map<String, String>>>
 
     // ---- Notifications (alerting policies) ----
 
@@ -1578,4 +1591,116 @@ interface CloudflareApi {
         @Path("accountId") accountId: String,
         @Path("networkId") networkId: String
     ): Response<CfEnvelope<VirtualNetwork>>
+
+    // ---- AI Gateway, Calls, Pipelines, Secrets Store ----
+
+    @GET("accounts/{accountId}/ai-gateway/gateways")
+    suspend fun listAiGateways(@Path("accountId") accountId: String): Response<CfEnvelope<List<AiGateway>>>
+
+    @POST("accounts/{accountId}/ai-gateway/gateways")
+    suspend fun createAiGateway(
+        @Path("accountId") accountId: String,
+        @Body gateway: AiGatewayWrite
+    ): Response<CfEnvelope<AiGateway>>
+
+    @DELETE("accounts/{accountId}/ai-gateway/gateways/{gatewayId}")
+    suspend fun deleteAiGateway(
+        @Path("accountId") accountId: String,
+        @Path("gatewayId") gatewayId: String
+    ): Response<CfEnvelope<AiGateway>>
+
+    @GET("accounts/{accountId}/calls/apps")
+    suspend fun listCallsApps(@Path("accountId") accountId: String): Response<CfEnvelope<List<CallsApp>>>
+
+    /** The only response carrying the app's secret. */
+    @POST("accounts/{accountId}/calls/apps")
+    suspend fun createCallsApp(
+        @Path("accountId") accountId: String,
+        @Body app: CallsAppWrite
+    ): Response<CfEnvelope<CallsApp>>
+
+    @DELETE("accounts/{accountId}/calls/apps/{appId}")
+    suspend fun deleteCallsApp(
+        @Path("accountId") accountId: String,
+        @Path("appId") appId: String
+    ): Response<CfEnvelope<CallsApp>>
+
+    @GET("accounts/{accountId}/pipelines")
+    suspend fun listPipelines(@Path("accountId") accountId: String): Response<CfEnvelope<List<Pipeline>>>
+
+    @DELETE("accounts/{accountId}/pipelines/{pipelineName}")
+    suspend fun deletePipeline(
+        @Path("accountId") accountId: String,
+        @Path("pipelineName") pipelineName: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    @GET("accounts/{accountId}/secrets_store/stores")
+    suspend fun listSecretStores(@Path("accountId") accountId: String): Response<CfEnvelope<List<SecretStore>>>
+
+    @POST("accounts/{accountId}/secrets_store/stores")
+    suspend fun createSecretStore(
+        @Path("accountId") accountId: String,
+        @Body store: SecretStoreWrite
+    ): Response<CfEnvelope<List<SecretStore>>>
+
+    @DELETE("accounts/{accountId}/secrets_store/stores/{storeId}")
+    suspend fun deleteSecretStore(
+        @Path("accountId") accountId: String,
+        @Path("storeId") storeId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    /** Names and metadata only - a stored secret's value is never returned. */
+    @GET("accounts/{accountId}/secrets_store/stores/{storeId}/secrets")
+    suspend fun listStoredSecrets(
+        @Path("accountId") accountId: String,
+        @Path("storeId") storeId: String
+    ): Response<CfEnvelope<List<StoredSecret>>>
+
+    @DELETE("accounts/{accountId}/secrets_store/stores/{storeId}/secrets/{secretId}")
+    suspend fun deleteStoredSecret(
+        @Path("accountId") accountId: String,
+        @Path("storeId") storeId: String,
+        @Path("secretId") secretId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- DNS Firewall and notification destinations ----
+
+    @GET("accounts/{accountId}/dns_firewall")
+    suspend fun listDnsFirewallClusters(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<DnsFirewallCluster>>>
+
+    @POST("accounts/{accountId}/dns_firewall")
+    suspend fun createDnsFirewallCluster(
+        @Path("accountId") accountId: String,
+        @Body cluster: DnsFirewallClusterWrite
+    ): Response<CfEnvelope<DnsFirewallCluster>>
+
+    @DELETE("accounts/{accountId}/dns_firewall/{clusterId}")
+    suspend fun deleteDnsFirewallCluster(
+        @Path("accountId") accountId: String,
+        @Path("clusterId") clusterId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    @GET("accounts/{accountId}/alerting/v3/destinations/webhooks")
+    suspend fun listNotificationWebhooks(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<NotificationWebhook>>>
+
+    @POST("accounts/{accountId}/alerting/v3/destinations/webhooks")
+    suspend fun createNotificationWebhook(
+        @Path("accountId") accountId: String,
+        @Body webhook: NotificationWebhookWrite
+    ): Response<CfEnvelope<NotificationWebhook>>
+
+    @DELETE("accounts/{accountId}/alerting/v3/destinations/webhooks/{webhookId}")
+    suspend fun deleteNotificationWebhook(
+        @Path("accountId") accountId: String,
+        @Path("webhookId") webhookId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    @GET("accounts/{accountId}/alerting/v3/history")
+    suspend fun listNotificationHistory(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<NotificationHistoryEntry>>>
 }

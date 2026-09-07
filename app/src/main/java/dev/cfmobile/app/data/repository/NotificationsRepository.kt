@@ -2,7 +2,10 @@ package dev.cfmobile.app.data.repository
 
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
+import dev.cfmobile.app.data.remote.dto.NotificationHistoryEntry
 import dev.cfmobile.app.data.remote.dto.NotificationPolicy
+import dev.cfmobile.app.data.remote.dto.NotificationWebhook
+import dev.cfmobile.app.data.remote.dto.NotificationWebhookWrite
 import dev.cfmobile.app.data.remote.dto.NotificationPolicyUpdate
 import dev.cfmobile.app.data.remote.safeApiCall
 import dev.cfmobile.app.data.remote.safeApiCallUnit
@@ -21,4 +24,19 @@ class NotificationsRepository(private val api: CloudflareApi) {
 
     suspend fun deletePolicy(accountId: String, policyId: String): ApiResult<Unit> =
         safeApiCallUnit { api.deleteNotificationPolicy(accountId, policyId) }
+
+    /** Where alerts can be sent, beyond the email addresses a policy lists inline. */
+    suspend fun listWebhooks(accountId: String): ApiResult<List<NotificationWebhook>> =
+        safeApiCall { api.listNotificationWebhooks(accountId) }
+
+    suspend fun createWebhook(accountId: String, name: String, url: String): ApiResult<NotificationWebhook> =
+        safeApiCall { api.createNotificationWebhook(accountId, NotificationWebhookWrite(name = name, url = url)) }
+
+    suspend fun deleteWebhook(accountId: String, webhookId: String): ApiResult<Unit> =
+        safeApiCallUnit { api.deleteNotificationWebhook(accountId, webhookId) }
+
+    /** What Cloudflare actually sent, which is the difference between a policy being
+     *  configured and it working. */
+    suspend fun listHistory(accountId: String): ApiResult<List<NotificationHistoryEntry>> =
+        safeApiCall { api.listNotificationHistory(accountId) }
 }

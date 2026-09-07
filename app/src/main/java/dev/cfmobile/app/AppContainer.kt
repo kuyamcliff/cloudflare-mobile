@@ -9,16 +9,21 @@ import dev.cfmobile.app.data.local.db.ZonesCache
 import dev.cfmobile.app.data.remote.NetworkModule
 import dev.cfmobile.app.data.repository.AccountMembersRepository
 import dev.cfmobile.app.data.repository.AccountsRepository
+import dev.cfmobile.app.data.repository.AiGatewayRepository
 import dev.cfmobile.app.data.repository.AnalyticsRepository
 import dev.cfmobile.app.data.repository.ApiTokensRepository
 import dev.cfmobile.app.data.repository.BotManagementRepository
+import dev.cfmobile.app.data.repository.CallsRepository
+import dev.cfmobile.app.data.repository.DnsFirewallRepository
 import dev.cfmobile.app.data.repository.BulkRedirectsRepository
 import dev.cfmobile.app.data.repository.CloudConnectorRepository
 import dev.cfmobile.app.data.repository.CustomPagesRepository
 import dev.cfmobile.app.data.repository.NotificationsRepository
 import dev.cfmobile.app.data.repository.MutualTlsRepository
 import dev.cfmobile.app.data.repository.PerformanceRepository
+import dev.cfmobile.app.data.repository.PipelinesRepository
 import dev.cfmobile.app.data.repository.RegistrarRepository
+import dev.cfmobile.app.data.repository.SecretsStoreRepository
 import dev.cfmobile.app.data.repository.SnippetsRepository
 import dev.cfmobile.app.data.repository.WebAnalyticsRepository
 import dev.cfmobile.app.data.repository.ZarazRepository
@@ -137,4 +142,9 @@ class AppContainer(context: Context) {
     val mutualTlsRepository = MutualTlsRepository(api)
     val zoneOwnershipRepository = ZoneOwnershipRepository(api)
     val performanceRepository = PerformanceRepository(api)
+    val aiGatewayRepository = AiGatewayRepository(api)
+    val callsRepository = CallsRepository(api)
+    val pipelinesRepository = PipelinesRepository(api)
+    val secretsStoreRepository = SecretsStoreRepository(api)
+    val dnsFirewallRepository = DnsFirewallRepository(api)
 }

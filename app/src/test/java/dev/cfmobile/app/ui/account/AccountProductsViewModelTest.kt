@@ -7,6 +7,7 @@ import dev.cfmobile.app.data.remote.dto.BulkRedirect
 import dev.cfmobile.app.data.remote.dto.NotificationMechanismTarget
 import dev.cfmobile.app.data.remote.dto.NotificationMechanisms
 import dev.cfmobile.app.data.remote.dto.NotificationPolicy
+import dev.cfmobile.app.data.remote.dto.NotificationWebhook
 import dev.cfmobile.app.data.remote.dto.RegistrarDomain
 import dev.cfmobile.app.data.remote.dto.RulesList
 import dev.cfmobile.app.data.remote.dto.RulesListItem
@@ -55,14 +56,52 @@ class AccountProductsViewModelTest {
     }
 
     @Test
-    fun `api tokens load from the user-scoped endpoint`() = runTest {
+    fun `api tokens load from both the user and account collections`() = runTest {
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[{"id":"t1","name":"ci","status":"active"}]}"""))
-        val vm = ApiTokensViewModel(ApiTokensRepository(testApi(server)))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[{"id":"t2","name":"deploy-bot","status":"active"}]}"""))
+        val vm = ApiTokensViewModel("acct1", ApiTokensRepository(testApi(server)))
 
-        val state = vm.uiState.first { it.tokens !is UiState.Loading }
+        val state = vm.uiState.first { it.tokens !is UiState.Loading && it.accountTokens !is UiState.Loading }
 
         assertThat((state.tokens as UiState.Data).value.single().name).isEqualTo("ci")
+        assertThat((state.accountTokens as UiState.Data).value.single().name).isEqualTo("deploy-bot")
         assertThat(server.takeRequest().path).isEqualTo("/user/tokens")
+        assertThat(server.takeRequest().path).isEqualTo("/accounts/acct1/tokens")
+    }
+
+    @Test
+    fun `one token collection being unreadable leaves the other usable`() = runTest {
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[{"id":"t1","name":"ci"}]}"""))
+        // Account API Tokens Read is a separate permission from User API Tokens Read.
+        server.enqueue(
+            MockResponse().setResponseCode(403)
+                .setBody("""{"success":false,"errors":[{"code":9109,"message":"Unauthorized"}],"result":null}""")
+        )
+        val vm = ApiTokensViewModel("acct1", ApiTokensRepository(testApi(server)))
+
+        val state = vm.uiState.first { it.tokens !is UiState.Loading && it.accountTokens !is UiState.Loading }
+
+        assertThat((state.tokens as UiState.Data).value).hasSize(1)
+        assertThat(state.accountTokens).isInstanceOf(UiState.Error::class.java)
+    }
+
+    @Test
+    fun `revoking on the account tab hits the account endpoint`() = runTest {
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[{"id":"t2","name":"deploy-bot"}]}"""))
+        val vm = ApiTokensViewModel("acct1", ApiTokensRepository(testApi(server)))
+        vm.uiState.first { it.tokens !is UiState.Loading && it.accountTokens !is UiState.Loading }
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{}}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
+
+        vm.selectScope(ApiTokenScope.ACCOUNT)
+        vm.revoke(ApiToken(id = "t2", name = "deploy-bot"))
+        vm.uiState.first { it.deletingId == null && (it.accountTokens as? UiState.Data)?.value?.isEmpty() == true }
+
+        val requests = buildList { repeat(server.requestCount) { add(server.takeRequest()) } }
+        val delete = requests.single { it.method == "DELETE" }
+        assertThat(delete.path).isEqualTo("/accounts/acct1/tokens/t2")
     }
 
     @Test
@@ -71,7 +110,8 @@ class AccountProductsViewModelTest {
             MockResponse().setResponseCode(403)
                 .setBody("""{"success":false,"errors":[{"code":9109,"message":"Unauthorized to access requested resource"}],"result":null}""")
         )
-        val vm = ApiTokensViewModel(ApiTokensRepository(testApi(server)))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
+        val vm = ApiTokensViewModel("acct1", ApiTokensRepository(testApi(server)))
 
         val state = vm.uiState.first { it.tokens !is UiState.Loading }
 
@@ -81,17 +121,20 @@ class AccountProductsViewModelTest {
     @Test
     fun `revoking a token deletes it by id and reloads`() = runTest {
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[{"id":"t1","name":"ci"}]}"""))
-        val vm = ApiTokensViewModel(ApiTokensRepository(testApi(server)))
-        vm.uiState.first { it.tokens !is UiState.Loading }
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
+        val vm = ApiTokensViewModel("acct1", ApiTokensRepository(testApi(server)))
+        // Await both collections: the reload below would otherwise race the account-tokens
+        // request still in flight for the next queued response.
+        vm.uiState.first { it.tokens !is UiState.Loading && it.accountTokens !is UiState.Loading }
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{}}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
 
         vm.revoke(ApiToken(id = "t1", name = "ci"))
         vm.uiState.first { it.deletingId == null && (it.tokens as? UiState.Data)?.value?.isEmpty() == true }
 
-        server.takeRequest()
-        val delete = server.takeRequest()
-        assertThat(delete.method).isEqualTo("DELETE")
+        val requests = buildList { repeat(server.requestCount) { add(server.takeRequest()) } }
+        val delete = requests.single { it.method == "DELETE" }
         assertThat(delete.path).isEqualTo("/user/tokens/t1")
     }
 
@@ -122,20 +165,67 @@ class AccountProductsViewModelTest {
     @Test
     fun `silencing a policy patches only enabled and updates the row in place`() = runTest {
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[{"id":"p1","name":"SSL","enabled":true}]}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}""")) // webhooks
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}""")) // history
         val vm = NotificationsViewModel("acct1", NotificationsRepository(testApi(server)))
-        val policy = (vm.uiState.first { it.policies !is UiState.Loading }.policies as UiState.Data).value.single()
+        // Await all three: the screen loads them in one coroutine, and patching while the last
+        // is in flight would race it for the next queued response.
+        val loaded = vm.uiState.first { it.policies !is UiState.Loading && it.history !is UiState.Loading }
+        val policy = (loaded.policies as UiState.Data).value.single()
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"id":"p1","name":"SSL","enabled":false}}"""))
 
         vm.setEnabled(policy, false)
         val state = vm.uiState.first { (it.policies as? UiState.Data)?.value?.single()?.enabled == false }
 
         assertThat(state.busyId).isNull()
-        server.takeRequest()
-        val patch = server.takeRequest()
-        assertThat(patch.method).isEqualTo("PATCH")
+        val requests = buildList { repeat(server.requestCount) { add(server.takeRequest()) } }
+        val patch = requests.single { it.method == "PATCH" }
         assertThat(patch.body.readUtf8()).isEqualTo("""{"enabled":false}""")
-        // Only one extra request: the row is patched in place rather than refetching the list.
-        assertThat(server.requestCount).isEqualTo(2)
+        // Only one extra request past the three that load the tabs: the row is patched in
+        // place rather than refetching the list.
+        assertThat(server.requestCount).isEqualTo(4)
+    }
+
+    @Test
+    fun `a webhook destination must be https`() {
+        assertThat(validateWebhookForm(WebhookFormState(name = "", url = "https://x.example"))).contains("Name")
+        assertThat(validateWebhookForm(WebhookFormState(name = "ops", url = "http://x.example")))
+            .contains("https://")
+        assertThat(validateWebhookForm(WebhookFormState(name = "ops", url = "https://"))).contains("full webhook URL")
+        assertThat(validateWebhookForm(WebhookFormState(name = "ops", url = "https://x.example/hook"))).isNull()
+    }
+
+    @Test
+    fun `webhookHost hides the path, which can carry the delivery token`() {
+        assertThat(webhookHost("https://hooks.slack.com/services/T0/B0/verysecret"))
+            .isEqualTo("hooks.slack.com")
+        assertThat(webhookHost(null)).isNull()
+    }
+
+    @Test
+    fun `webhookSummary says whether a destination has ever worked`() {
+        assertThat(webhookSummary(NotificationWebhook(lastSuccess = "2026-01-02"))).contains("Last delivered")
+        assertThat(webhookSummary(NotificationWebhook(lastFailure = "2026-01-02"))).contains("failed")
+        assertThat(webhookSummary(NotificationWebhook())).isEqualTo("Never used")
+    }
+
+    @Test
+    fun `adding a destination posts to the alerting destinations endpoint`() = runTest {
+        repeat(3) { server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}""")) }
+        val vm = NotificationsViewModel("acct1", NotificationsRepository(testApi(server)))
+        vm.uiState.first { it.policies !is UiState.Loading && it.history !is UiState.Loading }
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"id":"w1","name":"ops"}}"""))
+        repeat(3) { server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}""")) }
+
+        vm.openWebhookForm()
+        vm.updateWebhookForm { it.copy(name = "ops", url = "https://hooks.example.com/alerts") }
+        vm.saveWebhook()
+        vm.uiState.first { it.webhookForm == null }
+
+        val requests = buildList { repeat(server.requestCount) { add(server.takeRequest()) } }
+        val post = requests.single { it.method == "POST" }
+        assertThat(post.path).isEqualTo("/accounts/acct1/alerting/v3/destinations/webhooks")
+        assertThat(post.body.readUtf8()).contains("\"url\":\"https://hooks.example.com/alerts\"")
     }
 
     // ---- Bulk redirects ----

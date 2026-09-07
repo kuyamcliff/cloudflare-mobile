@@ -2137,3 +2137,125 @@ data class VirtualNetworkWrite(
     @Json(name = "is_default") val isDefault: Boolean = false
 )
 
+// ---- Account platform: AI Gateway, Calls, Pipelines, Secrets Store, DNS Firewall ----
+
+/** An AI Gateway: a proxy in front of model providers that caches, rate-limits, and logs. */
+@JsonClass(generateAdapter = true)
+data class AiGateway(
+    val id: String = "",
+    @Json(name = "cache_ttl") val cacheTtl: Int? = null,
+    @Json(name = "cache_invalidate_on_update") val cacheInvalidateOnUpdate: Boolean? = null,
+    @Json(name = "collect_logs") val collectLogs: Boolean? = null,
+    @Json(name = "rate_limiting_interval") val rateLimitingInterval: Int? = null,
+    @Json(name = "rate_limiting_limit") val rateLimitingLimit: Int? = null,
+    @Json(name = "rate_limiting_technique") val rateLimitingTechnique: String? = null,
+    @Json(name = "created_at") val createdAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AiGatewayWrite(
+    val id: String,
+    @Json(name = "cache_ttl") val cacheTtl: Int = 0,
+    @Json(name = "cache_invalidate_on_update") val cacheInvalidateOnUpdate: Boolean = false,
+    @Json(name = "collect_logs") val collectLogs: Boolean = true,
+    @Json(name = "rate_limiting_interval") val rateLimitingInterval: Int = 0,
+    @Json(name = "rate_limiting_limit") val rateLimitingLimit: Int = 0,
+    @Json(name = "rate_limiting_technique") val rateLimitingTechnique: String = "fixed"
+)
+
+/** A Calls application - the credentials a client uses to reach Cloudflare's SFU or TURN. */
+@JsonClass(generateAdapter = true)
+data class CallsApp(
+    val uid: String = "",
+    val name: String? = null,
+    val created: String? = null,
+    val modified: String? = null,
+    /** Returned only when the app is created; never readable afterwards. */
+    val secret: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class CallsAppWrite(val name: String)
+
+/** A Pipeline: an HTTP or Worker source feeding batched records into R2. */
+@JsonClass(generateAdapter = true)
+data class Pipeline(
+    val id: String = "",
+    val name: String = "",
+    val endpoint: String? = null,
+    val version: Int? = null
+)
+
+/** A store in the account's Secrets Store. */
+@JsonClass(generateAdapter = true)
+data class SecretStore(
+    val id: String = "",
+    val name: String = "",
+    val created: String? = null,
+    val modified: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class SecretStoreWrite(val name: String)
+
+/** One secret inside a store. As everywhere else, the value is never returned. */
+@JsonClass(generateAdapter = true)
+data class StoredSecret(
+    val id: String = "",
+    val name: String = "",
+    val comment: String? = null,
+    val status: String? = null,
+    val scopes: List<String>? = null,
+    val created: String? = null
+)
+
+/** A DNS Firewall cluster: Cloudflare's resolvers fronting your own authoritative servers. */
+@JsonClass(generateAdapter = true)
+data class DnsFirewallCluster(
+    val id: String = "",
+    val name: String = "",
+    @Json(name = "dns_firewall_ips") val dnsFirewallIps: List<String>? = null,
+    @Json(name = "upstream_ips") val upstreamIps: List<String>? = null,
+    @Json(name = "minimum_cache_ttl") val minimumCacheTtl: Int? = null,
+    @Json(name = "maximum_cache_ttl") val maximumCacheTtl: Int? = null,
+    @Json(name = "deprecate_any_requests") val deprecateAnyRequests: Boolean? = null,
+    @Json(name = "ratelimit") val rateLimit: Int? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class DnsFirewallClusterWrite(
+    val name: String,
+    @Json(name = "upstream_ips") val upstreamIps: List<String>
+)
+
+/** A webhook destination an alert policy can notify. */
+@JsonClass(generateAdapter = true)
+data class NotificationWebhook(
+    val id: String = "",
+    val name: String? = null,
+    val url: String? = null,
+    val type: String? = null,
+    @Json(name = "last_success") val lastSuccess: String? = null,
+    @Json(name = "last_failure") val lastFailure: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class NotificationWebhookWrite(
+    val name: String,
+    val url: String,
+    /** Cloudflare's own value for a plain HTTP webhook, as opposed to a Slack or Teams one. */
+    val secret: String? = null
+)
+
+/** One alert Cloudflare actually sent, from the notification history. */
+@JsonClass(generateAdapter = true)
+data class NotificationHistoryEntry(
+    val id: String = "",
+    val name: String? = null,
+    val description: String? = null,
+    @Json(name = "alert_type") val alertType: String? = null,
+    val mechanism: String? = null,
+    @Json(name = "mechanism_type") val mechanismType: String? = null,
+    val sent: String? = null
+)
+

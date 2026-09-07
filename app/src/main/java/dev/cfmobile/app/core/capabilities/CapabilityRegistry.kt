@@ -780,25 +780,49 @@ object CapabilityRegistry {
             id = "api_tokens",
             product = "Account",
             displayName = "API Tokens",
-            description = "Review and revoke the account's API tokens",
+            description = "Review and revoke user and account API tokens",
             scope = CapabilityScope.ACCOUNT,
             status = CapabilityStatus.IMPLEMENTED,
             roadmapPhase = RoadmapPhase.P1,
             destructiveRisk = DestructiveRisk.HIGH,
             accountRoute = { accountId -> Routes.apiTokens(accountId) },
-            migrationHint = "Lists token metadata - name, status, issue and expiry dates, last use - and revokes a token. Creating or rolling a token isn't implemented: both return a token value, and building the permission-policy editor they need is a desktop-sized job. No token value is ever fetched or displayed, including the one this app signs in with. Reading this list needs a token carrying User API Tokens Read, which many tokens don't. Not verified against a live API call."
+            migrationHint = "Two tabs: the signed-in user's own tokens, and the tokens the account itself owns (the cfat_ kind, which outlive whoever created them). Each shows metadata only - name, status, issue and expiry dates, last use - and can be revoked. Creating or rolling a token isn't implemented: both return a token value, and building the permission-policy editor they need is a desktop-sized job. No token value is ever fetched or displayed, including the one this app signs in with. Each tab needs its own permission (User API Tokens Read, Account API Tokens Read), so one can be readable while the other isn't; each keeps its own error rather than failing the screen. Not verified against a live API call."
         ),
         Capability(
             id = "notifications",
             product = "Account",
             displayName = "Notifications",
-            description = "Alert policies and where they notify",
+            description = "Alert policies, destinations, and what was sent",
             scope = CapabilityScope.ACCOUNT,
             status = CapabilityStatus.IMPLEMENTED,
             roadmapPhase = RoadmapPhase.P1,
             destructiveRisk = DestructiveRisk.MEDIUM,
             accountRoute = { accountId -> Routes.notifications(accountId) },
-            migrationHint = "Lists alert policies, silences or re-enables one, and deletes one. Creating a policy or editing its destinations isn't implemented - Cloudflare's alert types each carry their own filter shape. Destination counts are shown rather than the addresses themselves. Not verified against a live API call."
+            migrationHint = "Three tabs. Alerts lists the policies, silences or re-enables one, and deletes one; creating a policy or editing its destinations isn't implemented - Cloudflare's alert types each carry their own filter shape, and destination counts are shown rather than the addresses themselves. Destinations lists webhook targets and adds or deletes one; a new destination still has to be attached to a policy from the dashboard, PagerDuty needs an OAuth connection, and only a webhook's host is displayed since its path can carry the delivery token. History is read-only and covers whatever window Cloudflare retains. Not verified against a live API call."
+        ),
+        Capability(
+            id = "platform",
+            product = "Account",
+            displayName = "Platform",
+            description = "AI Gateway, Calls, Pipelines, and Secrets Store",
+            scope = CapabilityScope.ACCOUNT,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.platform(accountId) },
+            migrationHint = "Four account products behind four tabs, each loaded independently so one being unavailable on the plan leaves the others usable. AI Gateway lists gateways and creates one with its cache TTL, rate limit, and log setting; editing a gateway or reading its request logs isn't implemented, and provider keys never pass through this app. Calls lists applications and creates one - the app secret is shown exactly once, in a dialog, and is never persisted or logged. Pipelines is list and delete only: creating one needs a source, a destination bucket, and that bucket's credentials. Secrets Store creates and deletes stores; a secret's value is never readable by any API and this app doesn't write one either, since the bulk create payload differs per scope. Not verified against a live API call."
+        ),
+        Capability(
+            id = "dns_firewall",
+            product = "DNS",
+            displayName = "DNS Firewall",
+            description = "Cloudflare resolvers in front of your own nameservers",
+            scope = CapabilityScope.ACCOUNT,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.dnsFirewall(accountId) },
+            migrationHint = "Lists clusters with their Cloudflare-side addresses, creates one from a name and a list of upstream IPs, and deletes one. A separate product from the per-zone DNS records elsewhere in the app. Editing an existing cluster and tuning its cache TTLs, rate limit, negative caching, or ECS setting aren't implemented - creation takes Cloudflare's defaults for all of them. Deleting a cluster is destructive in a way a list row can hide: anything still delegating to it stops resolving, which the confirmation says. Not verified against a live API call."
         ),
         Capability(
             id = "bulk_redirects",

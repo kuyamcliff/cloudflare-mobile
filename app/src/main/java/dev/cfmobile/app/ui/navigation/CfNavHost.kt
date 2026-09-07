@@ -22,6 +22,8 @@ import dev.cfmobile.app.ui.caching.CachingScreen
 import dev.cfmobile.app.ui.caching.CachingViewModel
 import dev.cfmobile.app.ui.dashboard.DashboardScreen
 import dev.cfmobile.app.ui.dashboard.DashboardViewModel
+import dev.cfmobile.app.ui.dns.DnsFirewallScreen
+import dev.cfmobile.app.ui.dns.DnsFirewallViewModel
 import dev.cfmobile.app.ui.dns.DnsScreen
 import dev.cfmobile.app.ui.dns.DnsViewModel
 import dev.cfmobile.app.ui.firewall.FirewallScreen
@@ -68,6 +70,8 @@ import dev.cfmobile.app.ui.account.BulkRedirectsScreen
 import dev.cfmobile.app.ui.account.BulkRedirectsViewModel
 import dev.cfmobile.app.ui.account.NotificationsScreen
 import dev.cfmobile.app.ui.account.NotificationsViewModel
+import dev.cfmobile.app.ui.account.PlatformScreen
+import dev.cfmobile.app.ui.account.PlatformViewModel
 import dev.cfmobile.app.ui.account.RegistrarScreen
 import dev.cfmobile.app.ui.account.RegistrarViewModel
 import dev.cfmobile.app.ui.account.WebAnalyticsScreen
@@ -391,10 +395,11 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
             WorkerDomainsScreen(vm, onBack = { navController.popBackStack() })
         }
 
-        accountScreen(Routes.API_TOKENS) {
-            // User-scoped, not account-scoped: the token list belongs to whoever is signed in.
+        accountScreen(Routes.API_TOKENS) { accountId ->
+            // Two collections behind one screen: the signed-in user's own tokens, and the
+            // tokens the account itself owns.
             val vm = viewModel<ApiTokensViewModel>(
-                factory = factoryOf { ApiTokensViewModel(container.apiTokensRepository) }
+                factory = factoryOf { ApiTokensViewModel(accountId, container.apiTokensRepository) }
             )
             ApiTokensScreen(vm, onBack = { navController.popBackStack() })
         }
@@ -425,6 +430,28 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
                 factory = factoryOf { WebAnalyticsViewModel(accountId, container.webAnalyticsRepository) }
             )
             WebAnalyticsScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.PLATFORM) { accountId ->
+            val vm = viewModel<PlatformViewModel>(
+                factory = factoryOf {
+                    PlatformViewModel(
+                        accountId,
+                        container.aiGatewayRepository,
+                        container.callsRepository,
+                        container.pipelinesRepository,
+                        container.secretsStoreRepository
+                    )
+                }
+            )
+            PlatformScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.DNS_FIREWALL) { accountId ->
+            val vm = viewModel<DnsFirewallViewModel>(
+                factory = factoryOf { DnsFirewallViewModel(accountId, container.dnsFirewallRepository) }
+            )
+            DnsFirewallScreen(vm, onBack = { navController.popBackStack() })
         }
 
         accountScreen(Routes.ACCESS_DIRECTORY) { accountId ->
