@@ -225,7 +225,7 @@ object CapabilityRegistry {
             roadmapPhase = RoadmapPhase.P1,
             destructiveRisk = DestructiveRisk.HIGH,
             zoneRoute = { id, name -> Routes.waitingRoom(id, name) },
-            migrationHint = "Create, list, and delete rooms with the core queueing thresholds. Custom queue pages, event scheduling, and per-room rules aren't implemented. Requires a plan that includes Waiting Room. Not verified against a live API call."
+            migrationHint = "Create, list, and delete rooms with the core queueing thresholds. Tapping a room opens its scheduled events, which can be listed, created, and deleted - an event overrides the room's thresholds for one window, and blank overrides mean 'keep the room's own'. Times are entered and shown in UTC, in Cloudflare's own format, rather than converted into a local timezone the API never mentions. Editing a room or an event, custom queue pages, pre-queue windows, and per-room rules aren't implemented. Requires a plan that includes Waiting Room. Not verified against a live API call."
         ),
         Capability(
             id = "health_checks",
@@ -697,25 +697,25 @@ object CapabilityRegistry {
             id = "stream",
             product = "Storage & Media",
             displayName = "Stream",
-            description = "Video hosting and delivery",
+            description = "Videos, live inputs, watermarks, and keys",
             scope = CapabilityScope.ACCOUNT,
             status = CapabilityStatus.IMPLEMENTED,
             roadmapPhase = RoadmapPhase.P2,
             destructiveRisk = DestructiveRisk.HIGH,
             accountRoute = { accountId -> Routes.stream(accountId) },
-            migrationHint = "List, inspect, delete, and upload a video from the device through Android's photo picker. The upload sends the whole file in one request, which is Cloudflare's 200 MB limit - larger files need the tus resumable protocol, which isn't implemented, so an oversized pick is refused before it starts rather than after a long upload fails. There is no upload progress for the same reason, and playback happens in Cloudflare's player, not in this app. Not verified against a live API call."
+            migrationHint = "Four tabs. Videos lists, deletes, and uploads from the device through Android's photo picker; the upload sends the whole file in one request, which is Cloudflare's 200 MB limit - larger files need the tus resumable protocol, which isn't implemented, so an oversized pick is refused before it starts rather than after a long upload fails. There is no upload progress for the same reason, and playback happens in Cloudflare's player, not in this app. A video's caption tracks open from its row and can be deleted; adding one means uploading a VTT file, which isn't implemented. Live lists and creates inputs - the RTMPS, SRT and WebRTC endpoints and the stream key come from the single-input read, are shown only while that sheet is open, and are never persisted. Watermarks and signing keys are list and delete: creating a watermark uploads a logo, and a signing key's private half is returned once at creation, which this app never asks for. Not verified against a live API call."
         ),
         Capability(
             id = "images",
             product = "Storage & Media",
             displayName = "Images",
-            description = "Image storage, resizing, delivery",
+            description = "Image storage, variants, and signing keys",
             scope = CapabilityScope.ACCOUNT,
             status = CapabilityStatus.IMPLEMENTED,
             roadmapPhase = RoadmapPhase.P2,
             destructiveRisk = DestructiveRisk.HIGH,
             accountRoute = { accountId -> Routes.images(accountId) },
-            migrationHint = "Inventory, quota, delete, and uploading a picture from the device through Android's photo picker - which needs no storage permission and only ever hands the app the one file you choose. Variant configuration, signed-URL delivery, and uploading by URL aren't implemented. Not verified against a live API call."
+            migrationHint = "Three tabs. Images covers inventory, quota, delete, and uploading a picture from the device through Android's photo picker - which needs no storage permission and only ever hands the app the one file you choose. Variants lists and creates the named sizes a delivery URL can ask for, with Cloudflare's fit modes and an explicit choice about keeping EXIF; editing an existing variant isn't offered, since changing one silently reshapes every image already served through it, and deleting one breaks the delivery URLs that end in its name, which the confirmation says. Keys lists signing key names only - a key's value signs private delivery URLs, so it is dropped in the repository before it can reach the UI, and rotating one isn't implemented. Uploading by URL isn't implemented. Not verified against a live API call."
         ),
         Capability(
             id = "email_routing",
@@ -739,7 +739,7 @@ object CapabilityRegistry {
             roadmapPhase = RoadmapPhase.P2,
             destructiveRisk = DestructiveRisk.HIGH,
             accountRoute = { accountId -> Routes.turnstile(accountId) },
-            migrationHint = "Widget create/list/delete. Only the public sitekey is shown or copied - this app never reads a widget's secret key. Rotating a secret isn't implemented. Not verified against a live API call."
+            migrationHint = "Widget create, list, delete, and secret rotation. No call here ever fetches a secret: the list and the row show only the public sitekey, which is also the only value the copy button touches. The single exception is a rotation the user explicitly confirms - Cloudflare answers that call with the newly minted secret, which is the only way to learn the value that replaced the old one, so it is shown once in a dialog and dropped when that dialog closes. It is never persisted or logged. The confirmation says plainly that the old secret stops verifying immediately. Editing a widget's domains or mode isn't implemented. Not verified against a live API call."
         ),
         Capability(
             id = "spectrum",
@@ -788,6 +788,42 @@ object CapabilityRegistry {
             destructiveRisk = DestructiveRisk.HIGH,
             accountRoute = { accountId -> Routes.addressing(accountId) },
             migrationHint = "Two tabs. Prefixes lists the account's BYOIP space and switches each prefix's BGP announcement on or off - the one thing here worth doing from a phone. Adding a prefix isn't implemented: it needs a signed letter of authorization and Cloudflare's approval first. The switch is left visible but inert when Cloudflare would refuse the change (prefix not approved, on-demand not enabled, or control locked), with the reason on the row, rather than being hidden or failing on tap. Editing a prefix's description isn't wired to the UI. Address Maps lists maps, creates one, enables or disables one, and deletes one; tapping a map fetches its addresses and bindings, which the list response omits. Adding or removing a map's IPs and its zone or account bindings isn't implemented - each is a separate per-member endpoint and getting the set wrong takes zones off those addresses. Not verified against a live API call."
+        ),
+        Capability(
+            id = "request_tracer",
+            product = "Diagnostics",
+            displayName = "Request Tracer",
+            description = "See which of your rules would match a request",
+            scope = CapabilityScope.ACCOUNT,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.NONE,
+            accountRoute = { accountId -> Routes.tracer(accountId) },
+            migrationHint = "Cloudflare replays a URL and method against its own pipeline and reports every step it evaluated, marking the ones that matched. Nothing reaches the origin, so this is safe against a live site - and for the same reason there is no response body to inspect. Custom request headers, a request body, and the bot- and threat-score overrides the API accepts aren't wired to the form. Not verified against a live API call."
+        ),
+        Capability(
+            id = "web3",
+            product = "DNS",
+            displayName = "Web3 Gateways",
+            description = "IPFS and Ethereum gateways on your own hostname",
+            scope = CapabilityScope.ZONE,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.MEDIUM,
+            zoneRoute = { id, name -> Routes.web3(id, name) },
+            migrationHint = "Lists gateway hostnames, adds one for IPFS (DNSLink or universal path) or Ethereum, and deletes one. Editing an existing gateway's DNSLink isn't implemented, and neither is the IPFS universal-path content list. Deleting a gateway leaves its DNS record behind, which the confirmation says. Not verified against a live API call."
+        ),
+        Capability(
+            id = "dns_settings",
+            product = "DNS",
+            displayName = "DNS Settings",
+            description = "Zone-wide DNS behaviour, apart from the records",
+            scope = CapabilityScope.ZONE,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.MEDIUM,
+            zoneRoute = { id, name -> Routes.dnsSettings(id, name) },
+            migrationHint = "CNAME flattening, Foundation DNS, multi-provider DNS, and secondary overrides, each sending only its own field so flipping one never rewrites the others. The nameserver assignment and NS TTL are shown but not editable here - switching to custom nameservers belongs to Zone Ownership, which already does it. Secondary-zone transfer settings (peers, TSIG keys, ACLs) aren't implemented. Not verified against a live API call."
         ),
         Capability(
             id = "logpush",

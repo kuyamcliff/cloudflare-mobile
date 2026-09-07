@@ -44,6 +44,22 @@ class MediaUploadTest {
     private fun payload(name: String, content: String = "bytes") =
         UploadPayload(fileName = name, body = content.toRequestBody("image/jpeg".toMediaType()))
 
+    /** The four calls one Images load makes, in order: list, stats, variants, keys. */
+    private fun enqueueImagesLoad(images: String = "") {
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"images":[$images]}}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"count":{"current":0}}}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"variants":{}}}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"keys":[]}}"""))
+    }
+
+    /** The four calls one Stream load makes: videos, live inputs, watermarks, keys. */
+    private fun enqueueStreamLoad(videos: String = "") {
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[$videos]}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"liveInputs":[]}}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
+    }
+
     /** Stands in for a file too large to actually allocate in a test. */
     private fun oversizedPayload(name: String): UploadPayload {
         val body = object : RequestBody() {
@@ -64,15 +80,13 @@ class MediaUploadTest {
 
     @Test
     fun `uploading an image posts multipart and refreshes the list`() = runTest {
-        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"images":[]}}"""))
-        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"count":{"current":0}}}"""))
+        enqueueImagesLoad()
         val vm = ImagesViewModel("acct1", ImagesRepository(testApi(server)))
-        // Await the stats call too, not just the list: init fires both, and starting an
-        // upload while the second is still in flight makes the request order a race.
-        vm.uiState.first { it.images !is UiState.Loading && it.stats != null }
+        // Await the whole init chain, not just the list: one load now makes four calls, and
+        // starting an upload while any is still in flight makes the request order a race.
+        vm.uiState.first { it.images !is UiState.Loading && it.signingKeys !is UiState.Loading }
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"id":"i1","filename":"cat.jpg"}}"""))
-        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"images":[{"id":"i1","filename":"cat.jpg"}]}}"""))
-        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"count":{"current":1}}}"""))
+        enqueueImagesLoad(images = """{"id":"i1","filename":"cat.jpg"}""")
 
         vm.upload(payload("cat.jpg"))
         val state = vm.uiState.first { !it.isUploading && (it.images as? UiState.Data)?.value?.isNotEmpty() == true }
@@ -88,12 +102,9 @@ class MediaUploadTest {
 
     @Test
     fun `a file that couldn't be opened is reported rather than uploaded as empty`() = runTest {
-        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"images":[]}}"""))
-        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{}}"""))
+        enqueueImagesLoad()
         val vm = ImagesViewModel("acct1", ImagesRepository(testApi(server)))
-        // Await the stats call too, not just the list: init fires both, and starting an
-        // upload while the second is still in flight makes the request order a race.
-        vm.uiState.first { it.images !is UiState.Loading && it.stats != null }
+        vm.uiState.first { it.images !is UiState.Loading && it.signingKeys !is UiState.Loading }
         val requestsBefore = server.requestCount
 
         vm.upload(null)
@@ -104,12 +115,9 @@ class MediaUploadTest {
 
     @Test
     fun `a rejected upload surfaces Cloudflare's message`() = runTest {
-        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"images":[]}}"""))
-        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{}}"""))
+        enqueueImagesLoad()
         val vm = ImagesViewModel("acct1", ImagesRepository(testApi(server)))
-        // Await the stats call too, not just the list: init fires both, and starting an
-        // upload while the second is still in flight makes the request order a race.
-        vm.uiState.first { it.images !is UiState.Loading && it.stats != null }
+        vm.uiState.first { it.images !is UiState.Loading && it.signingKeys !is UiState.Loading }
         server.enqueue(
             MockResponse().setResponseCode(400)
                 .setBody("""{"success":false,"errors":[{"code":5455,"message":"Image too large"}],"result":null}""")
@@ -130,9 +138,9 @@ class MediaUploadTest {
 
     @Test
     fun `an oversized video is refused before anything is sent`() = runTest {
-        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
+        enqueueStreamLoad()
         val vm = StreamViewModel("acct1", StreamRepository(testApi(server)))
-        vm.uiState.first { it.videos !is UiState.Loading }
+        vm.uiState.first { it.videos !is UiState.Loading && it.signingKeys !is UiState.Loading }
         val requestsBefore = server.requestCount
 
         vm.upload(oversizedPayload("huge.mp4"))
@@ -143,18 +151,20 @@ class MediaUploadTest {
 
     @Test
     fun `uploading a video posts to the stream endpoint and reloads`() = runTest {
-        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
+        enqueueStreamLoad()
         val vm = StreamViewModel("acct1", StreamRepository(testApi(server)))
-        vm.uiState.first { it.videos !is UiState.Loading }
+        // Await the whole init chain: one load makes four calls now.
+        vm.uiState.first { it.videos !is UiState.Loading && it.signingKeys !is UiState.Loading }
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"uid":"v1"}}"""))
-        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[{"uid":"v1"}]}"""))
+        enqueueStreamLoad(videos = """{"uid":"v1"}""")
 
         vm.upload(UploadPayload("clip.mp4", "bytes".toRequestBody("video/mp4".toMediaType())))
         val state = vm.uiState.first { !it.isUploading && (it.videos as? UiState.Data)?.value?.isNotEmpty() == true }
 
         assertThat(state.uploadedName).isEqualTo("clip.mp4")
-        server.takeRequest()
-        val upload = server.takeRequest()
+        // Found by method rather than by position: a load fires four GETs now.
+        val requests = buildList { repeat(server.requestCount) { add(server.takeRequest()) } }
+        val upload = requests.single { it.method == "POST" }
         assertThat(upload.path).isEqualTo("/accounts/acct1/stream")
         assertThat(upload.body.readUtf8()).contains("clip.mp4")
     }

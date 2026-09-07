@@ -24,12 +24,18 @@ import dev.cfmobile.app.ui.dashboard.DashboardScreen
 import dev.cfmobile.app.ui.dashboard.DashboardViewModel
 import dev.cfmobile.app.ui.addressing.AddressingScreen
 import dev.cfmobile.app.ui.addressing.AddressingViewModel
+import dev.cfmobile.app.ui.diagnostics.TracerScreen
+import dev.cfmobile.app.ui.diagnostics.TracerViewModel
 import dev.cfmobile.app.ui.dns.DnsFirewallScreen
 import dev.cfmobile.app.ui.dns.DnsFirewallViewModel
+import dev.cfmobile.app.ui.dns.DnsSettingsScreen
+import dev.cfmobile.app.ui.dns.DnsSettingsViewModel
 import dev.cfmobile.app.ui.dns.DnsScreen
 import dev.cfmobile.app.ui.dns.DnsViewModel
 import dev.cfmobile.app.ui.magicfirewall.MagicFirewallScreen
 import dev.cfmobile.app.ui.magicfirewall.MagicFirewallViewModel
+import dev.cfmobile.app.ui.web3.Web3Screen
+import dev.cfmobile.app.ui.web3.Web3ViewModel
 import dev.cfmobile.app.ui.firewall.FirewallScreen
 import dev.cfmobile.app.ui.firewall.FirewallViewModel
 import dev.cfmobile.app.ui.login.LoginScreen
@@ -878,6 +884,28 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
             val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
             val vm = viewModel<BotManagementViewModel>(factory = factoryOf { BotManagementViewModel(zoneId, container.botManagementRepository) })
             BotManagementScreen(vm, zoneName = zoneName, onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.WEB3, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val vm = viewModel<Web3ViewModel>(factory = factoryOf { Web3ViewModel(zoneId, container.web3Repository) })
+            Web3Screen(vm, onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.DNS_SETTINGS, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<DnsSettingsViewModel>(
+                factory = factoryOf { DnsSettingsViewModel(zoneId, container.zoneDnsSettingsRepository) }
+            )
+            DnsSettingsScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.TRACER) { accountId ->
+            val vm = viewModel<TracerViewModel>(
+                factory = factoryOf { TracerViewModel(accountId, container.diagnosticsRepository) }
+            )
+            TracerScreen(vm, onBack = { navController.popBackStack() })
         }
     }
 }

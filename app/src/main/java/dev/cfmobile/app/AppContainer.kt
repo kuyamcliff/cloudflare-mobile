@@ -15,8 +15,11 @@ import dev.cfmobile.app.data.repository.AnalyticsRepository
 import dev.cfmobile.app.data.repository.ApiTokensRepository
 import dev.cfmobile.app.data.repository.BotManagementRepository
 import dev.cfmobile.app.data.repository.CallsRepository
+import dev.cfmobile.app.data.repository.DiagnosticsRepository
 import dev.cfmobile.app.data.repository.DnsFirewallRepository
 import dev.cfmobile.app.data.repository.MagicFirewallRepository
+import dev.cfmobile.app.data.repository.Web3Repository
+import dev.cfmobile.app.data.repository.ZoneDnsSettingsRepository
 import dev.cfmobile.app.data.repository.BulkRedirectsRepository
 import dev.cfmobile.app.data.repository.CloudConnectorRepository
 import dev.cfmobile.app.data.repository.CustomPagesRepository
@@ -151,4 +154,7 @@ class AppContainer(context: Context) {
     val dnsFirewallRepository = DnsFirewallRepository(api)
     val addressingRepository = AddressingRepository(api)
     val magicFirewallRepository = MagicFirewallRepository(api)
+    val diagnosticsRepository = DiagnosticsRepository(api)
+    val web3Repository = Web3Repository(api)
+    val zoneDnsSettingsRepository = ZoneDnsSettingsRepository(api)
 }

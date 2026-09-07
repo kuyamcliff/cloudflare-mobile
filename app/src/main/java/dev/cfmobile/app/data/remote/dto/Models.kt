@@ -2404,3 +2404,256 @@ data class MagicRouteDeleteResult(
     val deleted: Boolean = false,
     @Json(name = "deleted_route") val deletedRoute: MagicRoute? = null
 )
+
+// ---- Media depth: Stream live inputs and watermarks, Images variants and keys ----
+
+/** A Stream live input: the RTMPS/SRT endpoint a broadcaster pushes to. */
+@JsonClass(generateAdapter = true)
+data class StreamLiveInput(
+    val uid: String = "",
+    val meta: Map<String, String>? = null,
+    val created: String? = null,
+    val modified: String? = null,
+    /** "off", "automatic" - whether Cloudflare records the broadcast for replay. */
+    val recording: StreamRecording? = null,
+    val status: StreamLiveInputStatus? = null,
+    /** Carries the stream key, so it is only ever read for the copy dialog. */
+    val rtmps: StreamProtocolEndpoint? = null,
+    val srt: StreamProtocolEndpoint? = null,
+    @Json(name = "webRTC") val webRtc: StreamProtocolEndpoint? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class StreamRecording(
+    val mode: String? = null,
+    @Json(name = "timeoutSeconds") val timeoutSeconds: Int? = null,
+    @Json(name = "requireSignedURLs") val requireSignedUrls: Boolean? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class StreamLiveInputStatus(
+    val current: StreamLiveInputState? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class StreamLiveInputState(
+    val reason: String? = null,
+    val state: String? = null,
+    @Json(name = "statusEnteredAt") val statusEnteredAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class StreamProtocolEndpoint(
+    val url: String? = null,
+    /** The push credential. Shown only in the input's own sheet, never in a list row. */
+    @Json(name = "streamKey") val streamKey: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class StreamLiveInputWrite(
+    val meta: Map<String, String>,
+    val recording: StreamRecording
+)
+
+/** Cloudflare wraps the live input list under its own key. */
+@JsonClass(generateAdapter = true)
+data class StreamLiveInputList(
+    @Json(name = "liveInputs") val liveInputs: List<StreamLiveInput> = emptyList()
+)
+
+/** A watermark profile that can be burned into a video at upload time. */
+@JsonClass(generateAdapter = true)
+data class StreamWatermark(
+    val uid: String = "",
+    val name: String? = null,
+    val position: String? = null,
+    val opacity: Double? = null,
+    val padding: Double? = null,
+    val scale: Double? = null,
+    val size: Long? = null,
+    val height: Int? = null,
+    val width: Int? = null,
+    @Json(name = "downloadedFrom") val downloadedFrom: String? = null,
+    val created: String? = null
+)
+
+/** A caption track on one video. */
+@JsonClass(generateAdapter = true)
+data class StreamCaption(
+    val language: String = "",
+    val label: String? = null,
+    val generated: Boolean? = null,
+    val status: String? = null
+)
+
+/** A Stream signing key. The private half exists only in the create response. */
+@JsonClass(generateAdapter = true)
+data class StreamSigningKey(
+    val id: String = "",
+    val created: String? = null,
+    /** Returned once, when the key is created. */
+    val pem: String? = null,
+    val jwk: String? = null
+)
+
+/** A named Images variant: the resize and fit rules a delivery URL can ask for. */
+@JsonClass(generateAdapter = true)
+data class ImageVariant(
+    val id: String = "",
+    val options: ImageVariantOptions? = null,
+    @Json(name = "neverRequireSignedURLs") val neverRequireSignedUrls: Boolean? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ImageVariantOptions(
+    /** "scale-down", "contain", "cover", "crop", "pad". */
+    val fit: String = "scale-down",
+    val width: Int = 0,
+    val height: Int = 0,
+    val metadata: String = "none"
+)
+
+@JsonClass(generateAdapter = true)
+data class ImageVariantWrite(
+    val id: String,
+    val options: ImageVariantOptions,
+    @Json(name = "neverRequireSignedURLs") val neverRequireSignedUrls: Boolean = false
+)
+
+/** The variants list arrives as an object keyed by variant id, not as an array. */
+@JsonClass(generateAdapter = true)
+data class ImageVariantsResult(
+    val variants: Map<String, ImageVariant> = emptyMap()
+)
+
+@JsonClass(generateAdapter = true)
+data class ImageVariantResult(val variant: ImageVariant? = null)
+
+/** An Images signing key, used to sign delivery URLs for private images. */
+@JsonClass(generateAdapter = true)
+data class ImageSigningKey(
+    val name: String = "",
+    val value: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ImageSigningKeysResult(val keys: List<ImageSigningKey> = emptyList())
+
+/** The response to rotating a Turnstile widget's secret - the only time this app sees one. */
+@JsonClass(generateAdapter = true)
+data class TurnstileRotateResult(
+    val sitekey: String = "",
+    val secret: String? = null,
+    val name: String? = null
+)
+
+// ---- Diagnostics: request tracer, Web3, Waiting Room events, zone DNS settings ----
+
+@JsonClass(generateAdapter = true)
+data class TraceRequest(
+    val url: String,
+    val method: String = "GET",
+    val protocol: String = "HTTP/1.1",
+    val context: TraceContext? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class TraceContext(
+    @Json(name = "bot_score") val botScore: Int? = null,
+    @Json(name = "threat_score") val threatScore: Int? = null,
+    @Json(name = "skip_challenge") val skipChallenge: Boolean? = null
+)
+
+/** What Cloudflare's own pipeline did with the request, step by step. */
+@JsonClass(generateAdapter = true)
+data class TraceResult(
+    val trace: List<TraceStep> = emptyList(),
+    @Json(name = "status_code") val statusCode: Int? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class TraceStep(
+    val step: Int? = null,
+    /** "request_trace", "rate_limit", "waf", "page_rule", "worker" and so on. */
+    val trace: String? = null,
+    val action: String? = null,
+    val description: String? = null,
+    val matched: Boolean? = null,
+    @Json(name = "step_name") val stepName: String? = null,
+    val value: String? = null
+)
+
+/** A Web3 gateway hostname: an IPFS or Ethereum gateway served on your own domain. */
+@JsonClass(generateAdapter = true)
+data class Web3Hostname(
+    val id: String = "",
+    val name: String = "",
+    val description: String? = null,
+    /** "ethereum", "ipfs", or "ipfs_universal_path". */
+    val target: String? = null,
+    val status: String? = null,
+    val dnslink: String? = null,
+    @Json(name = "created_on") val createdOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class Web3HostnameWrite(
+    val name: String,
+    val target: String,
+    val description: String? = null,
+    val dnslink: String? = null
+)
+
+/** A scheduled Waiting Room event: a window with its own thresholds. */
+@JsonClass(generateAdapter = true)
+data class WaitingRoomEvent(
+    val id: String = "",
+    val name: String = "",
+    val description: String? = null,
+    @Json(name = "event_start_time") val eventStartTime: String? = null,
+    @Json(name = "event_end_time") val eventEndTime: String? = null,
+    @Json(name = "prequeue_start_time") val prequeueStartTime: String? = null,
+    @Json(name = "new_users_per_minute") val newUsersPerMinute: Int? = null,
+    @Json(name = "total_active_users") val totalActiveUsers: Int? = null,
+    @Json(name = "queueing_method") val queueingMethod: String? = null,
+    @Json(name = "shuffle_at_event_start") val shuffleAtEventStart: Boolean? = null,
+    val suspended: Boolean? = null,
+    @Json(name = "created_on") val createdOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class WaitingRoomEventWrite(
+    val name: String,
+    @Json(name = "event_start_time") val eventStartTime: String,
+    @Json(name = "event_end_time") val eventEndTime: String,
+    val description: String? = null,
+    @Json(name = "new_users_per_minute") val newUsersPerMinute: Int? = null,
+    @Json(name = "total_active_users") val totalActiveUsers: Int? = null
+)
+
+/** Zone-wide DNS behaviour, separate from the individual records. */
+@JsonClass(generateAdapter = true)
+data class ZoneDnsSettings(
+    @Json(name = "flatten_all_cnames") val flattenAllCnames: Boolean? = null,
+    @Json(name = "foundation_dns") val foundationDns: Boolean? = null,
+    @Json(name = "multi_provider") val multiProvider: Boolean? = null,
+    @Json(name = "secondary_overrides") val secondaryOverrides: Boolean? = null,
+    @Json(name = "ns_ttl") val nsTtl: Int? = null,
+    @Json(name = "zone_mode") val zoneMode: String? = null,
+    val nameservers: ZoneNameserverSettings? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ZoneNameserverSettings(
+    val type: String? = null,
+    @Json(name = "ns_set") val nsSet: Int? = null
+)
+
+/** Only the fields being changed are sent; Cloudflare merges the rest. */
+@JsonClass(generateAdapter = true)
+data class ZoneDnsSettingsUpdate(
+    @Json(name = "flatten_all_cnames") val flattenAllCnames: Boolean? = null,
+    @Json(name = "foundation_dns") val foundationDns: Boolean? = null,
+    @Json(name = "multi_provider") val multiProvider: Boolean? = null,
+    @Json(name = "secondary_overrides") val secondaryOverrides: Boolean? = null
+)

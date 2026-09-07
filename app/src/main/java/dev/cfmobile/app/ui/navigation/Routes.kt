@@ -30,6 +30,7 @@ object Routes {
     const val DNS_FIREWALL = "account/{accountId}/dnsfirewall"
     const val ADDRESSING = "account/{accountId}/addressing"
     const val MAGIC_FIREWALL = "account/{accountId}/magicfirewall"
+    const val TRACER = "account/{accountId}/tracer"
     const val ZERO_TRUST_NETWORK = "account/{accountId}/zerotrustnetwork"
     const val GATEWAY_LISTS = "account/{accountId}/gatewaylists"
     const val ACCESS_IDENTITY = "account/{accountId}/accessidentity"
@@ -90,6 +91,8 @@ object Routes {
     const val ZARAZ = "zone/{zoneId}/{zoneName}/zaraz"
     const val ANALYTICS = "zone/{zoneId}/{zoneName}/analytics"
     const val BOT_MANAGEMENT = "zone/{zoneId}/{zoneName}/botmanagement"
+    const val WEB3 = "zone/{zoneId}/{zoneName}/web3"
+    const val DNS_SETTINGS = "zone/{zoneId}/{zoneName}/dnssettings"
 
     /** Zone names (domains) only ever contain URL-safe characters, but this encodes anyway
      *  rather than assuming - a nav route argument is still a URL path segment. */
@@ -124,6 +127,7 @@ object Routes {
     fun dnsFirewall(accountId: String) = "account/$accountId/dnsfirewall"
     fun addressing(accountId: String) = "account/$accountId/addressing"
     fun magicFirewall(accountId: String) = "account/$accountId/magicfirewall"
+    fun tracer(accountId: String) = "account/$accountId/tracer"
     fun zeroTrustNetwork(accountId: String) = "account/$accountId/zerotrustnetwork"
     fun gatewayLists(accountId: String) = "account/$accountId/gatewaylists"
     fun accessIdentity(accountId: String) = "account/$accountId/accessidentity"
@@ -184,4 +188,6 @@ object Routes {
     fun zaraz(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/zaraz"
     fun analytics(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/analytics"
     fun botManagement(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/botmanagement"
+    fun web3(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/web3"
+    fun dnsSettings(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/dnssettings"
 }

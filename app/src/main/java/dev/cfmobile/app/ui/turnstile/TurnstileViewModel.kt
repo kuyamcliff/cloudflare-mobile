@@ -29,11 +29,25 @@ data class TurnstileFormState(
     val error: String? = null
 )
 
+/**
+ * A freshly rotated secret. This is the only secret value this app ever holds: it exists
+ * because the user asked for the rotation, is shown once, and is dropped when the dialog is
+ * dismissed. It is never persisted and never fetched back.
+ */
+data class RotatedSecret(
+    val widgetName: String,
+    val sitekey: String,
+    val secret: String
+)
+
 data class TurnstileUiState(
     val widgets: UiState<List<TurnstileWidget>> = UiState.Loading,
     val isRefreshing: Boolean = false,
     val form: TurnstileFormState? = null,
-    val deletingSitekey: String? = null
+    val deletingSitekey: String? = null,
+    val rotatingSitekey: String? = null,
+    val rotatedSecret: RotatedSecret? = null,
+    val error: String? = null
 )
 
 fun parseDomains(raw: String): List<String> =
@@ -114,4 +128,48 @@ class TurnstileViewModel(
             load(isRefresh = true)
         }
     }
+
+    /**
+     * Rotates a widget's secret. The old value stops verifying the moment this returns, so any
+     * server still holding it starts rejecting every challenge - the confirmation says so
+     * before this is called. The new secret comes back in the response and is shown once.
+     */
+    fun rotateSecret(widget: TurnstileWidget) {
+        _uiState.update { it.copy(rotatingSitekey = widget.sitekey, error = null) }
+        viewModelScope.launch {
+            when (val result = repository.rotateSecret(accountId, widget.sitekey)) {
+                is ApiResult.Success -> {
+                    val secret = result.data.secret
+                    _uiState.update {
+                        it.copy(
+                            rotatingSitekey = null,
+                            rotatedSecret = secret?.let { value ->
+                                RotatedSecret(
+                                    widgetName = widget.name.ifBlank { widget.sitekey },
+                                    sitekey = widget.sitekey,
+                                    secret = value
+                                )
+                            },
+                            // Cloudflare rotated it either way; if it withheld the value there
+                            // is nothing to show and the dashboard is the only way to read it.
+                            error = if (secret == null) {
+                                "The secret was rotated, but Cloudflare didn't return the new value - read it from the dashboard."
+                            } else {
+                                null
+                            }
+                        )
+                    }
+                    load(isRefresh = true)
+                }
+                is ApiResult.Failure -> _uiState.update {
+                    it.copy(rotatingSitekey = null, error = result.message)
+                }
+            }
+        }
+    }
+
+    /** Dismissing is what clears the secret from memory. */
+    fun dismissRotatedSecret() = _uiState.update { it.copy(rotatedSecret = null) }
+
+    fun dismissError() = _uiState.update { it.copy(error = null) }
 }

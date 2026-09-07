@@ -1663,6 +1663,152 @@ interface CloudflareApi {
         @Path("secretId") secretId: String
     ): Response<CfEnvelope<Map<String, String>>>
 
+    // ---- Stream depth: live inputs, watermarks, captions, signing keys ----
+
+    @GET("accounts/{accountId}/stream/live_inputs")
+    suspend fun listStreamLiveInputs(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<StreamLiveInputList>>
+
+    /** The create response is the only place the RTMPS and SRT stream keys are read. */
+    @POST("accounts/{accountId}/stream/live_inputs")
+    suspend fun createStreamLiveInput(
+        @Path("accountId") accountId: String,
+        @Body input: StreamLiveInputWrite
+    ): Response<CfEnvelope<StreamLiveInput>>
+
+    @GET("accounts/{accountId}/stream/live_inputs/{inputId}")
+    suspend fun getStreamLiveInput(
+        @Path("accountId") accountId: String,
+        @Path("inputId") inputId: String
+    ): Response<CfEnvelope<StreamLiveInput>>
+
+    @DELETE("accounts/{accountId}/stream/live_inputs/{inputId}")
+    suspend fun deleteStreamLiveInput(
+        @Path("accountId") accountId: String,
+        @Path("inputId") inputId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    @GET("accounts/{accountId}/stream/watermarks")
+    suspend fun listStreamWatermarks(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<StreamWatermark>>>
+
+    @DELETE("accounts/{accountId}/stream/watermarks/{watermarkId}")
+    suspend fun deleteStreamWatermark(
+        @Path("accountId") accountId: String,
+        @Path("watermarkId") watermarkId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    @GET("accounts/{accountId}/stream/{videoId}/captions")
+    suspend fun listStreamCaptions(
+        @Path("accountId") accountId: String,
+        @Path("videoId") videoId: String
+    ): Response<CfEnvelope<List<StreamCaption>>>
+
+    @DELETE("accounts/{accountId}/stream/{videoId}/captions/{language}")
+    suspend fun deleteStreamCaption(
+        @Path("accountId") accountId: String,
+        @Path("videoId") videoId: String,
+        @Path("language") language: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    @GET("accounts/{accountId}/stream/keys")
+    suspend fun listStreamSigningKeys(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<StreamSigningKey>>>
+
+    @DELETE("accounts/{accountId}/stream/keys/{keyId}")
+    suspend fun deleteStreamSigningKey(
+        @Path("accountId") accountId: String,
+        @Path("keyId") keyId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Images depth: variants and signing keys ----
+
+    /** Arrives as an object keyed by variant id rather than as an array. */
+    @GET("accounts/{accountId}/images/v1/variants")
+    suspend fun listImageVariants(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<ImageVariantsResult>>
+
+    @POST("accounts/{accountId}/images/v1/variants")
+    suspend fun createImageVariant(
+        @Path("accountId") accountId: String,
+        @Body variant: ImageVariantWrite
+    ): Response<CfEnvelope<ImageVariantResult>>
+
+    @DELETE("accounts/{accountId}/images/v1/variants/{variantId}")
+    suspend fun deleteImageVariant(
+        @Path("accountId") accountId: String,
+        @Path("variantId") variantId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    /** Names only in this app: the key values are what sign private delivery URLs. */
+    @GET("accounts/{accountId}/images/v1/keys")
+    suspend fun listImageSigningKeys(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<ImageSigningKeysResult>>
+
+    /** Rotating a Turnstile secret is the only call in this app that returns one. */
+    @POST("accounts/{accountId}/challenges/widgets/{sitekey}/rotate_secret")
+    suspend fun rotateTurnstileSecret(
+        @Path("accountId") accountId: String,
+        @Path("sitekey") sitekey: String
+    ): Response<CfEnvelope<TurnstileRotateResult>>
+
+    // ---- Diagnostics: request tracer, Web3, Waiting Room events, zone DNS settings ----
+
+    @POST("accounts/{accountId}/request-tracer/trace")
+    suspend fun traceRequest(
+        @Path("accountId") accountId: String,
+        @Body request: TraceRequest
+    ): Response<CfEnvelope<TraceResult>>
+
+    @GET("zones/{zoneId}/web3/hostnames")
+    suspend fun listWeb3Hostnames(@Path("zoneId") zoneId: String): Response<CfEnvelope<List<Web3Hostname>>>
+
+    @POST("zones/{zoneId}/web3/hostnames")
+    suspend fun createWeb3Hostname(
+        @Path("zoneId") zoneId: String,
+        @Body hostname: Web3HostnameWrite
+    ): Response<CfEnvelope<Web3Hostname>>
+
+    @DELETE("zones/{zoneId}/web3/hostnames/{identifier}")
+    suspend fun deleteWeb3Hostname(
+        @Path("zoneId") zoneId: String,
+        @Path("identifier") identifier: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    @GET("zones/{zoneId}/waiting_rooms/{roomId}/events")
+    suspend fun listWaitingRoomEvents(
+        @Path("zoneId") zoneId: String,
+        @Path("roomId") roomId: String
+    ): Response<CfEnvelope<List<WaitingRoomEvent>>>
+
+    @POST("zones/{zoneId}/waiting_rooms/{roomId}/events")
+    suspend fun createWaitingRoomEvent(
+        @Path("zoneId") zoneId: String,
+        @Path("roomId") roomId: String,
+        @Body event: WaitingRoomEventWrite
+    ): Response<CfEnvelope<WaitingRoomEvent>>
+
+    @DELETE("zones/{zoneId}/waiting_rooms/{roomId}/events/{eventId}")
+    suspend fun deleteWaitingRoomEvent(
+        @Path("zoneId") zoneId: String,
+        @Path("roomId") roomId: String,
+        @Path("eventId") eventId: String
+    ): Response<CfEnvelope<WaitingRoomEvent>>
+
+    @GET("zones/{zoneId}/dns_settings")
+    suspend fun getZoneDnsSettings(@Path("zoneId") zoneId: String): Response<CfEnvelope<ZoneDnsSettings>>
+
+    @PATCH("zones/{zoneId}/dns_settings")
+    suspend fun updateZoneDnsSettings(
+        @Path("zoneId") zoneId: String,
+        @Body settings: ZoneDnsSettingsUpdate
+    ): Response<CfEnvelope<ZoneDnsSettings>>
+
     // ---- Addressing: BYOIP prefixes and address maps ----
 
     @GET("accounts/{accountId}/addressing/prefixes")
