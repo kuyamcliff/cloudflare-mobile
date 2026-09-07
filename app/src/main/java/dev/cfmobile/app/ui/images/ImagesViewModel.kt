@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.cfmobile.app.core.errors.ErrorClassifier
 import dev.cfmobile.app.data.remote.ApiResult
+import dev.cfmobile.app.data.remote.UploadPayload
 import dev.cfmobile.app.data.remote.dto.CfImage
 import dev.cfmobile.app.data.remote.dto.ImagesStats
 import dev.cfmobile.app.data.repository.ImagesRepository
@@ -18,7 +19,10 @@ data class ImagesUiState(
     val images: UiState<List<CfImage>> = UiState.Loading,
     val isRefreshing: Boolean = false,
     val stats: ImagesStats? = null,
-    val deletingId: String? = null
+    val deletingId: String? = null,
+    val isUploading: Boolean = false,
+    val uploadError: String? = null,
+    val uploadedName: String? = null
 )
 
 /** "1,204 of 100,000 stored" - null when the account didn't report a quota. */
@@ -70,4 +74,30 @@ class ImagesViewModel(
             load(isRefresh = true)
         }
     }
+
+    /**
+     * Uploads a picture the user picked. The payload streams from the content provider, so a
+     * large image never sits in memory whole; a null payload means the picked file couldn't be
+     * opened at all, which is reported rather than sent as an empty file.
+     */
+    fun upload(payload: UploadPayload?) {
+        if (payload == null) {
+            _uiState.update { it.copy(uploadError = "Couldn't read the selected image") }
+            return
+        }
+        _uiState.update { it.copy(isUploading = true, uploadError = null, uploadedName = null) }
+        viewModelScope.launch {
+            when (val result = repository.uploadImage(accountId, payload)) {
+                is ApiResult.Success -> {
+                    _uiState.update { it.copy(isUploading = false, uploadedName = payload.fileName) }
+                    load(isRefresh = true)
+                }
+                is ApiResult.Failure -> _uiState.update {
+                    it.copy(isUploading = false, uploadError = result.message)
+                }
+            }
+        }
+    }
+
+    fun dismissUploadStatus() = _uiState.update { it.copy(uploadError = null, uploadedName = null) }
 }

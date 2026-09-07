@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.cfmobile.app.core.errors.ErrorClassifier
 import dev.cfmobile.app.data.remote.ApiResult
+import dev.cfmobile.app.data.remote.UploadPayload
 import dev.cfmobile.app.data.remote.dto.StreamVideo
 import dev.cfmobile.app.data.repository.StreamRepository
 import dev.cfmobile.app.ui.common.UiState
@@ -17,8 +18,23 @@ import kotlin.math.roundToInt
 data class StreamUiState(
     val videos: UiState<List<StreamVideo>> = UiState.Loading,
     val isRefreshing: Boolean = false,
-    val deletingId: String? = null
+    val deletingId: String? = null,
+    val isUploading: Boolean = false,
+    val uploadError: String? = null,
+    val uploadedName: String? = null
 )
+
+/** Cloudflare's basic upload takes the whole file in one request and rejects anything past
+ *  200 MB; the resumable protocol that handles bigger files isn't implemented, so the limit is
+ *  checked here rather than after a long upload fails. */
+const val STREAM_BASIC_UPLOAD_LIMIT_BYTES = 200L * 1024 * 1024
+
+fun streamUploadSizeError(sizeBytes: Long): String? =
+    if (sizeBytes > STREAM_BASIC_UPLOAD_LIMIT_BYTES) {
+        "That video is over the 200 MB limit for this app's upload - Cloudflare needs a resumable upload above that, which isn't implemented."
+    } else {
+        null
+    }
 
 /** Videos carry their display name in free-form metadata, so fall back to the uid rather than
  *  showing an untitled row. */
@@ -74,4 +90,34 @@ class StreamViewModel(
             load(isRefresh = true)
         }
     }
+
+    /**
+     * Uploads a video the user picked. Cloudflare processes the file after it lands, so the
+     * new row shows as still encoding rather than ready to play.
+     */
+    fun upload(payload: UploadPayload?) {
+        if (payload == null) {
+            _uiState.update { it.copy(uploadError = "Couldn't read the selected video") }
+            return
+        }
+        val sizeError = payload.body.contentLength().takeIf { it > 0 }?.let(::streamUploadSizeError)
+        if (sizeError != null) {
+            _uiState.update { it.copy(uploadError = sizeError) }
+            return
+        }
+        _uiState.update { it.copy(isUploading = true, uploadError = null, uploadedName = null) }
+        viewModelScope.launch {
+            when (val result = repository.uploadVideo(accountId, payload)) {
+                is ApiResult.Success -> {
+                    _uiState.update { it.copy(isUploading = false, uploadedName = payload.fileName) }
+                    load(isRefresh = true)
+                }
+                is ApiResult.Failure -> _uiState.update {
+                    it.copy(isUploading = false, uploadError = result.message)
+                }
+            }
+        }
+    }
+
+    fun dismissUploadStatus() = _uiState.update { it.copy(uploadError = null, uploadedName = null) }
 }

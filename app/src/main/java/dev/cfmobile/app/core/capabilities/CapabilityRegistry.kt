@@ -607,7 +607,7 @@ object CapabilityRegistry {
             roadmapPhase = RoadmapPhase.P2,
             destructiveRisk = DestructiveRisk.HIGH,
             accountRoute = { accountId -> Routes.stream(accountId) },
-            migrationHint = "List, inspect, and delete videos. Uploading video from the device isn't implemented - that needs a media picker plus a resumable upload. Playback happens in Cloudflare's player, not in this app. Not verified against a live API call."
+            migrationHint = "List, inspect, delete, and upload a video from the device through Android's photo picker. The upload sends the whole file in one request, which is Cloudflare's 200 MB limit - larger files need the tus resumable protocol, which isn't implemented, so an oversized pick is refused before it starts rather than after a long upload fails. There is no upload progress for the same reason, and playback happens in Cloudflare's player, not in this app. Not verified against a live API call."
         ),
         Capability(
             id = "images",
@@ -619,7 +619,7 @@ object CapabilityRegistry {
             roadmapPhase = RoadmapPhase.P2,
             destructiveRisk = DestructiveRisk.HIGH,
             accountRoute = { accountId -> Routes.images(accountId) },
-            migrationHint = "Inventory, quota, and delete. Uploading from the device gallery isn't implemented - that needs a picker and media permissions. Variant configuration isn't covered either. Not verified against a live API call."
+            migrationHint = "Inventory, quota, delete, and uploading a picture from the device through Android's photo picker - which needs no storage permission and only ever hands the app the one file you choose. Variant configuration, signed-URL delivery, and uploading by URL aren't implemented. Not verified against a live API call."
         ),
         Capability(
             id = "email_routing",

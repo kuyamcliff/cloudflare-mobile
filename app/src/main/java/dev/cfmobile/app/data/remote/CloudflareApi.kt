@@ -706,6 +706,16 @@ interface CloudflareApi {
     @GET("accounts/{accountId}/stream")
     suspend fun listStreamVideos(@Path("accountId") accountId: String): Response<CfEnvelope<List<StreamVideo>>>
 
+    /** Basic (non-resumable) upload: the whole file in one multipart request. Cloudflare caps
+     *  this at 200 MB - anything larger needs the tus resumable protocol, which this app
+     *  doesn't implement. */
+    @Multipart
+    @POST("accounts/{accountId}/stream")
+    suspend fun uploadStreamVideo(
+        @Path("accountId") accountId: String,
+        @Part file: MultipartBody.Part
+    ): Response<CfEnvelope<StreamVideo>>
+
     @DELETE("accounts/{accountId}/stream/{videoId}")
     suspend fun deleteStreamVideo(
         @Path("accountId") accountId: String,
@@ -716,6 +726,13 @@ interface CloudflareApi {
 
     @GET("accounts/{accountId}/images/v1")
     suspend fun listImages(@Path("accountId") accountId: String): Response<CfEnvelope<ImagesListResult>>
+
+    @Multipart
+    @POST("accounts/{accountId}/images/v1")
+    suspend fun uploadImage(
+        @Path("accountId") accountId: String,
+        @Part file: MultipartBody.Part
+    ): Response<CfEnvelope<CfImage>>
 
     @GET("accounts/{accountId}/images/v1/stats")
     suspend fun getImagesStats(@Path("accountId") accountId: String): Response<CfEnvelope<ImagesStats>>
