@@ -36,10 +36,12 @@ class LoadBalancingViewModelTest {
 
     private suspend fun LoadBalancingViewModel.awaitPoolsLoaded() = uiState.first { it.pools !is UiState.Loading }
     private suspend fun LoadBalancingViewModel.awaitLbLoaded() = uiState.first { it.loadBalancers !is UiState.Loading }
+    private suspend fun LoadBalancingViewModel.awaitMonitorsLoaded() = uiState.first { it.monitors !is UiState.Loading }
 
     @Test
     fun `loads pools and auto-selects the first zone for load balancers`() = runTest {
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[{"id":"pool1","name":"primary","origins":[]}]}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}""")) // monitors
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[{"id":"zone1","name":"example.com","status":"active"}]}"""))
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
 
@@ -55,6 +57,7 @@ class LoadBalancingViewModelTest {
     @Test
     fun `switching zones reloads load balancers for the newly selected zone`() = runTest {
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}""")) // monitors
         server.enqueue(
             MockResponse().setBody(
                 """{"success":true,"errors":[],"result":[{"id":"zone1","name":"a.com","status":"active"},{"id":"zone2","name":"b.com","status":"active"}]}"""
@@ -75,6 +78,7 @@ class LoadBalancingViewModelTest {
     @Test
     fun `savePool rejects an invalid form before calling the network`() = runTest {
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}""")) // monitors
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
         val vm = viewModel()
         // Both init-triggered requests (pools, zones-with-no-zones) need to have actually
@@ -94,6 +98,7 @@ class LoadBalancingViewModelTest {
     @Test
     fun `savePool creates the pool and closes the form on success`() = runTest {
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}""")) // monitors
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
         val vm = viewModel()
         // Both init-triggered requests (pools, zones-with-no-zones) need to have actually
@@ -118,6 +123,7 @@ class LoadBalancingViewModelTest {
     @Test
     fun `openLbForm preselects the first available pool`() = runTest {
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[{"id":"pool1","name":"primary","origins":[]}]}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}""")) // monitors
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
         val vm = viewModel()
         // Await the full init chain (not just pools) so the single init coroutine has
@@ -129,5 +135,44 @@ class LoadBalancingViewModelTest {
         vm.openLbForm()
 
         assertThat(vm.uiState.value.lbForm?.poolId).isEqualTo("pool1")
+    }
+
+    @Test
+    fun `monitors load alongside pools and a saved monitor appears in the list`() = runTest {
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}""")) // pools
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}""")) // monitors
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}""")) // zones
+        val vm = viewModel()
+        vm.awaitPoolsLoaded()
+        vm.awaitMonitorsLoaded()
+        vm.awaitLbLoaded()
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"id":"m1","type":"http","description":"Origin health"}}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[{"id":"m1","type":"http","description":"Origin health"}]}"""))
+
+        vm.openMonitorForm()
+        vm.updateMonitorForm { it.copy(description = "Origin health", path = "/health") }
+        vm.saveMonitor()
+        val state = vm.uiState.first { it.monitorForm == null && (it.monitors as? UiState.Data)?.value?.isNotEmpty() == true }
+
+        assertThat((state.monitors as UiState.Data).value.single().description).isEqualTo("Origin health")
+    }
+
+    @Test
+    fun `an invalid monitor never reaches the network`() = runTest {
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}""")) // pools
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}""")) // monitors
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}""")) // zones
+        val vm = viewModel()
+        vm.awaitPoolsLoaded()
+        vm.awaitMonitorsLoaded()
+        vm.awaitLbLoaded()
+        val requestsBefore = server.requestCount
+
+        vm.openMonitorForm()
+        vm.updateMonitorForm { it.copy(timeout = "120") }
+        vm.saveMonitor()
+
+        assertThat(vm.uiState.value.monitorForm?.error).contains("shorter than the interval")
+        assertThat(server.requestCount).isEqualTo(requestsBefore)
     }
 }

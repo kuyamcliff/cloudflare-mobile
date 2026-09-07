@@ -603,7 +603,7 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
         composable(Routes.EMAIL_ROUTING, arguments = zoneScopedArgs) { backStackEntry ->
             val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
             val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
-            val vm = viewModel<EmailRoutingViewModel>(factory = factoryOf { EmailRoutingViewModel(zoneId, container.emailRoutingRepository) })
+            val vm = viewModel<EmailRoutingViewModel>(factory = factoryOf { EmailRoutingViewModel(zoneId, container.emailRoutingRepository, container.zonesRepository) })
             EmailRoutingScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
         }
 
@@ -708,7 +708,7 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
         composable(Routes.BOT_MANAGEMENT, arguments = zoneScopedArgs) { backStackEntry ->
             val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
             val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
-            val vm = viewModel<BotManagementViewModel>(factory = factoryOf { BotManagementViewModel(zoneId, container.zoneSettingsRepository) })
+            val vm = viewModel<BotManagementViewModel>(factory = factoryOf { BotManagementViewModel(zoneId, container.botManagementRepository) })
             BotManagementScreen(vm, zoneName = zoneName, onBack = { navController.popBackStack() })
         }
     }

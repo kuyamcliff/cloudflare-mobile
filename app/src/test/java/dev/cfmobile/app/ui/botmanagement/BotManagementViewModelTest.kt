@@ -3,7 +3,7 @@ package dev.cfmobile.app.ui.botmanagement
 import com.google.common.truth.Truth.assertThat
 import dev.cfmobile.app.MainDispatcherRule
 import dev.cfmobile.app.data.remote.testApi
-import dev.cfmobile.app.data.repository.ZoneSettingsRepository
+import dev.cfmobile.app.data.repository.BotManagementRepository
 import dev.cfmobile.app.ui.common.UiState
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -30,52 +30,59 @@ class BotManagementViewModelTest {
     @After
     fun tearDown() = server.shutdown()
 
-    private fun viewModel() = BotManagementViewModel("zone1", ZoneSettingsRepository(testApi(server)))
+    private fun viewModel() = BotManagementViewModel("zone1", BotManagementRepository(testApi(server)))
 
-    private suspend fun BotManagementViewModel.awaitLoaded() = uiState.first { it.botFightMode !is UiState.Loading }
+    private suspend fun BotManagementViewModel.awaitLoaded() = uiState.first { it.config !is UiState.Loading }
 
     @Test
-    fun `loads the current bot fight mode value as a boolean`() = runTest {
-        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"id":"bot_fight_mode","value":"on"}}"""))
+    fun `loads the zone's bot configuration on init`() = runTest {
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"fight_mode":true}}"""))
 
         val state = viewModel().awaitLoaded()
 
-        assertThat((state.botFightMode as UiState.Data).value).isTrue()
+        assertThat((state.config as UiState.Data).value.fightMode).isTrue()
+        assertThat(server.takeRequest().path).isEqualTo("/zones/zone1/bot_management")
     }
 
     @Test
-    fun `hits the bot_fight_mode setting endpoint`() = runTest {
-        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"id":"bot_fight_mode","value":"off"}}"""))
-
-        viewModel().awaitLoaded()
-
-        val request = server.takeRequest()
-        assertThat(request.path).isEqualTo("/zones/zone1/settings/bot_fight_mode")
-    }
-
-    @Test
-    fun `setBotFightMode toggles the value and reflects the server response`() = runTest {
-        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"id":"bot_fight_mode","value":"off"}}"""))
+    fun `toggling Bot Fight Mode writes the new value and shows what came back`() = runTest {
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"fight_mode":false}}"""))
         val vm = viewModel()
         vm.awaitLoaded()
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"fight_mode":true}}"""))
 
-        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"id":"bot_fight_mode","value":"on"}}"""))
-        vm.setBotFightMode(true)
-        val state = vm.uiState.first { (it.botFightMode as? UiState.Data)?.value == true }
+        vm.setFightMode(true)
+        val state = vm.uiState.first { !it.isSaving && (it.config as? UiState.Data)?.value?.fightMode == true }
 
-        assertThat((state.botFightMode as UiState.Data).value).isTrue()
-        assertThat(state.isSaving).isFalse()
+        assertThat(state.error).isNull()
+        server.takeRequest()
+        val put = server.takeRequest()
+        assertThat(put.method).isEqualTo("PUT")
+        assertThat(put.body.readUtf8()).contains("\"fight_mode\":true")
     }
 
     @Test
-    fun `failure surfaces as an error state`() = runTest {
+    fun `a failure loading the configuration is an error state, not an empty screen`() = runTest {
         server.enqueue(
             MockResponse().setResponseCode(403)
-                .setBody("""{"success":false,"errors":[{"code":9109,"message":"Invalid API token"}],"result":null}""")
+                .setBody("""{"success":false,"errors":[{"code":1004,"message":"Not entitled"}],"result":null}""")
         )
 
         val state = viewModel().awaitLoaded()
 
-        assertThat(state.botFightMode).isInstanceOf(UiState.Error::class.java)
+        assertThat(state.config).isInstanceOf(UiState.Error::class.java)
+    }
+
+    @Test
+    fun `nothing is written before the configuration has loaded`() = runTest {
+        server.enqueue(MockResponse().setResponseCode(403).setBody("""{"success":false,"errors":[],"result":null}"""))
+        val vm = viewModel()
+        vm.awaitLoaded()
+        val requestsBefore = server.requestCount
+
+        vm.setFightMode(true)
+
+        // Without a loaded config there is no document to send one changed field of.
+        assertThat(server.requestCount).isEqualTo(requestsBefore)
     }
 }

@@ -13,6 +13,7 @@ import dev.cfmobile.app.data.remote.dto.SubscriptionRatePlan
 import dev.cfmobile.app.data.remote.testApi
 import dev.cfmobile.app.data.repository.BrowserRenderingRepository
 import dev.cfmobile.app.data.repository.EmailRoutingRepository
+import dev.cfmobile.app.data.repository.ZonesRepository
 import dev.cfmobile.app.data.repository.MagicNetworkRepository
 import dev.cfmobile.app.ui.billing.subscriptionPriceLabel
 import dev.cfmobile.app.ui.billing.subscriptionTitle
@@ -130,12 +131,32 @@ class NetworkAndBillingViewModelTest {
         // Settings are supplementary context; a failure there must not hide the rules.
         server.enqueue(MockResponse().setResponseCode(403).setBody("""{"success":false,"errors":[],"result":null}"""))
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[{"tag":"r1","name":"Support"}]}"""))
+        // Catch-all, then the zone lookup that finds the account, then its destinations.
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"enabled":false,"actions":[]}}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"id":"zone1","name":"a.com","account":{"id":"acct1"}}}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[{"tag":"d1","email":"me@b.com","verified":"2026-01-01"}]}"""))
 
-        val vm = EmailRoutingViewModel("zone1", EmailRoutingRepository(testApi(server)))
-        val state = vm.uiState.first { it.rules !is UiState.Loading }
+        val vm = EmailRoutingViewModel("zone1", EmailRoutingRepository(testApi(server)), ZonesRepository(testApi(server)))
+        val state = vm.uiState.first { it.rules !is UiState.Loading && it.destinations !is UiState.Loading }
 
         assertThat((state.rules as UiState.Data).value).hasSize(1)
         assertThat(state.isEnabled).isNull()
+        assertThat((state.destinations as UiState.Data).value.single().email).isEqualTo("me@b.com")
+    }
+
+    @Test
+    fun `email destinations report an error when the zone's account can't be resolved`() = runTest {
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"enabled":true}}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"enabled":false,"actions":[]}}"""))
+        // A zone response with no account block leaves nothing to list destinations for.
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"id":"zone1","name":"a.com"}}"""))
+
+        val vm = EmailRoutingViewModel("zone1", EmailRoutingRepository(testApi(server)), ZonesRepository(testApi(server)))
+        val state = vm.uiState.first { it.destinations !is UiState.Loading }
+
+        assertThat(state.destinations).isInstanceOf(UiState.Error::class.java)
+        assertThat((state.destinations as UiState.Error).message).contains("which account")
     }
 
     @Test

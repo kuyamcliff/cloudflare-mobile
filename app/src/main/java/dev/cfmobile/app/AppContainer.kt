@@ -11,6 +11,7 @@ import dev.cfmobile.app.data.repository.AccountMembersRepository
 import dev.cfmobile.app.data.repository.AccountsRepository
 import dev.cfmobile.app.data.repository.AnalyticsRepository
 import dev.cfmobile.app.data.repository.ApiTokensRepository
+import dev.cfmobile.app.data.repository.BotManagementRepository
 import dev.cfmobile.app.data.repository.BulkRedirectsRepository
 import dev.cfmobile.app.data.repository.CloudConnectorRepository
 import dev.cfmobile.app.data.repository.CustomPagesRepository
@@ -127,4 +128,5 @@ class AppContainer(context: Context) {
     val cloudConnectorRepository = CloudConnectorRepository(api)
     val customPagesRepository = CustomPagesRepository(api)
     val zarazRepository = ZarazRepository(api)
+    val botManagementRepository = BotManagementRepository(api)
 }

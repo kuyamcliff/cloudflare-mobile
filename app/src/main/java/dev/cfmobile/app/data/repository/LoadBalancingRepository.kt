@@ -3,6 +3,8 @@ package dev.cfmobile.app.data.repository
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.LoadBalancer
+import dev.cfmobile.app.data.remote.dto.LoadBalancerMonitor
+import dev.cfmobile.app.data.remote.dto.LoadBalancerMonitorWrite
 import dev.cfmobile.app.data.remote.dto.LoadBalancerPool
 import dev.cfmobile.app.data.remote.dto.LoadBalancerPoolWrite
 import dev.cfmobile.app.data.remote.dto.LoadBalancerWrite
@@ -32,4 +34,13 @@ class LoadBalancingRepository(private val api: CloudflareApi) {
 
     suspend fun deleteLoadBalancer(zoneId: String, loadBalancerId: String): ApiResult<Unit> =
         safeApiCallUnit { api.deleteLoadBalancer(zoneId, loadBalancerId) }
+
+    suspend fun listMonitors(accountId: String): ApiResult<List<LoadBalancerMonitor>> =
+        safeApiCall { api.listLoadBalancerMonitors(accountId) }
+
+    suspend fun createMonitor(accountId: String, monitor: LoadBalancerMonitorWrite): ApiResult<LoadBalancerMonitor> =
+        safeApiCall { api.createLoadBalancerMonitor(accountId, monitor) }
+
+    suspend fun deleteMonitor(accountId: String, monitorId: String): ApiResult<Unit> =
+        safeApiCallUnit { api.deleteLoadBalancerMonitor(accountId, monitorId) }
 }

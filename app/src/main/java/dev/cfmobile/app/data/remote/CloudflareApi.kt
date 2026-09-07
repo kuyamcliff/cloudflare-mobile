@@ -314,6 +314,23 @@ interface CloudflareApi {
         @Path("poolId") poolId: String
     ): Response<CfEnvelope<Map<String, String>>>
 
+    @GET("accounts/{accountId}/load_balancers/monitors")
+    suspend fun listLoadBalancerMonitors(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<LoadBalancerMonitor>>>
+
+    @POST("accounts/{accountId}/load_balancers/monitors")
+    suspend fun createLoadBalancerMonitor(
+        @Path("accountId") accountId: String,
+        @Body monitor: LoadBalancerMonitorWrite
+    ): Response<CfEnvelope<LoadBalancerMonitor>>
+
+    @DELETE("accounts/{accountId}/load_balancers/monitors/{monitorId}")
+    suspend fun deleteLoadBalancerMonitor(
+        @Path("accountId") accountId: String,
+        @Path("monitorId") monitorId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
     @GET("zones/{zoneId}/load_balancers")
     suspend fun listLoadBalancers(@Path("zoneId") zoneId: String): Response<CfEnvelope<List<LoadBalancer>>>
 
@@ -630,6 +647,22 @@ interface CloudflareApi {
     @GET("accounts/{accountId}/workflows")
     suspend fun listWorkflows(@Path("accountId") accountId: String): Response<CfEnvelope<List<CfWorkflow>>>
 
+    /** Starts a new run of a Workflow. */
+    @POST("accounts/{accountId}/workflows/{workflowName}/instances")
+    suspend fun createWorkflowInstance(
+        @Path("accountId") accountId: String,
+        @Path("workflowName") workflowName: String
+    ): Response<CfEnvelope<WorkflowInstance>>
+
+    /** Cloudflare takes the verb - "terminate", "pause", "resume" - as a status. */
+    @PATCH("accounts/{accountId}/workflows/{workflowName}/instances/{instanceId}/status")
+    suspend fun updateWorkflowInstanceStatus(
+        @Path("accountId") accountId: String,
+        @Path("workflowName") workflowName: String,
+        @Path("instanceId") instanceId: String,
+        @Body status: WorkflowInstanceStatusWrite
+    ): Response<CfEnvelope<WorkflowInstance>>
+
     @GET("accounts/{accountId}/workflows/{workflowName}/instances")
     suspend fun listWorkflowInstances(
         @Path("accountId") accountId: String,
@@ -773,6 +806,41 @@ interface CloudflareApi {
     @GET("zones/{zoneId}/page_shield/connections")
     suspend fun listPageShieldConnections(@Path("zoneId") zoneId: String): Response<CfEnvelope<List<PageShieldConnection>>>
 
+    @GET("zones/{zoneId}/page_shield/policies")
+    suspend fun listPageShieldPolicies(
+        @Path("zoneId") zoneId: String
+    ): Response<CfEnvelope<List<PageShieldPolicy>>>
+
+    @POST("zones/{zoneId}/page_shield/policies")
+    suspend fun createPageShieldPolicy(
+        @Path("zoneId") zoneId: String,
+        @Body policy: PageShieldPolicyWrite
+    ): Response<CfEnvelope<PageShieldPolicy>>
+
+    @PUT("zones/{zoneId}/page_shield/policies/{policyId}")
+    suspend fun updatePageShieldPolicy(
+        @Path("zoneId") zoneId: String,
+        @Path("policyId") policyId: String,
+        @Body policy: PageShieldPolicyWrite
+    ): Response<CfEnvelope<PageShieldPolicy>>
+
+    @DELETE("zones/{zoneId}/page_shield/policies/{policyId}")
+    suspend fun deletePageShieldPolicy(
+        @Path("zoneId") zoneId: String,
+        @Path("policyId") policyId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Bot management (Super Bot Fight Mode and its free-tier sibling) ----
+
+    @GET("zones/{zoneId}/bot_management")
+    suspend fun getBotManagement(@Path("zoneId") zoneId: String): Response<CfEnvelope<BotManagementConfig>>
+
+    @PUT("zones/{zoneId}/bot_management")
+    suspend fun updateBotManagement(
+        @Path("zoneId") zoneId: String,
+        @Body config: BotManagementConfig
+    ): Response<CfEnvelope<BotManagementConfig>>
+
     // ---- DDoS protection (read-only managed ruleset) ----
 
     @GET("zones/{zoneId}/rulesets/phases/ddos_l7/entrypoint")
@@ -863,6 +931,34 @@ interface CloudflareApi {
         @Path("zoneId") zoneId: String,
         @Body rule: EmailRoutingRuleCreate
     ): Response<CfEnvelope<EmailRoutingRule>>
+
+    @GET("accounts/{accountId}/email/routing/addresses")
+    suspend fun listEmailDestinations(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<EmailDestinationAddress>>>
+
+    /** Cloudflare emails the address a verification link; until it's clicked, mail isn't
+     *  delivered there. */
+    @POST("accounts/{accountId}/email/routing/addresses")
+    suspend fun createEmailDestination(
+        @Path("accountId") accountId: String,
+        @Body address: EmailDestinationCreate
+    ): Response<CfEnvelope<EmailDestinationAddress>>
+
+    @DELETE("accounts/{accountId}/email/routing/addresses/{addressTag}")
+    suspend fun deleteEmailDestination(
+        @Path("accountId") accountId: String,
+        @Path("addressTag") addressTag: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    @GET("zones/{zoneId}/email/routing/rules/catch_all")
+    suspend fun getEmailCatchAll(@Path("zoneId") zoneId: String): Response<CfEnvelope<EmailCatchAll>>
+
+    @PUT("zones/{zoneId}/email/routing/rules/catch_all")
+    suspend fun updateEmailCatchAll(
+        @Path("zoneId") zoneId: String,
+        @Body catchAll: EmailCatchAllWrite
+    ): Response<CfEnvelope<EmailCatchAll>>
 
     @DELETE("zones/{zoneId}/email/routing/rules/{ruleId}")
     suspend fun deleteEmailRoutingRule(

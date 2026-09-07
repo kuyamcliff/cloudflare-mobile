@@ -27,7 +27,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.filled.MonitorHeart
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
@@ -44,15 +47,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.cfmobile.app.data.remote.dto.LoadBalancer
+import dev.cfmobile.app.data.remote.dto.LoadBalancerMonitor
 import dev.cfmobile.app.data.remote.dto.LoadBalancerPool
+import dev.cfmobile.app.ui.common.DeletableListRow
 import dev.cfmobile.app.ui.common.EmptyState
+import dev.cfmobile.app.ui.common.FormActions
 import dev.cfmobile.app.ui.common.StateContent
 import dev.cfmobile.app.ui.common.UiState
 
-private val TABS = listOf("Pools", "Load Balancers")
+private val TABS = listOf("Pools", "Load Balancers", "Monitors")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,8 +75,21 @@ fun LoadBalancingScreen(viewModel: LoadBalancingViewModel, onBack: () -> Unit) {
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { if (selectedTab == 0) viewModel.openPoolForm() else viewModel.openLbForm() }) {
-                Icon(Icons.Filled.Add, contentDescription = if (selectedTab == 0) "Add pool" else "Add load balancer")
+            val createLabel = when (selectedTab) {
+                0 -> "Add pool"
+                1 -> "Add load balancer"
+                else -> "Add monitor"
+            }
+            FloatingActionButton(
+                onClick = {
+                    when (selectedTab) {
+                        0 -> viewModel.openPoolForm()
+                        1 -> viewModel.openLbForm()
+                        else -> viewModel.openMonitorForm()
+                    }
+                }
+            ) {
+                Icon(Icons.Filled.Add, contentDescription = createLabel)
             }
         }
     ) { padding ->
@@ -79,20 +99,119 @@ fun LoadBalancingScreen(viewModel: LoadBalancingViewModel, onBack: () -> Unit) {
                     Tab(selected = selectedTab == index, onClick = { selectedTab = index }, text = { Text(label) })
                 }
             }
-            if (selectedTab == 0) {
-                PoolsTab(uiState, viewModel)
-            } else {
-                LoadBalancersTab(uiState, viewModel)
+            when (selectedTab) {
+                0 -> PoolsTab(uiState, viewModel)
+                1 -> LoadBalancersTab(uiState, viewModel)
+                else -> MonitorsTab(uiState, viewModel)
             }
         }
     }
 
     uiState.poolForm?.let { form ->
-        PoolFormSheet(form, onDismiss = viewModel::closePoolForm, viewModel = viewModel)
+        PoolFormSheet(
+            form,
+            monitors = (uiState.monitors as? UiState.Data)?.value ?: emptyList(),
+            onDismiss = viewModel::closePoolForm,
+            viewModel = viewModel
+        )
     }
     uiState.lbForm?.let { form ->
         LbFormSheet(form, pools = (uiState.pools as? UiState.Data)?.value ?: emptyList(), onDismiss = viewModel::closeLbForm, viewModel = viewModel)
     }
+    uiState.monitorForm?.let { form ->
+        MonitorFormSheet(form, onDismiss = viewModel::closeMonitorForm, viewModel = viewModel)
+    }
+}
+
+@Composable
+private fun MonitorsTab(uiState: LoadBalancingUiState, viewModel: LoadBalancingViewModel) {
+    StateContent(state = uiState.monitors, onRetry = viewModel::refreshMonitors) { monitors ->
+        if (monitors.isEmpty()) {
+            EmptyState("No health monitors yet - without one, a pool never fails an origin out")
+        } else {
+            LazyColumn(contentPadding = PaddingValues(bottom = 96.dp)) {
+                items(monitors, key = { it.id }) { monitor ->
+                    DeletableListRow(
+                        icon = Icons.Filled.MonitorHeart,
+                        title = monitor.description?.takeIf { it.isNotBlank() } ?: monitor.type.uppercase(),
+                        subtitle = monitorSummary(monitor),
+                        isDeleting = uiState.deletingMonitorId == monitor.id,
+                        deleteContentDescription = "Delete monitor",
+                        confirmTitle = "Delete monitor?",
+                        confirmText = "Pools using this monitor will stop health-checking their origins, so failover stops too.",
+                        onDelete = { viewModel.deleteMonitor(monitor) }
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MonitorFormSheet(form: MonitorFormState, onDismiss: () -> Unit, viewModel: LoadBalancingViewModel) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Add HTTP monitor", style = MaterialTheme.typography.titleMedium)
+            OutlinedTextField(
+                value = form.description,
+                onValueChange = { v -> viewModel.updateMonitorForm { it.copy(description = v) } },
+                label = { Text("Description") },
+                placeholder = { Text("Origin health") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = form.path,
+                onValueChange = { v -> viewModel.updateMonitorForm { it.copy(path = v) } },
+                label = { Text("Path") },
+                placeholder = { Text("/health") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = form.expectedCodes,
+                onValueChange = { v -> viewModel.updateMonitorForm { it.copy(expectedCodes = v) } },
+                label = { Text("Expected status codes") },
+                placeholder = { Text("2xx") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NumberField("Interval (s)", form.interval, Modifier.weight(1f)) { v ->
+                    viewModel.updateMonitorForm { it.copy(interval = v) }
+                }
+                NumberField("Timeout (s)", form.timeout, Modifier.weight(1f)) { v ->
+                    viewModel.updateMonitorForm { it.copy(timeout = v) }
+                }
+                NumberField("Retries", form.retries, Modifier.weight(1f)) { v ->
+                    viewModel.updateMonitorForm { it.copy(retries = v) }
+                }
+            }
+            Text(
+                "Cloudflare sends a GET to this path on each origin. Attach the monitor to a pool when you create the pool.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (form.error != null) {
+                Text(form.error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
+            FormActions(isSaving = form.isSaving, onCancel = onDismiss, onSave = viewModel::saveMonitor)
+        }
+    }
+}
+
+@Composable
+private fun NumberField(label: String, value: String, modifier: Modifier = Modifier, onValueChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        modifier = modifier
+    )
 }
 
 @Composable
@@ -103,7 +222,12 @@ private fun PoolsTab(uiState: LoadBalancingUiState, viewModel: LoadBalancingView
         } else {
             LazyColumn(contentPadding = PaddingValues(bottom = 96.dp)) {
                 items(pools, key = { it.id }) { pool ->
-                    PoolRow(pool, isDeleting = uiState.deletingPoolId == pool.id, onDelete = { viewModel.deletePool(pool) })
+                    PoolRow(
+                        pool,
+                        monitorLabel = poolMonitorLabel(pool, (uiState.monitors as? UiState.Data)?.value.orEmpty()),
+                        isDeleting = uiState.deletingPoolId == pool.id,
+                        onDelete = { viewModel.deletePool(pool) }
+                    )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                 }
             }
@@ -112,7 +236,7 @@ private fun PoolsTab(uiState: LoadBalancingUiState, viewModel: LoadBalancingView
 }
 
 @Composable
-private fun PoolRow(pool: LoadBalancerPool, isDeleting: Boolean, onDelete: () -> Unit) {
+private fun PoolRow(pool: LoadBalancerPool, monitorLabel: String, isDeleting: Boolean, onDelete: () -> Unit) {
     var confirmDelete by remember { mutableStateOf(false) }
     Row(
         Modifier.fillMaxWidth().padding(16.dp, 10.dp),
@@ -122,8 +246,13 @@ private fun PoolRow(pool: LoadBalancerPool, isDeleting: Boolean, onDelete: () ->
         Column(Modifier.weight(1f)) {
             Text(pool.name, style = MaterialTheme.typography.bodyLarge)
             Text(
-                "${pool.origins.size} origin${if (pool.origins.size == 1) "" else "s"}" + (pool.monitor?.let { " · monitored" } ?: ""),
+                "${pool.origins.size} origin${if (pool.origins.size == 1) "" else "s"}",
                 style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                monitorLabel,
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -221,7 +350,12 @@ private fun LoadBalancerRow(lb: LoadBalancer, isDeleting: Boolean, onDelete: () 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PoolFormSheet(form: PoolFormState, onDismiss: () -> Unit, viewModel: LoadBalancingViewModel) {
+private fun PoolFormSheet(
+    form: PoolFormState,
+    monitors: List<LoadBalancerMonitor>,
+    onDismiss: () -> Unit,
+    viewModel: LoadBalancingViewModel
+) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text("Add pool", style = MaterialTheme.typography.titleMedium)
@@ -251,6 +385,11 @@ private fun PoolFormSheet(form: PoolFormState, onDismiss: () -> Unit, viewModel:
                 }
             }
             TextButton(onClick = viewModel::addOriginRow) { Text("Add another origin") }
+            MonitorPicker(
+                monitors = monitors,
+                selectedId = form.monitorId,
+                onSelect = { id -> viewModel.updatePoolForm { it.copy(monitorId = id) } }
+            )
             if (form.error != null) {
                 Text(form.error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
@@ -314,5 +453,51 @@ private fun LbFormSheet(form: LbFormState, pools: List<LoadBalancerPool>, onDism
                 }
             }
         }
+    }
+}
+
+/**
+ * Picks the monitor a new pool health-checks with. "None" is a real choice - Cloudflare allows
+ * a pool without one - so it is offered explicitly rather than left as an empty field, with
+ * what that costs spelled out.
+ */
+@Composable
+private fun MonitorPicker(
+    monitors: List<LoadBalancerMonitor>,
+    selectedId: String?,
+    onSelect: (String?) -> Unit
+) {
+    Text("Health monitor", style = MaterialTheme.typography.labelLarge)
+    if (monitors.isEmpty()) {
+        Text(
+            "No monitors on this account yet. Create one on the Monitors tab first if you want automatic failover.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        return
+    }
+    MonitorChoice(
+        label = "None - no automatic failover",
+        selected = selectedId == null,
+        onClick = { onSelect(null) }
+    )
+    monitors.forEach { monitor ->
+        MonitorChoice(
+            label = monitor.description?.takeIf { it.isNotBlank() } ?: monitorSummary(monitor),
+            selected = selectedId == monitor.id,
+            onClick = { onSelect(monitor.id) }
+        )
+    }
+}
+
+@Composable
+private fun MonitorChoice(label: String, selected: Boolean, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        RadioButton(selected = selected, onClick = onClick)
+        Text(label, style = MaterialTheme.typography.bodyMedium)
     }
 }

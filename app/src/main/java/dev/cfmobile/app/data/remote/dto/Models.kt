@@ -479,7 +479,39 @@ data class LoadBalancerPoolWrite(
     val name: String,
     val enabled: Boolean = true,
     val origins: List<LoadBalancerOrigin>,
-    @Json(name = "minimum_origins") val minimumOrigins: Int = 1
+    @Json(name = "minimum_origins") val minimumOrigins: Int = 1,
+    /** The monitor to health-check this pool's origins with; null means no automatic failover. */
+    val monitor: String? = null
+)
+
+/** A health check monitor. Without one attached, a pool never marks an origin unhealthy, so
+ *  failover never happens. */
+@JsonClass(generateAdapter = true)
+data class LoadBalancerMonitor(
+    val id: String = "",
+    val type: String = "http",
+    val description: String? = null,
+    val method: String? = null,
+    val path: String? = null,
+    val port: Int? = null,
+    val interval: Int? = null,
+    val retries: Int? = null,
+    val timeout: Int? = null,
+    @Json(name = "expected_codes") val expectedCodes: String? = null,
+    @Json(name = "follow_redirects") val followRedirects: Boolean? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class LoadBalancerMonitorWrite(
+    val type: String,
+    val description: String? = null,
+    val method: String? = null,
+    val path: String? = null,
+    val port: Int? = null,
+    val interval: Int = 60,
+    val retries: Int = 2,
+    val timeout: Int = 5,
+    @Json(name = "expected_codes") val expectedCodes: String? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -1536,4 +1568,83 @@ data class ZarazSettings(
     val hideUserAgent: Boolean? = null,
     val hideExternalReferer: Boolean? = null
 )
+
+/** Super Bot Fight Mode and its free-tier sibling live in the same bot_management document,
+ *  so one type covers both; which fields Cloudflare accepts depends on the zone's plan. */
+@JsonClass(generateAdapter = true)
+data class BotManagementConfig(
+    @Json(name = "fight_mode") val fightMode: Boolean? = null,
+    @Json(name = "sbfm_definitely_automated") val definitelyAutomated: String? = null,
+    @Json(name = "sbfm_likely_automated") val likelyAutomated: String? = null,
+    @Json(name = "sbfm_verified_bots") val verifiedBots: String? = null,
+    @Json(name = "sbfm_static_resource_protection") val staticResourceProtection: Boolean? = null,
+    @Json(name = "optimize_wordpress") val optimizeWordpress: Boolean? = null,
+    @Json(name = "using_latest_model") val usingLatestModel: Boolean? = null,
+    @Json(name = "auto_update_model") val autoUpdateModel: Boolean? = null,
+    @Json(name = "suppress_session_score") val suppressSessionScore: Boolean? = null
+)
+
+/** A Page Shield policy: an allow-list expression deciding which scripts may run. */
+@JsonClass(generateAdapter = true)
+data class PageShieldPolicy(
+    val id: String = "",
+    val action: String = "allow",
+    val description: String? = null,
+    val enabled: Boolean = true,
+    val expression: String = "",
+    val value: String = ""
+)
+
+@JsonClass(generateAdapter = true)
+data class PageShieldPolicyWrite(
+    val action: String,
+    val description: String? = null,
+    val enabled: Boolean = true,
+    val expression: String,
+    val value: String
+)
+
+/** A destination address email routing can forward to. Cloudflare only delivers to an address
+ *  once its owner has clicked the verification link. */
+@JsonClass(generateAdapter = true)
+data class EmailDestinationAddress(
+    val tag: String = "",
+    val email: String = "",
+    val verified: String? = null,
+    val created: String? = null,
+    val modified: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class EmailDestinationCreate(val email: String)
+
+@JsonClass(generateAdapter = true)
+data class EmailCatchAllAction(
+    val type: String = "drop",
+    val value: List<String> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class EmailCatchAllMatcher(val type: String = "all")
+
+/** What happens to mail sent to an address with no matching rule. */
+@JsonClass(generateAdapter = true)
+data class EmailCatchAll(
+    val tag: String? = null,
+    val name: String? = null,
+    val enabled: Boolean = false,
+    val actions: List<EmailCatchAllAction> = emptyList(),
+    val matchers: List<EmailCatchAllMatcher> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class EmailCatchAllWrite(
+    val enabled: Boolean,
+    val actions: List<EmailCatchAllAction>,
+    val matchers: List<EmailCatchAllMatcher> = listOf(EmailCatchAllMatcher())
+)
+
+/** Sent to change a Workflow instance's state; Cloudflare takes the verb as a status. */
+@JsonClass(generateAdapter = true)
+data class WorkflowInstanceStatusWrite(val status: String)
 

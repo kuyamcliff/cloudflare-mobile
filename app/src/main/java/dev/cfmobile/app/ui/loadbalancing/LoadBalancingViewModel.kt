@@ -6,6 +6,8 @@ import dev.cfmobile.app.core.errors.ErrorClassifier
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.dto.CfZone
 import dev.cfmobile.app.data.remote.dto.LoadBalancer
+import dev.cfmobile.app.data.remote.dto.LoadBalancerMonitor
+import dev.cfmobile.app.data.remote.dto.LoadBalancerMonitorWrite
 import dev.cfmobile.app.data.remote.dto.LoadBalancerOrigin
 import dev.cfmobile.app.data.remote.dto.LoadBalancerPool
 import dev.cfmobile.app.data.remote.dto.LoadBalancerPoolWrite
@@ -24,6 +26,21 @@ data class OriginFormState(val name: String = "", val address: String = "", val 
 data class PoolFormState(
     val name: String = "",
     val origins: List<OriginFormState> = listOf(OriginFormState()),
+    /** The health monitor to attach; null means the pool never marks an origin unhealthy. */
+    val monitorId: String? = null,
+    val isSaving: Boolean = false,
+    val error: String? = null
+)
+
+/** HTTP is the monitor type worth offering from a phone: TCP and UDP monitors exist but need
+ *  port and protocol detail this form doesn't collect. */
+data class MonitorFormState(
+    val description: String = "",
+    val path: String = "/",
+    val expectedCodes: String = "2xx",
+    val interval: String = "60",
+    val retries: String = "2",
+    val timeout: String = "5",
     val isSaving: Boolean = false,
     val error: String? = null
 )
@@ -43,6 +60,9 @@ data class LbFormState(
 
 data class LoadBalancingUiState(
     val pools: UiState<List<LoadBalancerPool>> = UiState.Loading,
+    val monitors: UiState<List<LoadBalancerMonitor>> = UiState.Loading,
+    val monitorForm: MonitorFormState? = null,
+    val deletingMonitorId: String? = null,
     val poolForm: PoolFormState? = null,
     val deletingPoolId: String? = null,
     val zones: List<CfZone> = emptyList(),
@@ -62,8 +82,54 @@ fun buildPoolWrite(form: PoolFormState): LoadBalancerPoolWrite = LoadBalancerPoo
     name = form.name.trim(),
     origins = form.origins.filter { it.address.isNotBlank() }.mapIndexed { index, origin ->
         LoadBalancerOrigin(name = origin.name.trim().ifBlank { "origin-${index + 1}" }, address = origin.address.trim(), enabled = origin.enabled)
-    }
+    },
+    monitor = form.monitorId
 )
+
+/** Cloudflare's own bounds: an interval under 60s needs a plan that allows it, and the timeout
+ *  has to fit inside the interval or checks overlap. */
+fun validateMonitorForm(form: MonitorFormState): String? {
+    val interval = form.interval.trim().toIntOrNull()
+    val retries = form.retries.trim().toIntOrNull()
+    val timeout = form.timeout.trim().toIntOrNull()
+    return when {
+        !form.path.trim().startsWith("/") -> "The path must start with /"
+        form.expectedCodes.isBlank() -> "Expected status codes are required, e.g. 2xx"
+        interval == null || interval < 10 -> "Interval must be at least 10 seconds"
+        retries == null || retries < 0 -> "Retries must be zero or more"
+        timeout == null || timeout < 1 -> "Timeout must be at least 1 second"
+        timeout >= interval -> "Timeout has to be shorter than the interval, or checks overlap"
+        else -> null
+    }
+}
+
+fun buildMonitorWrite(form: MonitorFormState): LoadBalancerMonitorWrite = LoadBalancerMonitorWrite(
+    type = "http",
+    description = form.description.trim().ifBlank { null },
+    method = "GET",
+    path = form.path.trim(),
+    expectedCodes = form.expectedCodes.trim(),
+    interval = form.interval.trim().toInt(),
+    retries = form.retries.trim().toInt(),
+    timeout = form.timeout.trim().toInt()
+)
+
+/** "GET /health · every 60s" - what the monitor actually does. */
+fun monitorSummary(monitor: LoadBalancerMonitor): String = listOfNotNull(
+    listOfNotNull(monitor.method, monitor.path).joinToString(" ").takeIf { it.isNotBlank() },
+    monitor.interval?.let { "every ${it}s" },
+    monitor.expectedCodes?.let { "expects $it" }
+).joinToString(" · ")
+
+/** A pool with no monitor still serves traffic - it just never fails an origin out, which is
+ *  worth saying on the row rather than leaving blank. */
+fun poolMonitorLabel(pool: LoadBalancerPool, monitors: List<LoadBalancerMonitor>): String {
+    val monitorId = pool.monitor ?: return "No health monitor - no automatic failover"
+    val monitor = monitors.firstOrNull { it.id == monitorId }
+    return monitor?.description?.takeIf { it.isNotBlank() }
+        ?: monitor?.let { monitorSummary(it) }?.takeIf { it.isNotBlank() }
+        ?: "Monitor $monitorId"
+}
 
 fun validateLbForm(form: LbFormState): String? = when {
     form.hostname.isBlank() -> "Hostname is required"
@@ -99,7 +165,57 @@ class LoadBalancingViewModel(
     init {
         viewModelScope.launch {
             loadPools()
+            loadMonitors()
             loadZonesThenLoadBalancers()
+        }
+    }
+
+    fun refreshMonitors() {
+        viewModelScope.launch { loadMonitors() }
+    }
+
+    private suspend fun loadMonitors() {
+        _uiState.update { it.copy(monitors = UiState.Loading) }
+        when (val result = repository.listMonitors(accountId)) {
+            is ApiResult.Success -> _uiState.update { it.copy(monitors = UiState.Data(result.data)) }
+            is ApiResult.Failure -> _uiState.update { it.copy(monitors = UiState.Error(ErrorClassifier.classify(result))) }
+        }
+    }
+
+    fun openMonitorForm() = _uiState.update { it.copy(monitorForm = MonitorFormState()) }
+
+    fun closeMonitorForm() = _uiState.update { it.copy(monitorForm = null) }
+
+    fun updateMonitorForm(transform: (MonitorFormState) -> MonitorFormState) =
+        _uiState.update { state -> state.monitorForm?.let { state.copy(monitorForm = transform(it)) } ?: state }
+
+    fun saveMonitor() {
+        val form = _uiState.value.monitorForm ?: return
+        val validationError = validateMonitorForm(form)
+        if (validationError != null) {
+            updateMonitorForm { it.copy(error = validationError) }
+            return
+        }
+        updateMonitorForm { it.copy(isSaving = true, error = null) }
+        viewModelScope.launch {
+            when (val result = repository.createMonitor(accountId, buildMonitorWrite(form))) {
+                is ApiResult.Success -> {
+                    _uiState.update { it.copy(monitorForm = null) }
+                    loadMonitors()
+                }
+                is ApiResult.Failure -> updateMonitorForm { it.copy(isSaving = false, error = result.message) }
+            }
+        }
+    }
+
+    fun deleteMonitor(monitor: LoadBalancerMonitor) {
+        _uiState.update { it.copy(deletingMonitorId = monitor.id) }
+        viewModelScope.launch {
+            repository.deleteMonitor(accountId, monitor.id)
+            _uiState.update { it.copy(deletingMonitorId = null) }
+            loadMonitors()
+            // A deleted monitor leaves the pools that referenced it without one.
+            loadPools()
         }
     }
 

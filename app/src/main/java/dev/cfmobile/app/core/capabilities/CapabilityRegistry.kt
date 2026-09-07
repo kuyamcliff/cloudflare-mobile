@@ -328,7 +328,7 @@ object CapabilityRegistry {
             roadmapPhase = RoadmapPhase.P1,
             destructiveRisk = DestructiveRisk.HIGH,
             accountRoute = { accountId -> Routes.loadBalancing(accountId) },
-            migrationHint = "Health check monitors aren't implemented - pools work without one, just without automatic origin failover. Each load balancer form only supports a single pool (no multi-pool steering/priority or geo-steering). Not verified against a live API call."
+            migrationHint = "Pools, load balancers, and HTTP health monitors, with a monitor attachable when a pool is created. TCP and UDP monitors, editing a pool's monitor after creation, and multi-pool steering (priority, geo, or weighted) aren't implemented - each load balancer here uses a single pool for both its default and fallback. Not verified against a live API call."
         ),
         Capability(
             id = "page_shield",
@@ -339,7 +339,7 @@ object CapabilityRegistry {
             status = CapabilityStatus.IMPLEMENTED,
             roadmapPhase = RoadmapPhase.P1,
             zoneRoute = { id, name -> Routes.pageShield(id, name) },
-            migrationHint = "The on/off setting plus the detected scripts and outbound connections. Page Shield policies (allow/block lists) and per-script alerting aren't implemented. Not verified against a live API call."
+            migrationHint = "The on/off setting, the detected scripts and outbound connections, and policies that allow-list scripts on matching pages. Per-script alerting and the script-change history aren't implemented. Both policy fields are raw Cloudflare filter expressions - this app doesn't build them for you. Not verified against a live API call."
         ),
         Capability(
             id = "api_shield",
@@ -361,7 +361,7 @@ object CapabilityRegistry {
             status = CapabilityStatus.IMPLEMENTED,
             roadmapPhase = RoadmapPhase.P1,
             zoneRoute = { id, name -> Routes.botManagement(id, name) },
-            migrationHint = "Only the free-tier Bot Fight Mode toggle is implemented. Super Bot Fight Mode's per-category configuration (definitely/likely automated, verified bots, static resources) and bot score analytics both require a paid plan and aren't implemented."
+            migrationHint = "Bot Fight Mode plus Super Bot Fight Mode's per-category actions (definitely and likely automated, verified bots), static resource protection, and the WordPress optimization. Which of these appear depends on the zone's plan - Cloudflare omits the fields a plan doesn't include, and a save only ever changes fields the zone itself reported. Bot analytics and per-rule bot scores aren't implemented. Not verified against a live API call."
         ),
         Capability(
             id = "ddos",
@@ -560,7 +560,7 @@ object CapabilityRegistry {
             status = CapabilityStatus.IMPLEMENTED,
             roadmapPhase = RoadmapPhase.P2,
             accountRoute = { accountId -> Routes.workflows(accountId) },
-            migrationHint = "Read-only: list deployed Workflows and their recent instances. Triggering, pausing, or terminating a run isn't implemented. Not verified against a live API call."
+            migrationHint = "Lists deployed Workflows and their recent instances, starts a run, and pauses, resumes, or terminates one - only the transitions Cloudflare accepts for a run's current state are offered, and terminating is confirmed first. Passing parameters to a run, and a run's step-by-step history, aren't implemented. Not verified against a live API call."
         ),
         Capability(
             id = "hyperdrive",
@@ -631,7 +631,7 @@ object CapabilityRegistry {
             roadmapPhase = RoadmapPhase.P2,
             destructiveRisk = DestructiveRisk.MEDIUM,
             zoneRoute = { id, name -> Routes.emailRouting(id, name) },
-            migrationHint = "Status plus forwarding rules (list/create/delete). A rule forwards to a destination address you have already verified: verifying a new one requires clicking a link in an email, which this app can't do. Catch-all rules and Email Workers routing aren't covered. Not verified against a live API call."
+            migrationHint = "Status, forwarding rules, destination addresses, and the catch-all. Adding a destination sends Cloudflare's verification email; the app shows whether an address has been verified but can't click the link for you, and an unverified address won't receive mail. The catch-all here forwards to a verified destination or is off - \"drop\", which discards unmatched mail silently, isn't offered. Email Workers routing and editing an existing rule aren't implemented. Not verified against a live API call."
         ),
         Capability(
             id = "turnstile",
