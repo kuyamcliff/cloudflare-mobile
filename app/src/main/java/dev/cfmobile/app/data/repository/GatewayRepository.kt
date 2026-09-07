@@ -3,6 +3,9 @@ package dev.cfmobile.app.data.repository
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.GatewayList
+import dev.cfmobile.app.data.remote.dto.GatewayLocation
+import dev.cfmobile.app.data.remote.dto.GatewayLocationNetwork
+import dev.cfmobile.app.data.remote.dto.GatewayLocationWrite
 import dev.cfmobile.app.data.remote.dto.GatewayListCreate
 import dev.cfmobile.app.data.remote.dto.GatewayListItem
 import dev.cfmobile.app.data.remote.dto.GatewayRule
@@ -36,4 +39,24 @@ class GatewayRepository(private val api: CloudflareApi) {
 
     suspend fun deleteList(accountId: String, listId: String): ApiResult<Unit> =
         safeApiCallUnit { api.deleteGatewayList(accountId, listId) }
+
+    /** DNS locations: the resolver addresses a network's queries arrive on. */
+    suspend fun listLocations(accountId: String): ApiResult<List<GatewayLocation>> =
+        safeApiCall { api.listGatewayLocations(accountId) }
+
+    suspend fun createLocation(
+        accountId: String,
+        name: String,
+        clientDefault: Boolean,
+        networks: List<GatewayLocationNetwork>
+    ): ApiResult<GatewayLocation> =
+        safeApiCall {
+            api.createGatewayLocation(
+                accountId,
+                GatewayLocationWrite(name = name, clientDefault = clientDefault, networks = networks)
+            )
+        }
+
+    suspend fun deleteLocation(accountId: String, locationId: String): ApiResult<Unit> =
+        safeApiCallUnit { api.deleteGatewayLocation(accountId, locationId) }
 }

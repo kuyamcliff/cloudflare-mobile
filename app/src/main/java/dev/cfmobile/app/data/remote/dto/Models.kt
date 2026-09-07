@@ -1996,3 +1996,144 @@ data class QueueConsumerSettings(
     @Json(name = "max_concurrency") val maxConcurrency: Int? = null
 )
 
+// ---- Zero Trust breadth: groups, mTLS, bookmarks, tags, locations, WARP, tunnel routing ----
+
+/** A reusable Access group - the same include rules a policy uses, named and shared. */
+@JsonClass(generateAdapter = true)
+data class AccessGroup(
+    val id: String = "",
+    val name: String = "",
+    val include: List<AccessPolicyIncludeRule> = emptyList(),
+    val exclude: List<AccessPolicyIncludeRule>? = null,
+    val require: List<AccessPolicyIncludeRule>? = null,
+    @Json(name = "created_at") val createdAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AccessGroupWrite(
+    val name: String,
+    val include: List<AccessPolicyIncludeRule>
+)
+
+/** A root certificate Access will accept client certificates from. */
+@JsonClass(generateAdapter = true)
+data class AccessMtlsCertificate(
+    val id: String = "",
+    val name: String? = null,
+    val fingerprint: String? = null,
+    @Json(name = "associated_hostnames") val associatedHostnames: List<String>? = null,
+    @Json(name = "expires_on") val expiresOn: String? = null
+)
+
+/** A link on the Zero Trust launchpad - an app users can reach but Access doesn't guard. */
+@JsonClass(generateAdapter = true)
+data class AccessBookmark(
+    val id: String = "",
+    val name: String? = null,
+    val domain: String? = null,
+    @Json(name = "app_launcher_visible") val appLauncherVisible: Boolean? = null,
+    @Json(name = "logo_url") val logoUrl: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AccessBookmarkWrite(
+    val name: String,
+    val domain: String,
+    @Json(name = "app_launcher_visible") val appLauncherVisible: Boolean = true
+)
+
+/** A tag used to group Access applications on the launchpad. */
+@JsonClass(generateAdapter = true)
+data class AccessTag(
+    val name: String = "",
+    @Json(name = "app_count") val appCount: Int? = null,
+    @Json(name = "created_at") val createdAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class AccessTagWrite(val name: String)
+
+/** A Gateway DNS location: the resolver addresses a network sends its DNS queries to. */
+@JsonClass(generateAdapter = true)
+data class GatewayLocation(
+    val id: String = "",
+    val name: String = "",
+    @Json(name = "doh_subdomain") val dohSubdomain: String? = null,
+    @Json(name = "client_default") val clientDefault: Boolean? = null,
+    @Json(name = "ecs_support") val ecsSupport: Boolean? = null,
+    val networks: List<GatewayLocationNetwork>? = null,
+    @Json(name = "ip") val ip: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class GatewayLocationNetwork(
+    val id: String? = null,
+    val network: String = ""
+)
+
+@JsonClass(generateAdapter = true)
+data class GatewayLocationWrite(
+    val name: String,
+    @Json(name = "client_default") val clientDefault: Boolean = false,
+    val networks: List<GatewayLocationNetwork> = emptyList()
+)
+
+/** A WARP device settings profile - which traffic the client sends through Cloudflare. */
+@JsonClass(generateAdapter = true)
+data class DeviceSettingsPolicy(
+    @Json(name = "policy_id") val policyId: String? = null,
+    val name: String? = null,
+    val description: String? = null,
+    val enabled: Boolean? = null,
+    val default: Boolean? = null,
+    val precedence: Int? = null,
+    val match: String? = null,
+    @Json(name = "service_mode_v2") val serviceMode: DeviceServiceMode? = null,
+    @Json(name = "switch_locked") val switchLocked: Boolean? = null,
+    @Json(name = "auto_connect") val autoConnect: Int? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class DeviceServiceMode(
+    val mode: String? = null,
+    val port: Int? = null
+)
+
+/** A private network route reachable through a Cloudflare Tunnel. */
+@JsonClass(generateAdapter = true)
+data class TunnelRoute(
+    val id: String = "",
+    val network: String = "",
+    @Json(name = "tunnel_id") val tunnelId: String? = null,
+    @Json(name = "tunnel_name") val tunnelName: String? = null,
+    val comment: String? = null,
+    @Json(name = "virtual_network_id") val virtualNetworkId: String? = null,
+    @Json(name = "created_at") val createdAt: String? = null,
+    @Json(name = "deleted_at") val deletedAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class TunnelRouteWrite(
+    val network: String,
+    @Json(name = "tunnel_id") val tunnelId: String,
+    val comment: String? = null,
+    @Json(name = "virtual_network_id") val virtualNetworkId: String? = null
+)
+
+/** A virtual network, which lets overlapping private ranges coexist behind different tunnels. */
+@JsonClass(generateAdapter = true)
+data class VirtualNetwork(
+    val id: String = "",
+    val name: String = "",
+    val comment: String? = null,
+    @Json(name = "is_default_network") val isDefault: Boolean? = null,
+    @Json(name = "created_at") val createdAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class VirtualNetworkWrite(
+    val name: String,
+    val comment: String? = null,
+    @Json(name = "is_default") val isDefault: Boolean = false
+)
+

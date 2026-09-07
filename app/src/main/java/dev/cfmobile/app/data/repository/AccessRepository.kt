@@ -4,11 +4,19 @@ import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.AccessApplication
 import dev.cfmobile.app.data.remote.dto.AccessApplicationCreate
+import dev.cfmobile.app.data.remote.dto.AccessBookmark
+import dev.cfmobile.app.data.remote.dto.AccessBookmarkWrite
+import dev.cfmobile.app.data.remote.dto.AccessGroup
+import dev.cfmobile.app.data.remote.dto.AccessGroupWrite
+import dev.cfmobile.app.data.remote.dto.AccessMtlsCertificate
+import dev.cfmobile.app.data.remote.dto.AccessTag
+import dev.cfmobile.app.data.remote.dto.AccessTagWrite
 import dev.cfmobile.app.data.remote.dto.AccessIdentityProvider
 import dev.cfmobile.app.data.remote.dto.AccessIdentityProviderCreate
 import dev.cfmobile.app.data.remote.dto.AccessServiceToken
 import dev.cfmobile.app.data.remote.dto.AccessServiceTokenCreate
 import dev.cfmobile.app.data.remote.dto.AccessPolicyCreate
+import dev.cfmobile.app.data.remote.dto.AccessPolicyIncludeRule
 import dev.cfmobile.app.data.remote.safeApiCall
 import dev.cfmobile.app.data.remote.safeApiCallUnit
 
@@ -54,6 +62,43 @@ class AccessRepository(private val api: CloudflareApi) {
 
     suspend fun deleteServiceToken(accountId: String, tokenId: String): ApiResult<Unit> =
         safeApiCallUnit { api.deleteAccessServiceToken(accountId, tokenId) }
+
+    /** A named, reusable set of include rules that policies can point at. */
+    suspend fun listGroups(accountId: String): ApiResult<List<AccessGroup>> =
+        safeApiCall { api.listAccessGroups(accountId) }
+
+    suspend fun createGroup(accountId: String, name: String, include: List<AccessPolicyIncludeRule>): ApiResult<AccessGroup> =
+        safeApiCall { api.createAccessGroup(accountId, AccessGroupWrite(name = name, include = include)) }
+
+    suspend fun deleteGroup(accountId: String, groupId: String): ApiResult<Unit> =
+        safeApiCallUnit { api.deleteAccessGroup(accountId, groupId) }
+
+    /** Root certificates Access accepts client certificates from. Uploading one means holding
+     *  a certificate chain, which is left to the dashboard. */
+    suspend fun listMtlsCertificates(accountId: String): ApiResult<List<AccessMtlsCertificate>> =
+        safeApiCall { api.listAccessMtlsCertificates(accountId) }
+
+    suspend fun deleteMtlsCertificate(accountId: String, certificateId: String): ApiResult<Unit> =
+        safeApiCallUnit { api.deleteAccessMtlsCertificate(accountId, certificateId) }
+
+    /** Launchpad links to apps Access doesn't itself guard. */
+    suspend fun listBookmarks(accountId: String): ApiResult<List<AccessBookmark>> =
+        safeApiCall { api.listAccessBookmarks(accountId) }
+
+    suspend fun createBookmark(accountId: String, name: String, domain: String): ApiResult<AccessBookmark> =
+        safeApiCall { api.createAccessBookmark(accountId, AccessBookmarkWrite(name = name, domain = domain)) }
+
+    suspend fun deleteBookmark(accountId: String, bookmarkId: String): ApiResult<Unit> =
+        safeApiCallUnit { api.deleteAccessBookmark(accountId, bookmarkId) }
+
+    suspend fun listTags(accountId: String): ApiResult<List<AccessTag>> =
+        safeApiCall { api.listAccessTags(accountId) }
+
+    suspend fun createTag(accountId: String, name: String): ApiResult<AccessTag> =
+        safeApiCall { api.createAccessTag(accountId, AccessTagWrite(name)) }
+
+    suspend fun deleteTag(accountId: String, tagName: String): ApiResult<Unit> =
+        safeApiCallUnit { api.deleteAccessTag(accountId, tagName) }
 
     companion object {
         const val ONE_TIME_PIN_TYPE = "onetimepin"

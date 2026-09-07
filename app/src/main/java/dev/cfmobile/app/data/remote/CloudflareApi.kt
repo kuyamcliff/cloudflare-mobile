@@ -1460,4 +1460,122 @@ interface CloudflareApi {
         @Path("queueId") queueId: String,
         @Path("consumerId") consumerId: String
     ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Access groups, mTLS roots, bookmarks, tags ----
+
+    @GET("accounts/{accountId}/access/groups")
+    suspend fun listAccessGroups(@Path("accountId") accountId: String): Response<CfEnvelope<List<AccessGroup>>>
+
+    @POST("accounts/{accountId}/access/groups")
+    suspend fun createAccessGroup(
+        @Path("accountId") accountId: String,
+        @Body group: AccessGroupWrite
+    ): Response<CfEnvelope<AccessGroup>>
+
+    @DELETE("accounts/{accountId}/access/groups/{groupId}")
+    suspend fun deleteAccessGroup(
+        @Path("accountId") accountId: String,
+        @Path("groupId") groupId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    @GET("accounts/{accountId}/access/certificates")
+    suspend fun listAccessMtlsCertificates(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<AccessMtlsCertificate>>>
+
+    @DELETE("accounts/{accountId}/access/certificates/{certificateId}")
+    suspend fun deleteAccessMtlsCertificate(
+        @Path("accountId") accountId: String,
+        @Path("certificateId") certificateId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    @GET("accounts/{accountId}/access/bookmarks")
+    suspend fun listAccessBookmarks(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<AccessBookmark>>>
+
+    @POST("accounts/{accountId}/access/bookmarks")
+    suspend fun createAccessBookmark(
+        @Path("accountId") accountId: String,
+        @Body bookmark: AccessBookmarkWrite
+    ): Response<CfEnvelope<AccessBookmark>>
+
+    @DELETE("accounts/{accountId}/access/bookmarks/{bookmarkId}")
+    suspend fun deleteAccessBookmark(
+        @Path("accountId") accountId: String,
+        @Path("bookmarkId") bookmarkId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    @GET("accounts/{accountId}/access/tags")
+    suspend fun listAccessTags(@Path("accountId") accountId: String): Response<CfEnvelope<List<AccessTag>>>
+
+    @POST("accounts/{accountId}/access/tags")
+    suspend fun createAccessTag(
+        @Path("accountId") accountId: String,
+        @Body tag: AccessTagWrite
+    ): Response<CfEnvelope<AccessTag>>
+
+    @DELETE("accounts/{accountId}/access/tags/{tagName}")
+    suspend fun deleteAccessTag(
+        @Path("accountId") accountId: String,
+        @Path("tagName") tagName: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- Gateway locations, WARP profiles, tunnel routing ----
+
+    @GET("accounts/{accountId}/gateway/locations")
+    suspend fun listGatewayLocations(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<GatewayLocation>>>
+
+    @POST("accounts/{accountId}/gateway/locations")
+    suspend fun createGatewayLocation(
+        @Path("accountId") accountId: String,
+        @Body location: GatewayLocationWrite
+    ): Response<CfEnvelope<GatewayLocation>>
+
+    @DELETE("accounts/{accountId}/gateway/locations/{locationId}")
+    suspend fun deleteGatewayLocation(
+        @Path("accountId") accountId: String,
+        @Path("locationId") locationId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    @GET("accounts/{accountId}/devices/policies")
+    suspend fun listDeviceSettingsPolicies(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<DeviceSettingsPolicy>>>
+
+    @GET("accounts/{accountId}/teamnet/routes")
+    suspend fun listTunnelRoutes(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<TunnelRoute>>>
+
+    @POST("accounts/{accountId}/teamnet/routes")
+    suspend fun createTunnelRoute(
+        @Path("accountId") accountId: String,
+        @Body route: TunnelRouteWrite
+    ): Response<CfEnvelope<TunnelRoute>>
+
+    @DELETE("accounts/{accountId}/teamnet/routes/{routeId}")
+    suspend fun deleteTunnelRoute(
+        @Path("accountId") accountId: String,
+        @Path("routeId") routeId: String
+    ): Response<CfEnvelope<TunnelRoute>>
+
+    @GET("accounts/{accountId}/teamnet/virtual_networks")
+    suspend fun listVirtualNetworks(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<VirtualNetwork>>>
+
+    @POST("accounts/{accountId}/teamnet/virtual_networks")
+    suspend fun createVirtualNetwork(
+        @Path("accountId") accountId: String,
+        @Body network: VirtualNetworkWrite
+    ): Response<CfEnvelope<VirtualNetwork>>
+
+    @DELETE("accounts/{accountId}/teamnet/virtual_networks/{networkId}")
+    suspend fun deleteVirtualNetwork(
+        @Path("accountId") accountId: String,
+        @Path("networkId") networkId: String
+    ): Response<CfEnvelope<VirtualNetwork>>
 }

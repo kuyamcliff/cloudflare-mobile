@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.Gavel
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Http
@@ -107,6 +108,8 @@ fun capabilityIcon(capability: Capability): ImageVector = when (capability.id) {
     "gateway" -> Icons.Filled.Dns
     "gateway_lists" -> Icons.AutoMirrored.Filled.ListAlt
     "access_identity" -> Icons.AutoMirrored.Filled.Login
+    "access_directory" -> Icons.Filled.Group
+    "zero_trust_network" -> Icons.Filled.Hub
     "tunnels" -> Icons.Filled.Router
     "device_posture" -> Icons.Filled.Devices
     "worker_routes" -> Icons.AutoMirrored.Filled.AltRoute

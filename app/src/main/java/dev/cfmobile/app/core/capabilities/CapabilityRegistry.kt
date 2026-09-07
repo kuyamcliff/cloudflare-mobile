@@ -566,6 +566,30 @@ object CapabilityRegistry {
             migrationHint = "Block/allow policies for the DNS, HTTP, and network engines, each matching one hostname or destination IP. Richer Wirefilter expressions (categories, identity, device posture, list references), rule ordering, and editing an existing policy aren't implemented. Lists have their own screen - see the Gateway Lists capability. Not verified against a live API call."
         ),
         Capability(
+            id = "access_directory",
+            product = "Zero Trust",
+            displayName = "Access Directory",
+            description = "Groups, bookmarks, tags, and mTLS roots",
+            scope = CapabilityScope.ACCOUNT,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.accessDirectory(accountId) },
+            migrationHint = "Reusable Access groups, launchpad bookmarks, application tags, and the root certificates Access accepts client certificates from. A group is created with the same two rule kinds the policy form supports - an email domain and individual addresses; IP ranges, device posture, and service-token rules are set from the dashboard, and a group carrying them shows the count rather than pretending they aren't there. Uploading a root certificate means handling a certificate chain and isn't implemented. Editing an existing group isn't either. Not verified against a live API call."
+        ),
+        Capability(
+            id = "zero_trust_network",
+            product = "Zero Trust",
+            displayName = "Zero Trust Network",
+            description = "Tunnel routes, virtual networks, DNS locations, WARP profiles",
+            scope = CapabilityScope.ACCOUNT,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.zeroTrustNetwork(accountId) },
+            migrationHint = "The private-network side of Zero Trust: routes reachable through a tunnel, the virtual networks that let overlapping ranges coexist, and Gateway's DNS locations - all with create and delete. Routes and tunnels are picked by name rather than by id. Assigning a route to a non-default virtual network isn't offered. WARP device profiles are read-only: their split tunnel and fallback-domain lists are list editors of their own. Not verified against a live API call."
+        ),
+        Capability(
             id = "gateway_lists",
             product = "Zero Trust",
             displayName = "Gateway Lists",

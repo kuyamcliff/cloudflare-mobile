@@ -2,6 +2,7 @@ package dev.cfmobile.app.data.repository
 
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
+import dev.cfmobile.app.data.remote.dto.DeviceSettingsPolicy
 import dev.cfmobile.app.data.remote.dto.EnrolledDevice
 import dev.cfmobile.app.data.remote.dto.PostureRule
 import dev.cfmobile.app.data.remote.safeApiCall
@@ -22,4 +23,9 @@ class DevicePostureRepository(private val api: CloudflareApi) {
      *  reach anything behind Zero Trust again. */
     suspend fun revokeDevice(accountId: String, deviceId: String): ApiResult<Unit> =
         safeApiCallUnit { api.revokeDevices(accountId, listOf(deviceId)) }
+
+    /** WARP device settings profiles, read-only: each carries a match expression plus split
+     *  tunnel and fallback-domain lists that are their own screens' worth of editing. */
+    suspend fun listSettingsPolicies(accountId: String): ApiResult<List<DeviceSettingsPolicy>> =
+        safeApiCall { api.listDeviceSettingsPolicies(accountId) }
 }

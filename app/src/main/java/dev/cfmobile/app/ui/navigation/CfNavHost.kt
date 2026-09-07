@@ -86,9 +86,13 @@ import dev.cfmobile.app.ui.zoneproducts.SnippetsScreen
 import dev.cfmobile.app.ui.zoneproducts.SnippetsViewModel
 import dev.cfmobile.app.ui.zoneproducts.ZarazScreen
 import dev.cfmobile.app.ui.zoneproducts.ZarazViewModel
+import dev.cfmobile.app.ui.zerotrust.AccessDirectoryScreen
+import dev.cfmobile.app.ui.zerotrust.AccessDirectoryViewModel
 import dev.cfmobile.app.ui.zerotrust.AccessIdentityScreen
 import dev.cfmobile.app.ui.zerotrust.AccessIdentityViewModel
 import dev.cfmobile.app.ui.zerotrust.GatewayListsScreen
+import dev.cfmobile.app.ui.zerotrust.ZeroTrustNetworkScreen
+import dev.cfmobile.app.ui.zerotrust.ZeroTrustNetworkViewModel
 import dev.cfmobile.app.ui.zerotrust.GatewayListsViewModel
 import dev.cfmobile.app.ui.workerroutes.WorkerRoutesScreen
 import dev.cfmobile.app.ui.workerroutes.WorkerRoutesViewModel
@@ -421,6 +425,27 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
                 factory = factoryOf { WebAnalyticsViewModel(accountId, container.webAnalyticsRepository) }
             )
             WebAnalyticsScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.ACCESS_DIRECTORY) { accountId ->
+            val vm = viewModel<AccessDirectoryViewModel>(
+                factory = factoryOf { AccessDirectoryViewModel(accountId, container.accessRepository) }
+            )
+            AccessDirectoryScreen(vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.ZERO_TRUST_NETWORK) { accountId ->
+            val vm = viewModel<ZeroTrustNetworkViewModel>(
+                factory = factoryOf {
+                    ZeroTrustNetworkViewModel(
+                        accountId,
+                        container.tunnelsRepository,
+                        container.gatewayRepository,
+                        container.devicePostureRepository
+                    )
+                }
+            )
+            ZeroTrustNetworkScreen(vm, onBack = { navController.popBackStack() })
         }
 
         accountScreen(Routes.GATEWAY_LISTS) { accountId ->
