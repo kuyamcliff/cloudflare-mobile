@@ -1832,3 +1832,167 @@ data class UrlNormalizationWrite(
     val scope: String
 )
 
+// ---- Storage and compute depth: R2 config, Worker secrets/domains, Pages domains, consumers ----
+
+@JsonClass(generateAdapter = true)
+data class R2CorsAllowed(
+    val origins: List<String> = emptyList(),
+    val methods: List<String> = emptyList(),
+    val headers: List<String>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class R2CorsRule(
+    val id: String? = null,
+    val allowed: R2CorsAllowed = R2CorsAllowed(),
+    @Json(name = "maxAgeSeconds") val maxAgeSeconds: Int? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class R2CorsRules(val rules: List<R2CorsRule> = emptyList())
+
+/** How long after upload an object is deleted, or moved to infrequent access. */
+@JsonClass(generateAdapter = true)
+data class R2LifecycleCondition(
+    @Json(name = "maxAge") val maxAge: Int? = null,
+    val date: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class R2LifecycleDeleteAction(
+    val condition: R2LifecycleCondition = R2LifecycleCondition()
+)
+
+@JsonClass(generateAdapter = true)
+data class R2LifecycleConditions(
+    val prefix: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class R2LifecycleRule(
+    val id: String = "",
+    val enabled: Boolean = true,
+    val conditions: R2LifecycleConditions? = null,
+    @Json(name = "deleteObjectsTransition") val deleteTransition: R2LifecycleDeleteAction? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class R2LifecycleRules(val rules: List<R2LifecycleRule> = emptyList())
+
+/** A hostname serving a bucket's objects publicly. */
+@JsonClass(generateAdapter = true)
+data class R2CustomDomain(
+    val domain: String = "",
+    val enabled: Boolean = true,
+    val status: R2CustomDomainStatus? = null,
+    @Json(name = "zoneName") val zoneName: String? = null,
+    @Json(name = "minTLS") val minTls: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class R2CustomDomainStatus(
+    val ownership: String? = null,
+    val ssl: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class R2CustomDomains(val domains: List<R2CustomDomain> = emptyList())
+
+/** Whether the bucket answers on its r2.dev development URL. */
+@JsonClass(generateAdapter = true)
+data class R2ManagedDomain(
+    val enabled: Boolean = false,
+    val domain: String? = null,
+    @Json(name = "bucketId") val bucketId: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class R2ManagedDomainWrite(val enabled: Boolean)
+
+/** A Worker secret. Cloudflare returns the name and type only - never the value. */
+@JsonClass(generateAdapter = true)
+data class WorkerSecret(
+    val name: String = "",
+    val type: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class WorkerSecretWrite(
+    val name: String,
+    val text: String,
+    val type: String = "secret_text"
+)
+
+/** A hostname bound directly to a Worker, as opposed to a route on a zone. */
+@JsonClass(generateAdapter = true)
+data class WorkerDomain(
+    val id: String = "",
+    val hostname: String = "",
+    val service: String? = null,
+    val environment: String? = null,
+    @Json(name = "zone_id") val zoneId: String? = null,
+    @Json(name = "zone_name") val zoneName: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class WorkerDomainWrite(
+    @Json(name = "zone_id") val zoneId: String,
+    val hostname: String,
+    val service: String,
+    val environment: String = "production"
+)
+
+/** One deployment of a Worker script - which version is live and how traffic is split. */
+@JsonClass(generateAdapter = true)
+data class WorkerDeployment(
+    val id: String = "",
+    val source: String? = null,
+    val strategy: String? = null,
+    @Json(name = "created_on") val createdOn: String? = null,
+    @Json(name = "author_email") val authorEmail: String? = null,
+    val annotations: Map<String, String>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class WorkerDeployments(
+    val deployments: List<WorkerDeployment> = emptyList()
+)
+
+/** A Pages project's custom domain and where its verification has got to. */
+@JsonClass(generateAdapter = true)
+data class PagesDomain(
+    val id: String = "",
+    val name: String = "",
+    val status: String? = null,
+    @Json(name = "verification_data") val verificationData: PagesDomainVerification? = null,
+    @Json(name = "created_on") val createdOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PagesDomainVerification(
+    val status: String? = null,
+    @Json(name = "error_message") val errorMessage: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PagesDomainCreate(val name: String)
+
+/** A Worker consuming a queue, with the batching settings that decide how it's called. */
+@JsonClass(generateAdapter = true)
+data class QueueConsumer(
+    @Json(name = "consumer_id") val consumerId: String? = null,
+    @Json(name = "script_name") val scriptName: String? = null,
+    val type: String? = null,
+    val settings: QueueConsumerSettings? = null,
+    @Json(name = "dead_letter_queue") val deadLetterQueue: String? = null,
+    @Json(name = "created_on") val createdOn: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class QueueConsumerSettings(
+    @Json(name = "batch_size") val batchSize: Int? = null,
+    @Json(name = "max_retries") val maxRetries: Int? = null,
+    @Json(name = "max_wait_time_ms") val maxWaitTimeMs: Int? = null,
+    @Json(name = "max_concurrency") val maxConcurrency: Int? = null
+)
+

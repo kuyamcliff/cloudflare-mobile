@@ -1332,4 +1332,132 @@ interface CloudflareApi {
         @Path("zoneId") zoneId: String,
         @Body settings: UrlNormalizationWrite
     ): Response<CfEnvelope<UrlNormalization>>
+
+    // ---- R2 bucket configuration (the control plane; objects need the S3 data plane) ----
+
+    @GET("accounts/{accountId}/r2/buckets/{bucketName}/cors")
+    suspend fun getR2Cors(
+        @Path("accountId") accountId: String,
+        @Path("bucketName") bucketName: String
+    ): Response<CfEnvelope<R2CorsRules>>
+
+    @DELETE("accounts/{accountId}/r2/buckets/{bucketName}/cors")
+    suspend fun deleteR2Cors(
+        @Path("accountId") accountId: String,
+        @Path("bucketName") bucketName: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    @GET("accounts/{accountId}/r2/buckets/{bucketName}/lifecycle")
+    suspend fun getR2Lifecycle(
+        @Path("accountId") accountId: String,
+        @Path("bucketName") bucketName: String
+    ): Response<CfEnvelope<R2LifecycleRules>>
+
+    @GET("accounts/{accountId}/r2/buckets/{bucketName}/domains/custom")
+    suspend fun listR2CustomDomains(
+        @Path("accountId") accountId: String,
+        @Path("bucketName") bucketName: String
+    ): Response<CfEnvelope<R2CustomDomains>>
+
+    @DELETE("accounts/{accountId}/r2/buckets/{bucketName}/domains/custom/{domain}")
+    suspend fun deleteR2CustomDomain(
+        @Path("accountId") accountId: String,
+        @Path("bucketName") bucketName: String,
+        @Path("domain") domain: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    @GET("accounts/{accountId}/r2/buckets/{bucketName}/domains/managed")
+    suspend fun getR2ManagedDomain(
+        @Path("accountId") accountId: String,
+        @Path("bucketName") bucketName: String
+    ): Response<CfEnvelope<R2ManagedDomain>>
+
+    /** Turning the r2.dev URL on makes every object in the bucket publicly readable. */
+    @PUT("accounts/{accountId}/r2/buckets/{bucketName}/domains/managed")
+    suspend fun updateR2ManagedDomain(
+        @Path("accountId") accountId: String,
+        @Path("bucketName") bucketName: String,
+        @Body settings: R2ManagedDomainWrite
+    ): Response<CfEnvelope<R2ManagedDomain>>
+
+    // ---- Worker secrets, custom domains, and deployments ----
+
+    /** Names and types only - Cloudflare never returns a secret's value. */
+    @GET("accounts/{accountId}/workers/scripts/{scriptName}/secrets")
+    suspend fun listWorkerSecrets(
+        @Path("accountId") accountId: String,
+        @Path("scriptName") scriptName: String
+    ): Response<CfEnvelope<List<WorkerSecret>>>
+
+    @PUT("accounts/{accountId}/workers/scripts/{scriptName}/secrets")
+    suspend fun putWorkerSecret(
+        @Path("accountId") accountId: String,
+        @Path("scriptName") scriptName: String,
+        @Body secret: WorkerSecretWrite
+    ): Response<CfEnvelope<WorkerSecret>>
+
+    @DELETE("accounts/{accountId}/workers/scripts/{scriptName}/secrets/{secretName}")
+    suspend fun deleteWorkerSecret(
+        @Path("accountId") accountId: String,
+        @Path("scriptName") scriptName: String,
+        @Path("secretName") secretName: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    @GET("accounts/{accountId}/workers/domains")
+    suspend fun listWorkerDomains(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<WorkerDomain>>>
+
+    @PUT("accounts/{accountId}/workers/domains")
+    suspend fun attachWorkerDomain(
+        @Path("accountId") accountId: String,
+        @Body domain: WorkerDomainWrite
+    ): Response<CfEnvelope<WorkerDomain>>
+
+    @DELETE("accounts/{accountId}/workers/domains/{domainId}")
+    suspend fun detachWorkerDomain(
+        @Path("accountId") accountId: String,
+        @Path("domainId") domainId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    @GET("accounts/{accountId}/workers/scripts/{scriptName}/deployments")
+    suspend fun listWorkerDeployments(
+        @Path("accountId") accountId: String,
+        @Path("scriptName") scriptName: String
+    ): Response<CfEnvelope<WorkerDeployments>>
+
+    // ---- Pages custom domains and queue consumers ----
+
+    @GET("accounts/{accountId}/pages/projects/{projectName}/domains")
+    suspend fun listPagesDomains(
+        @Path("accountId") accountId: String,
+        @Path("projectName") projectName: String
+    ): Response<CfEnvelope<List<PagesDomain>>>
+
+    @POST("accounts/{accountId}/pages/projects/{projectName}/domains")
+    suspend fun addPagesDomain(
+        @Path("accountId") accountId: String,
+        @Path("projectName") projectName: String,
+        @Body domain: PagesDomainCreate
+    ): Response<CfEnvelope<PagesDomain>>
+
+    @DELETE("accounts/{accountId}/pages/projects/{projectName}/domains/{domainName}")
+    suspend fun deletePagesDomain(
+        @Path("accountId") accountId: String,
+        @Path("projectName") projectName: String,
+        @Path("domainName") domainName: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    @GET("accounts/{accountId}/queues/{queueId}/consumers")
+    suspend fun listQueueConsumers(
+        @Path("accountId") accountId: String,
+        @Path("queueId") queueId: String
+    ): Response<CfEnvelope<List<QueueConsumer>>>
+
+    @DELETE("accounts/{accountId}/queues/{queueId}/consumers/{consumerId}")
+    suspend fun deleteQueueConsumer(
+        @Path("accountId") accountId: String,
+        @Path("queueId") queueId: String,
+        @Path("consumerId") consumerId: String
+    ): Response<CfEnvelope<Map<String, String>>>
 }

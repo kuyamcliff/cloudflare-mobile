@@ -2,7 +2,12 @@ package dev.cfmobile.app.data.repository
 
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
+import dev.cfmobile.app.data.remote.dto.WorkerDeployment
+import dev.cfmobile.app.data.remote.dto.WorkerDomain
+import dev.cfmobile.app.data.remote.dto.WorkerDomainWrite
 import dev.cfmobile.app.data.remote.dto.WorkerRoute
+import dev.cfmobile.app.data.remote.dto.WorkerSecret
+import dev.cfmobile.app.data.remote.dto.WorkerSecretWrite
 import dev.cfmobile.app.data.remote.dto.WorkerRouteWrite
 import dev.cfmobile.app.data.remote.dto.WorkerSchedule
 import dev.cfmobile.app.data.remote.dto.WorkerScript
@@ -56,4 +61,41 @@ class WorkersRepository(private val api: CloudflareApi) {
 
     suspend fun deleteRoute(zoneId: String, routeId: String): ApiResult<Unit> =
         safeApiCallUnit { api.deleteWorkerRoute(zoneId, routeId) }
+
+    /** Names and types only: Cloudflare never returns a secret's value, and this app never
+     *  asks for one back. */
+    suspend fun listSecrets(accountId: String, scriptName: String): ApiResult<List<WorkerSecret>> =
+        safeApiCall { api.listWorkerSecrets(accountId, scriptName) }
+
+    suspend fun putSecret(accountId: String, scriptName: String, name: String, value: String): ApiResult<WorkerSecret> =
+        safeApiCall { api.putWorkerSecret(accountId, scriptName, WorkerSecretWrite(name = name, text = value)) }
+
+    suspend fun deleteSecret(accountId: String, scriptName: String, secretName: String): ApiResult<Unit> =
+        safeApiCallUnit { api.deleteWorkerSecret(accountId, scriptName, secretName) }
+
+    /** A custom domain binds a hostname straight to a Worker, without a route on the zone. */
+    suspend fun listDomains(accountId: String): ApiResult<List<WorkerDomain>> =
+        safeApiCall { api.listWorkerDomains(accountId) }
+
+    suspend fun attachDomain(
+        accountId: String,
+        zoneId: String,
+        hostname: String,
+        service: String
+    ): ApiResult<WorkerDomain> =
+        safeApiCall {
+            api.attachWorkerDomain(
+                accountId,
+                WorkerDomainWrite(zoneId = zoneId, hostname = hostname, service = service)
+            )
+        }
+
+    suspend fun detachDomain(accountId: String, domainId: String): ApiResult<Unit> =
+        safeApiCallUnit { api.detachWorkerDomain(accountId, domainId) }
+
+    suspend fun listDeployments(accountId: String, scriptName: String): ApiResult<List<WorkerDeployment>> =
+        when (val result = safeApiCall { api.listWorkerDeployments(accountId, scriptName) }) {
+            is ApiResult.Success -> ApiResult.Success(result.data.deployments)
+            is ApiResult.Failure -> result
+        }
 }

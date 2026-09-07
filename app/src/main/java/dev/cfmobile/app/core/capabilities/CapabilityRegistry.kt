@@ -444,7 +444,7 @@ object CapabilityRegistry {
             roadmapPhase = RoadmapPhase.P1,
             destructiveRisk = DestructiveRisk.HIGH,
             accountRoute = { accountId -> Routes.workers(accountId) },
-            migrationHint = "List, inspect (source, cron triggers), and delete. Editing or deploying script code needs an editor and bundler that don't belong on mobile, so that isn't implemented; bindings, secrets, versions, and tail logs aren't covered either. A module Worker's source is shown as the multipart parts Cloudflare returns. Not verified against a live API call."
+            migrationHint = "List, inspect (source, cron triggers, recent deployments), delete, and manage secrets - which are write-only in both directions: Cloudflare returns names only, and this app never asks for a value back or stores one. Editing or deploying script code needs an editor and bundler that don't belong on mobile; bindings, version rollback, and tail logs aren't covered. A module Worker's source is shown as the multipart parts Cloudflare returns. Not verified against a live API call."
         ),
         Capability(
             id = "worker_routes",
@@ -459,6 +459,18 @@ object CapabilityRegistry {
             migrationHint = "Create, edit, and delete routes that bind a URL pattern on this zone to a Worker. Routes attached to a Worker from the account side (the newer per-script routes API) and custom domains aren't covered. Not verified against a live API call."
         ),
         Capability(
+            id = "worker_domains",
+            product = "Develop",
+            displayName = "Worker Domains",
+            description = "Hostnames bound directly to a Worker",
+            scope = CapabilityScope.ACCOUNT,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.HIGH,
+            accountRoute = { accountId -> Routes.workerDomains(accountId) },
+            migrationHint = "Lists, attaches, and detaches the hostnames bound straight to a Worker, as opposed to routes on a zone. The form picks the zone and the Worker by name rather than asking for ids. Environments other than production aren't selectable. Not verified against a live API call."
+        ),
+        Capability(
             id = "pages",
             product = "Develop",
             displayName = "Pages",
@@ -467,7 +479,7 @@ object CapabilityRegistry {
             status = CapabilityStatus.IMPLEMENTED,
             roadmapPhase = RoadmapPhase.P1,
             accountRoute = { accountId -> Routes.pages(accountId) },
-            migrationHint = "List projects, view deployment history, redeploy the production branch, and retry a failed deployment. Editing project or build configuration, uploading assets directly, and managing custom domains aren't implemented. Not verified against a live API call."
+            migrationHint = "List projects, view deployment history, redeploy the production branch, retry a failed deployment, and add or remove custom domains - Cloudflare verifies a new domain asynchronously, so it shows as pending rather than live. Editing project or build configuration and uploading assets directly aren't implemented. Not verified against a live API call."
         ),
         Capability(
             id = "r2",
@@ -479,7 +491,7 @@ object CapabilityRegistry {
             roadmapPhase = RoadmapPhase.P1,
             destructiveRisk = DestructiveRisk.HIGH,
             accountRoute = { accountId -> Routes.r2(accountId) },
-            migrationHint = "Bucket management only (create/list/delete) - browsing or uploading objects inside a bucket isn't implemented, that's a separate file-browser-sized surface. Not verified against a live API call."
+            migrationHint = "Buckets, plus each bucket's public access, custom domains, CORS policy, and lifecycle rules. Browsing or uploading objects is genuinely out of reach: R2's data plane is the S3-compatible API, which needs its own access key pair rather than this app's Cloudflare token. CORS and lifecycle are read-only apart from removing the CORS policy outright, since editing either replaces the whole document. Connecting a new custom domain is left to the dashboard, which walks through DNS and certificates. Not verified against a live API call."
         ),
         Capability(
             id = "kv",
@@ -515,7 +527,7 @@ object CapabilityRegistry {
             roadmapPhase = RoadmapPhase.P1,
             destructiveRisk = DestructiveRisk.HIGH,
             accountRoute = { accountId -> Routes.queues(accountId) },
-            migrationHint = "Queue management only (create/list/delete) - producing and consuming messages is a Worker's job, so there's no message browser. Not verified against a live API call."
+            migrationHint = "Queues plus the consumers pulling from each one, with the batching settings that decide how they're called. Attaching a consumer is part of that Worker's own configuration and isn't something this app can write, so the sheet lists and detaches only. Sending or previewing messages isn't implemented. Not verified against a live API call."
         ),
         Capability(
             id = "access",

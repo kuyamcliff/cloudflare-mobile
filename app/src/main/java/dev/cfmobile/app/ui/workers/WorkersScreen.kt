@@ -36,7 +36,7 @@ import dev.cfmobile.app.ui.common.CfListScreen
 import dev.cfmobile.app.ui.common.ReadOnlyListRow
 
 @Composable
-fun WorkersScreen(viewModel: WorkersViewModel, onBack: () -> Unit) {
+fun WorkersScreen(viewModel: WorkersViewModel, onBack: () -> Unit, onOpenSecrets: (String) -> Unit) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     CfListScreen(
@@ -64,7 +64,8 @@ fun WorkersScreen(viewModel: WorkersViewModel, onBack: () -> Unit) {
             detail = detail,
             isDeleting = uiState.deletingId == detail.script.id,
             onDismiss = viewModel::closeDetail,
-            onDelete = { viewModel.delete(detail.script) }
+            onDelete = { viewModel.delete(detail.script) },
+            onOpenSecrets = { onOpenSecrets(detail.script.id) }
         )
     }
 }
@@ -75,7 +76,8 @@ private fun WorkerScriptDetailSheet(
     detail: WorkerDetailState,
     isDeleting: Boolean,
     onDismiss: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onOpenSecrets: () -> Unit
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
     val script = detail.script
@@ -101,8 +103,10 @@ private fun WorkerScriptDetailSheet(
                 }
             } else {
                 CronTriggers(detail)
+                Deployments(detail)
                 WorkerSource(detail)
             }
+            TextButton(onClick = onOpenSecrets) { Text("Manage secrets") }
 
             Button(
                 onClick = { confirmDelete = true },
@@ -126,6 +130,16 @@ private fun WorkerScriptDetailSheet(
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } }
         )
     }
+}
+
+@Composable
+private fun Deployments(detail: WorkerDetailState) {
+    if (detail.deployments.isEmpty()) {
+        DetailLine("Deployments", "None reported")
+        return
+    }
+    // The five most recent, which is as much history as a sheet can carry usefully.
+    DetailLine("Recent deployments", detail.deployments.joinToString("\n") { deploymentSummary(it) })
 }
 
 @Composable

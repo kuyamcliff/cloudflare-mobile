@@ -23,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -39,8 +40,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.cfmobile.app.data.remote.dto.PagesDeployment
+import dev.cfmobile.app.data.remote.dto.PagesDomain
 import dev.cfmobile.app.data.remote.dto.PagesProject
 import dev.cfmobile.app.ui.common.EmptyState
+import dev.cfmobile.app.ui.common.FormActions
 import dev.cfmobile.app.ui.common.StateContent
 import dev.cfmobile.app.ui.common.UiState
 
@@ -75,6 +78,10 @@ fun PagesScreen(viewModel: PagesViewModel, onBack: () -> Unit) {
         DeploymentsSheet(
             projectName = projectName,
             deployments = uiState.deployments,
+            domains = uiState.domains,
+            domainForm = uiState.domainForm,
+            deletingDomain = uiState.deletingDomain,
+            viewModel = viewModel,
             isDeploying = uiState.deployingProject == projectName,
             deployError = uiState.deployError,
             deployMessage = uiState.deployMessage,
@@ -112,6 +119,10 @@ private fun PagesProjectRow(project: PagesProject, onClick: () -> Unit) {
 private fun DeploymentsSheet(
     projectName: String,
     deployments: UiState<List<PagesDeployment>>?,
+    domains: UiState<List<PagesDomain>>?,
+    domainForm: PagesDomainFormState?,
+    deletingDomain: String?,
+    viewModel: PagesViewModel,
     isDeploying: Boolean,
     deployError: String?,
     deployMessage: String?,
@@ -123,6 +134,8 @@ private fun DeploymentsSheet(
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(20.dp).heightIn(max = 480.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(projectName, style = MaterialTheme.typography.titleMedium, fontFamily = FontFamily.Monospace)
+            DomainsSection(domains, domainForm, deletingDomain, viewModel)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
             Text("Deployment history", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Button(onClick = { confirmDeploy = true }, enabled = !isDeploying) {
                 if (isDeploying) CircularProgressIndicator(Modifier.padding(end = 6.dp))
@@ -163,6 +176,77 @@ private fun DeploymentsSheet(
             projectName = projectName,
             onConfirm = onDeploy,
             onDismiss = { confirmDeploy = false }
+        )
+    }
+}
+
+/**
+ * The project's custom domains, above its deployment history. Cloudflare verifies a new one
+ * asynchronously, so a freshly added domain shows as pending rather than live.
+ */
+@Composable
+private fun DomainsSection(
+    domains: UiState<List<PagesDomain>>?,
+    domainForm: PagesDomainFormState?,
+    deletingDomain: String?,
+    viewModel: PagesViewModel
+) {
+    Text("Custom domains", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    when (domains) {
+        null, is UiState.Loading -> CircularProgressIndicator(Modifier.padding(8.dp))
+        is UiState.Error -> Text(
+            domains.message,
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodySmall
+        )
+        is UiState.Data -> Column(Modifier.fillMaxWidth()) {
+            if (domains.value.isEmpty()) {
+                Text(
+                    "No custom domains - the project is reachable on its pages.dev subdomain only.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                domains.value.forEach { domain ->
+                    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(domain.name, style = MaterialTheme.typography.bodyMedium, fontFamily = FontFamily.Monospace)
+                            Text(
+                                pagesDomainStatus(domain),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        if (deletingDomain == domain.name) {
+                            CircularProgressIndicator(Modifier.padding(4.dp))
+                        } else {
+                            TextButton(onClick = { viewModel.deleteDomain(domain) }) { Text("Remove") }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (domainForm == null) {
+        TextButton(onClick = viewModel::openDomainForm) { Text("Add a domain") }
+    } else {
+        OutlinedTextField(
+            value = domainForm.name,
+            onValueChange = { v -> viewModel.updateDomainForm { it.copy(name = v) } },
+            label = { Text("Domain") },
+            placeholder = { Text("www.example.com") },
+            singleLine = true,
+            textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
+            modifier = Modifier.fillMaxWidth()
+        )
+        domainForm.error?.let { error ->
+            Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+        }
+        FormActions(
+            isSaving = domainForm.isSaving,
+            onCancel = viewModel::closeDomainForm,
+            onSave = viewModel::saveDomain,
+            saveLabel = "Add"
         )
     }
 }

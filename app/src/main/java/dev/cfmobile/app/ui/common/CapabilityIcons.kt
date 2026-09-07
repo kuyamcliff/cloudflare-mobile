@@ -110,6 +110,7 @@ fun capabilityIcon(capability: Capability): ImageVector = when (capability.id) {
     "tunnels" -> Icons.Filled.Router
     "device_posture" -> Icons.Filled.Devices
     "worker_routes" -> Icons.AutoMirrored.Filled.AltRoute
+    "worker_domains" -> Icons.Filled.Language
     "certificates" -> Icons.Filled.VerifiedUser
     "legacy_firewall" -> Icons.Filled.Lock
     "client_certificates" -> Icons.Filled.Badge

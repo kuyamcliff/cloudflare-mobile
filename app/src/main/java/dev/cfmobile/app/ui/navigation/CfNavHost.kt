@@ -92,6 +92,10 @@ import dev.cfmobile.app.ui.zerotrust.GatewayListsScreen
 import dev.cfmobile.app.ui.zerotrust.GatewayListsViewModel
 import dev.cfmobile.app.ui.workerroutes.WorkerRoutesScreen
 import dev.cfmobile.app.ui.workerroutes.WorkerRoutesViewModel
+import dev.cfmobile.app.ui.workers.WorkerDomainsScreen
+import dev.cfmobile.app.ui.workers.WorkerDomainsViewModel
+import dev.cfmobile.app.ui.workers.WorkerSecretsScreen
+import dev.cfmobile.app.ui.workers.WorkerSecretsViewModel
 import dev.cfmobile.app.ui.workers.WorkersScreen
 import dev.cfmobile.app.ui.workers.WorkersViewModel
 import dev.cfmobile.app.ui.pages.PagesScreen
@@ -152,6 +156,8 @@ import dev.cfmobile.app.ui.billing.BillingScreen
 import dev.cfmobile.app.ui.billing.BillingViewModel
 import dev.cfmobile.app.ui.browserrendering.BrowserRenderingScreen
 import dev.cfmobile.app.ui.browserrendering.BrowserRenderingViewModel
+import dev.cfmobile.app.ui.r2.R2BucketScreen
+import dev.cfmobile.app.ui.r2.R2BucketViewModel
 import dev.cfmobile.app.ui.r2.R2Screen
 import dev.cfmobile.app.ui.r2.R2ViewModel
 import dev.cfmobile.app.ui.ratelimit.RateLimitScreen
@@ -277,7 +283,11 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
         ) { backStackEntry ->
             val accountId = backStackEntry.arguments?.getString("accountId").orEmpty()
             val vm = viewModel<R2ViewModel>(factory = factoryOf { R2ViewModel(accountId, container.r2Repository) })
-            R2Screen(vm, onBack = { navController.popBackStack() })
+            R2Screen(
+                vm,
+                onBack = { navController.popBackStack() },
+                onOpenBucket = { bucket -> navController.navigate(Routes.r2Bucket(accountId, bucket.name)) }
+            )
         }
 
         composable(
@@ -340,6 +350,43 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
             D1ConsoleScreen(databaseName = databaseName, viewModel = vm, onBack = { navController.popBackStack() })
         }
 
+        composable(
+            Routes.WORKER_SECRETS,
+            arguments = listOf(
+                navArgument("accountId") { type = NavType.StringType },
+                navArgument("scriptName") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val accountId = backStackEntry.arguments?.getString("accountId").orEmpty()
+            val scriptName = Routes.decodeArg(backStackEntry.arguments?.getString("scriptName").orEmpty())
+            val vm = viewModel<WorkerSecretsViewModel>(
+                factory = factoryOf { WorkerSecretsViewModel(accountId, scriptName, container.workersRepository) }
+            )
+            WorkerSecretsScreen(scriptName = scriptName, viewModel = vm, onBack = { navController.popBackStack() })
+        }
+
+        composable(
+            Routes.R2_BUCKET,
+            arguments = listOf(
+                navArgument("accountId") { type = NavType.StringType },
+                navArgument("bucketName") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val accountId = backStackEntry.arguments?.getString("accountId").orEmpty()
+            val bucketName = Routes.decodeArg(backStackEntry.arguments?.getString("bucketName").orEmpty())
+            val vm = viewModel<R2BucketViewModel>(
+                factory = factoryOf { R2BucketViewModel(accountId, bucketName, container.r2Repository) }
+            )
+            R2BucketScreen(bucketName = bucketName, viewModel = vm, onBack = { navController.popBackStack() })
+        }
+
+        accountScreen(Routes.WORKER_DOMAINS) { accountId ->
+            val vm = viewModel<WorkerDomainsViewModel>(
+                factory = factoryOf { WorkerDomainsViewModel(accountId, container.workersRepository, container.zonesRepository) }
+            )
+            WorkerDomainsScreen(vm, onBack = { navController.popBackStack() })
+        }
+
         accountScreen(Routes.API_TOKENS) {
             // User-scoped, not account-scoped: the token list belongs to whoever is signed in.
             val vm = viewModel<ApiTokensViewModel>(
@@ -396,7 +443,11 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
         ) { backStackEntry ->
             val accountId = backStackEntry.arguments?.getString("accountId").orEmpty()
             val vm = viewModel<WorkersViewModel>(factory = factoryOf { WorkersViewModel(accountId, container.workersRepository) })
-            WorkersScreen(vm, onBack = { navController.popBackStack() })
+            WorkersScreen(
+                vm,
+                onBack = { navController.popBackStack() },
+                onOpenSecrets = { scriptName -> navController.navigate(Routes.workerSecrets(accountId, scriptName)) }
+            )
         }
 
         composable(

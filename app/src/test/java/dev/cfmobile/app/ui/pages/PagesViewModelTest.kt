@@ -53,8 +53,9 @@ class PagesViewModelTest {
         val project = (loaded.projects as UiState.Data).value.single()
 
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[{"id":"dep1","environment":"production"}]}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}""")) // domains
         vm.selectProject(project)
-        val state = vm.uiState.first { it.deployments is UiState.Data }
+        val state = vm.uiState.first { it.deployments is UiState.Data && it.domains is UiState.Data }
 
         assertThat(vm.uiState.value.selectedProjectName).isEqualTo("my-site")
         assertThat((state.deployments as UiState.Data).value.map { it.id }).containsExactly("dep1")
@@ -67,8 +68,11 @@ class PagesViewModelTest {
         val loaded = vm.awaitLoaded()
         val project = (loaded.projects as UiState.Data).value.single()
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}""")) // domains
         vm.selectProject(project)
-        vm.uiState.first { it.deployments is UiState.Data }
+        // Await domains too: selecting a project now loads both, and starting a deploy while
+        // the second is in flight would race it for the next queued response.
+        vm.uiState.first { it.deployments is UiState.Data && it.domains is UiState.Data }
 
         vm.closeDeployments()
 
@@ -96,8 +100,11 @@ class PagesViewModelTest {
         val vm = viewModel()
         val project = (vm.awaitLoaded().projects as UiState.Data).value.single()
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}""")) // domains
         vm.selectProject(project)
-        vm.uiState.first { it.deployments is UiState.Data }
+        // Await domains too: selecting a project now loads both, and starting a deploy while
+        // the second is in flight would race it for the next queued response.
+        vm.uiState.first { it.deployments is UiState.Data && it.domains is UiState.Data }
 
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"id":"new"}}"""))
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[{"id":"new","environment":"production"}]}"""))
@@ -117,8 +124,11 @@ class PagesViewModelTest {
         val vm = viewModel()
         val project = (vm.awaitLoaded().projects as UiState.Data).value.single()
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[{"id":"old"}]}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}""")) // domains
         vm.selectProject(project)
-        vm.uiState.first { it.deployments is UiState.Data }
+        // Await domains too: selecting a project now loads both, and starting a deploy while
+        // the second is in flight would race it for the next queued response.
+        vm.uiState.first { it.deployments is UiState.Data && it.domains is UiState.Data }
 
         server.enqueue(
             MockResponse().setResponseCode(400)
@@ -139,8 +149,9 @@ class PagesViewModelTest {
         val vm = viewModel()
         val project = (vm.awaitLoaded().projects as UiState.Data).value.single()
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[{"id":"dep1"}]}"""))
+        server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":[]}""")) // domains
         vm.selectProject(project)
-        val loaded = vm.uiState.first { it.deployments is UiState.Data }
+        val loaded = vm.uiState.first { it.deployments is UiState.Data && it.domains is UiState.Data }
         val deployment = (loaded.deployments as UiState.Data).value.single()
 
         server.enqueue(MockResponse().setBody("""{"success":true,"errors":[],"result":{"id":"dep2"}}"""))
@@ -149,9 +160,9 @@ class PagesViewModelTest {
         vm.retry(deployment)
         vm.uiState.first { (it.deployments as? UiState.Data)?.value?.single()?.id == "dep2" }
 
-        server.takeRequest()
-        server.takeRequest()
-        assertThat(server.takeRequest().path)
+        // Found by method rather than by position: selecting a project fires two GETs now.
+        val requests = buildList { repeat(server.requestCount) { add(server.takeRequest()) } }
+        assertThat(requests.single { it.method == "POST" }.path)
             .isEqualTo("/accounts/acct1/pages/projects/my-site/deployments/dep1/retry")
     }
 

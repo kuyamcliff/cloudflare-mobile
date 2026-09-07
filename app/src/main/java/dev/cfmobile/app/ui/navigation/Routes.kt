@@ -19,6 +19,9 @@ object Routes {
     const val D1 = "account/{accountId}/d1"
     const val D1_CONSOLE = "account/{accountId}/d1/{databaseId}/{databaseName}/query"
     const val WORKERS = "account/{accountId}/workers"
+    const val WORKER_SECRETS = "account/{accountId}/workers/{scriptName}/secrets"
+    const val WORKER_DOMAINS = "account/{accountId}/workerdomains"
+    const val R2_BUCKET = "account/{accountId}/r2/{bucketName}"
     const val PAGES = "account/{accountId}/pages"
     const val ACCESS = "account/{accountId}/access"
     const val GATEWAY = "account/{accountId}/gateway"
@@ -103,6 +106,10 @@ object Routes {
     fun d1Console(accountId: String, databaseId: String, databaseName: String) =
         "account/$accountId/d1/$databaseId/${encode(databaseName)}/query"
     fun workers(accountId: String) = "account/$accountId/workers"
+    fun workerSecrets(accountId: String, scriptName: String) =
+        "account/$accountId/workers/${encode(scriptName)}/secrets"
+    fun workerDomains(accountId: String) = "account/$accountId/workerdomains"
+    fun r2Bucket(accountId: String, bucketName: String) = "account/$accountId/r2/${encode(bucketName)}"
     fun pages(accountId: String) = "account/$accountId/pages"
     fun access(accountId: String) = "account/$accountId/access"
     fun gateway(accountId: String) = "account/$accountId/gateway"

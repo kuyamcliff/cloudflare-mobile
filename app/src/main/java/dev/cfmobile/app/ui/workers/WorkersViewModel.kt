@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dev.cfmobile.app.core.errors.ErrorClassifier
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.extractMultipartContent
+import dev.cfmobile.app.data.remote.dto.WorkerDeployment
 import dev.cfmobile.app.data.remote.dto.WorkerSchedule
 import dev.cfmobile.app.data.remote.dto.WorkerScript
 import dev.cfmobile.app.data.repository.WorkersRepository
@@ -23,8 +24,16 @@ data class WorkerDetailState(
     val source: String? = null,
     val sourceError: String? = null,
     val schedules: List<WorkerSchedule> = emptyList(),
-    val schedulesError: String? = null
+    val schedulesError: String? = null,
+    val deployments: List<WorkerDeployment> = emptyList()
 )
+
+/** "wrangler · 2026-01-02", from whatever the deployment recorded. */
+fun deploymentSummary(deployment: WorkerDeployment): String = listOfNotNull(
+    deployment.source,
+    deployment.authorEmail,
+    deployment.createdOn
+).joinToString(" · ").ifBlank { deployment.id }
 
 data class WorkersUiState(
     val scripts: UiState<List<WorkerScript>> = UiState.Loading,
@@ -72,8 +81,10 @@ class WorkersViewModel(
         viewModelScope.launch {
             val sourceResult = repository.getScriptSource(accountId, script.id)
             val schedulesResult = repository.getSchedules(accountId, script.id)
+            val deploymentsResult = repository.listDeployments(accountId, script.id)
             val source = (sourceResult as? ApiResult.Success<String>)?.data
             val schedules = (schedulesResult as? ApiResult.Success<List<WorkerSchedule>>)?.data
+            val deployments = (deploymentsResult as? ApiResult.Success<List<WorkerDeployment>>)?.data
             _uiState.update { state ->
                 // A second script may have been opened while these were in flight; that sheet
                 // owns the state now.
@@ -85,7 +96,10 @@ class WorkersViewModel(
                         source = source?.let(::extractMultipartContent),
                         sourceError = (sourceResult as? ApiResult.Failure)?.message,
                         schedules = schedules.orEmpty(),
-                        schedulesError = (schedulesResult as? ApiResult.Failure)?.message
+                        schedulesError = (schedulesResult as? ApiResult.Failure)?.message,
+                        // A deployments failure is silent: it's the least important of the
+                        // three and not worth a second error line in the sheet.
+                        deployments = deployments.orEmpty().take(5)
                     )
                 )
             }

@@ -16,12 +16,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.cfmobile.app.data.remote.dto.R2Bucket
 import dev.cfmobile.app.ui.common.CfListScreen
 import dev.cfmobile.app.ui.common.DeletableListRow
 import dev.cfmobile.app.ui.common.FormActions
 
 @Composable
-fun R2Screen(viewModel: R2ViewModel, onBack: () -> Unit) {
+fun R2Screen(viewModel: R2ViewModel, onBack: () -> Unit, onOpenBucket: (R2Bucket) -> Unit) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     CfListScreen(
@@ -46,7 +47,8 @@ fun R2Screen(viewModel: R2ViewModel, onBack: () -> Unit) {
             deleteContentDescription = "Delete bucket",
             confirmTitle = "Delete bucket?",
             confirmText = "\"${bucket.name}\" must be empty to delete. This can't be undone.",
-            onDelete = { viewModel.delete(bucket) }
+            onDelete = { viewModel.delete(bucket) },
+            onClick = { onOpenBucket(bucket) }
         )
     }
 
