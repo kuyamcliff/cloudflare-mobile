@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Api
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Code
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Extension
+import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Http
@@ -107,6 +109,9 @@ fun capabilityIcon(capability: Capability): ImageVector = when (capability.id) {
     "device_posture" -> Icons.Filled.Devices
     "worker_routes" -> Icons.AutoMirrored.Filled.AltRoute
     "certificates" -> Icons.Filled.VerifiedUser
+    "legacy_firewall" -> Icons.Filled.Lock
+    "client_certificates" -> Icons.Filled.Badge
+    "zone_ownership" -> Icons.Filled.Gavel
     "waiting_room" -> Icons.Filled.Groups
     "health_checks" -> Icons.Filled.MonitorHeart
     "speed" -> Icons.Filled.Speed

@@ -68,6 +68,12 @@ import dev.cfmobile.app.ui.account.RegistrarScreen
 import dev.cfmobile.app.ui.account.RegistrarViewModel
 import dev.cfmobile.app.ui.account.WebAnalyticsScreen
 import dev.cfmobile.app.ui.account.WebAnalyticsViewModel
+import dev.cfmobile.app.ui.zonesecurity.LegacyFirewallScreen
+import dev.cfmobile.app.ui.zonesecurity.LegacyFirewallViewModel
+import dev.cfmobile.app.ui.zonesecurity.MutualTlsScreen
+import dev.cfmobile.app.ui.zonesecurity.MutualTlsViewModel
+import dev.cfmobile.app.ui.zonesecurity.ZoneOwnershipScreen
+import dev.cfmobile.app.ui.zonesecurity.ZoneOwnershipViewModel
 import dev.cfmobile.app.ui.zoneproducts.CloudConnectorScreen
 import dev.cfmobile.app.ui.zoneproducts.CloudConnectorViewModel
 import dev.cfmobile.app.ui.zoneproducts.CustomPagesScreen
@@ -509,6 +515,29 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
                 )
                 ZoneSettingsGroupScreen(title, zoneName, vm, onBack = { navController.popBackStack() })
             }
+        }
+
+        composable(Routes.LEGACY_FIREWALL, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<LegacyFirewallViewModel>(factory = factoryOf { LegacyFirewallViewModel(zoneId, container.zoneFirewallLegacyRepository) })
+            LegacyFirewallScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.CLIENT_CERTIFICATES, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<MutualTlsViewModel>(factory = factoryOf { MutualTlsViewModel(zoneId, container.mutualTlsRepository) })
+            MutualTlsScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.ZONE_OWNERSHIP, arguments = zoneScopedArgs) { backStackEntry ->
+            val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
+            val zoneName = Routes.decodeZoneName(backStackEntry.arguments?.getString("zoneName").orEmpty())
+            val vm = viewModel<ZoneOwnershipViewModel>(
+                factory = factoryOf { ZoneOwnershipViewModel(zoneId, container.zoneOwnershipRepository, container.zonesRepository) }
+            )
+            ZoneOwnershipScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
         }
 
         composable(Routes.SNIPPETS, arguments = zoneScopedArgs) { backStackEntry ->

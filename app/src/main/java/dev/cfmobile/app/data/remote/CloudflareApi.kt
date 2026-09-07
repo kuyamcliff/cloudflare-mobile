@@ -1155,4 +1155,115 @@ interface CloudflareApi {
 
     @GET("zones/{zoneId}/settings/zaraz/config")
     suspend fun getZarazConfig(@Path("zoneId") zoneId: String): Response<CfEnvelope<ZarazConfig>>
+
+    // ---- Zone Lockdown and User Agent Blocking (the legacy firewall products) ----
+
+    @GET("zones/{zoneId}/firewall/lockdowns")
+    suspend fun listZoneLockdowns(@Path("zoneId") zoneId: String): Response<CfEnvelope<List<ZoneLockdown>>>
+
+    @POST("zones/{zoneId}/firewall/lockdowns")
+    suspend fun createZoneLockdown(
+        @Path("zoneId") zoneId: String,
+        @Body lockdown: ZoneLockdownWrite
+    ): Response<CfEnvelope<ZoneLockdown>>
+
+    @PUT("zones/{zoneId}/firewall/lockdowns/{lockdownId}")
+    suspend fun updateZoneLockdown(
+        @Path("zoneId") zoneId: String,
+        @Path("lockdownId") lockdownId: String,
+        @Body lockdown: ZoneLockdownWrite
+    ): Response<CfEnvelope<ZoneLockdown>>
+
+    @DELETE("zones/{zoneId}/firewall/lockdowns/{lockdownId}")
+    suspend fun deleteZoneLockdown(
+        @Path("zoneId") zoneId: String,
+        @Path("lockdownId") lockdownId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    @GET("zones/{zoneId}/firewall/ua_rules")
+    suspend fun listUserAgentRules(@Path("zoneId") zoneId: String): Response<CfEnvelope<List<UserAgentRule>>>
+
+    @POST("zones/{zoneId}/firewall/ua_rules")
+    suspend fun createUserAgentRule(
+        @Path("zoneId") zoneId: String,
+        @Body rule: UserAgentRuleWrite
+    ): Response<CfEnvelope<UserAgentRule>>
+
+    @PUT("zones/{zoneId}/firewall/ua_rules/{ruleId}")
+    suspend fun updateUserAgentRule(
+        @Path("zoneId") zoneId: String,
+        @Path("ruleId") ruleId: String,
+        @Body rule: UserAgentRuleWrite
+    ): Response<CfEnvelope<UserAgentRule>>
+
+    @DELETE("zones/{zoneId}/firewall/ua_rules/{ruleId}")
+    suspend fun deleteUserAgentRule(
+        @Path("zoneId") zoneId: String,
+        @Path("ruleId") ruleId: String
+    ): Response<CfEnvelope<Map<String, String>>>
+
+    // ---- mTLS, origin pulls, Total TLS ----
+
+    @GET("zones/{zoneId}/client_certificates")
+    suspend fun listClientCertificates(
+        @Path("zoneId") zoneId: String
+    ): Response<CfEnvelope<List<ClientCertificate>>>
+
+    /** Revokes a client certificate. Cloudflare keeps the record with a revoked status rather
+     *  than removing it. */
+    @DELETE("zones/{zoneId}/client_certificates/{certificateId}")
+    suspend fun revokeClientCertificate(
+        @Path("zoneId") zoneId: String,
+        @Path("certificateId") certificateId: String
+    ): Response<CfEnvelope<ClientCertificate>>
+
+    @GET("zones/{zoneId}/origin_tls_client_auth/settings")
+    suspend fun getOriginTlsClientAuth(
+        @Path("zoneId") zoneId: String
+    ): Response<CfEnvelope<OriginTlsClientAuthSettings>>
+
+    @PUT("zones/{zoneId}/origin_tls_client_auth/settings")
+    suspend fun updateOriginTlsClientAuth(
+        @Path("zoneId") zoneId: String,
+        @Body settings: OriginTlsClientAuthSettings
+    ): Response<CfEnvelope<OriginTlsClientAuthSettings>>
+
+    @GET("zones/{zoneId}/acm/total_tls")
+    suspend fun getTotalTls(@Path("zoneId") zoneId: String): Response<CfEnvelope<TotalTlsSettings>>
+
+    @POST("zones/{zoneId}/acm/total_tls")
+    suspend fun updateTotalTls(
+        @Path("zoneId") zoneId: String,
+        @Body settings: TotalTlsWrite
+    ): Response<CfEnvelope<TotalTlsSettings>>
+
+    // ---- Custom nameservers and zone holds ----
+
+    @GET("accounts/{accountId}/custom_ns")
+    suspend fun listAccountCustomNameservers(
+        @Path("accountId") accountId: String
+    ): Response<CfEnvelope<List<CustomNameserver>>>
+
+    @GET("zones/{zoneId}/custom_ns")
+    suspend fun getZoneCustomNameservers(
+        @Path("zoneId") zoneId: String
+    ): Response<CfEnvelope<ZoneCustomNameservers>>
+
+    @PUT("zones/{zoneId}/custom_ns")
+    suspend fun updateZoneCustomNameservers(
+        @Path("zoneId") zoneId: String,
+        @Body settings: ZoneCustomNameserversWrite
+    ): Response<CfEnvelope<ZoneCustomNameservers>>
+
+    @GET("zones/{zoneId}/hold")
+    suspend fun getZoneHold(@Path("zoneId") zoneId: String): Response<CfEnvelope<ZoneHold>>
+
+    @POST("zones/{zoneId}/hold")
+    suspend fun createZoneHold(
+        @Path("zoneId") zoneId: String,
+        @Query("include_subdomains") includeSubdomains: Boolean
+    ): Response<CfEnvelope<ZoneHold>>
+
+    @DELETE("zones/{zoneId}/hold")
+    suspend fun removeZoneHold(@Path("zoneId") zoneId: String): Response<CfEnvelope<ZoneHold>>
 }

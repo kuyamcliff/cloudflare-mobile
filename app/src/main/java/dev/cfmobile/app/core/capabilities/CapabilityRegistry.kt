@@ -49,6 +49,18 @@ object CapabilityRegistry {
             zoneRoute = { id, name -> Routes.firewall(id, name) }
         ),
         Capability(
+            id = "legacy_firewall",
+            product = "Security",
+            displayName = "Lockdown & User Agents",
+            description = "Zone Lockdown and User Agent Blocking",
+            scope = CapabilityScope.ZONE,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.HIGH,
+            zoneRoute = { zoneId, zoneName -> Routes.legacyFirewall(zoneId, zoneName) },
+            migrationHint = "Cloudflare's pre-Rulesets firewall products, both with full CRUD. A lockdown's source is read as an IP, a CIDR range, or a two-letter country code from the shape of what you type, matching how Cloudflare picks the target. A User Agent rule matches the header exactly - wildcards belong in a WAF custom rule, and the form says so rather than letting one silently match nothing. Not verified against a live API call."
+        ),
+        Capability(
             id = "waf.rulesets",
             product = "WAF",
             displayName = "WAF Custom Rules",
@@ -166,6 +178,30 @@ object CapabilityRegistry {
             destructiveRisk = DestructiveRisk.HIGH,
             zoneRoute = { id, name -> Routes.certificates(id, name) },
             migrationHint = "Edge certificate packs are read-only; custom hostnames (SSL for SaaS) can be added and removed; DNSSEC can be turned on and its DS record copied. Uploading a custom certificate, ordering advanced packs, and client certificates aren't implemented. Enabling DNSSEC only generates the DS record - your registrar still has to publish it. Not verified against a live API call."
+        ),
+        Capability(
+            id = "client_certificates",
+            product = "SSL/TLS",
+            displayName = "Client Certificates",
+            description = "mTLS certificates, origin pulls, and Total TLS",
+            scope = CapabilityScope.ZONE,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.HIGH,
+            zoneRoute = { zoneId, zoneName -> Routes.clientCertificates(zoneId, zoneName) },
+            migrationHint = "Lists and revokes the client certificates a zone accepts for mTLS, and toggles Authenticated Origin Pulls and Total TLS. Uploading a certificate isn't implemented: it means generating a CSR and holding a private key, which this app deliberately never does. Per-hostname origin pull certificates and Keyless SSL aren't covered. Not verified against a live API call."
+        ),
+        Capability(
+            id = "zone_ownership",
+            product = "Account",
+            displayName = "Zone Ownership",
+            description = "Zone hold and custom nameservers",
+            scope = CapabilityScope.ZONE,
+            status = CapabilityStatus.IMPLEMENTED,
+            roadmapPhase = RoadmapPhase.P2,
+            destructiveRisk = DestructiveRisk.HIGH,
+            zoneRoute = { zoneId, zoneName -> Routes.zoneOwnership(zoneId, zoneName) },
+            migrationHint = "Places or removes the hold that stops this domain being added to another Cloudflare account, and picks which account nameserver set the zone answers on. Removing a hold is confirmed, since that's what lets someone else claim the domain. Creating nameserver sets is an account-level operation and isn't implemented here. Not verified against a live API call."
         ),
         Capability(
             id = "waiting_room",

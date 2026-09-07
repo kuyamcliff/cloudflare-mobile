@@ -16,10 +16,13 @@ import dev.cfmobile.app.data.repository.BulkRedirectsRepository
 import dev.cfmobile.app.data.repository.CloudConnectorRepository
 import dev.cfmobile.app.data.repository.CustomPagesRepository
 import dev.cfmobile.app.data.repository.NotificationsRepository
+import dev.cfmobile.app.data.repository.MutualTlsRepository
 import dev.cfmobile.app.data.repository.RegistrarRepository
 import dev.cfmobile.app.data.repository.SnippetsRepository
 import dev.cfmobile.app.data.repository.WebAnalyticsRepository
 import dev.cfmobile.app.data.repository.ZarazRepository
+import dev.cfmobile.app.data.repository.ZoneFirewallLegacyRepository
+import dev.cfmobile.app.data.repository.ZoneOwnershipRepository
 import dev.cfmobile.app.data.repository.AuditLogsRepository
 import dev.cfmobile.app.data.repository.AuthRepository
 import dev.cfmobile.app.data.repository.D1Repository
@@ -129,4 +132,7 @@ class AppContainer(context: Context) {
     val customPagesRepository = CustomPagesRepository(api)
     val zarazRepository = ZarazRepository(api)
     val botManagementRepository = BotManagementRepository(api)
+    val zoneFirewallLegacyRepository = ZoneFirewallLegacyRepository(api)
+    val mutualTlsRepository = MutualTlsRepository(api)
+    val zoneOwnershipRepository = ZoneOwnershipRepository(api)
 }
