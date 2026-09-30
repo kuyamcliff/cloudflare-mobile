@@ -55,23 +55,44 @@ fun FullScreenLoading() {
     }
 }
 
-/** Renders Cloudflare's own error text (PRD §35.1: never a generic "Something went wrong")
- *  plus whichever recovery actions actually apply to this failure - a validation error gets
- *  no retry button, since retrying an invalid request just fails the same way again. */
+/**
+ * Answers what happened, what it means and what to do (spec 250), then shows Cloudflare's own
+ * error text and HTTP status under Details so nothing Cloudflare said is hidden. A validation
+ * error gets no retry button, since retrying an invalid request fails the same way again.
+ */
 @Composable
 fun FullScreenError(
     error: ClassifiedError,
     onRetry: () -> Unit,
     onReauthenticate: (() -> Unit)? = null
 ) {
+    var showDetails by remember { androidx.compose.runtime.mutableStateOf(false) }
     Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-                text = error.message,
+                text = dev.cfmobile.app.core.errors.ErrorClassifier.headline(error.type),
+                style = MaterialTheme.typography.titleMedium,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = dev.cfmobile.app.core.errors.ErrorClassifier.explanation(error.type),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.error
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            if (showDetails) {
+                Text(
+                    text = buildString {
+                        append(error.message)
+                        error.httpCode?.let { append("\nHTTP ").append(it) }
+                    },
+                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.error
+                )
+            } else {
+                androidx.compose.material3.TextButton(onClick = { showDetails = true }) { Text("Details") }
+            }
             if (RecoveryAction.RETRY in error.recoveryActions || RecoveryAction.REFRESH in error.recoveryActions) {
                 Button(onClick = onRetry) { Text("Retry") }
             }

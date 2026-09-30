@@ -12,7 +12,15 @@ import com.squareup.moshi.Types
 data class AccountMetadata(
     val id: String,
     val label: String,
-    val email: String? = null
+    val email: String? = null,
+    /** Cloudflare's token ID (not the secret), when verification returned one. */
+    val tokenId: String? = null,
+    /** First 12 hex chars of SHA-256(secret): identifies a token locally without revealing it
+     *  and is never used as a key (spec 108). */
+    val fingerprint: String? = null,
+    val expiresOn: String? = null,
+    val lastVerifiedAt: Long? = null,
+    val createdAt: Long? = null
 )
 
 /** What the UI is ever handed for an account - a [CredentialStore] token never reaches this
@@ -20,10 +28,14 @@ data class AccountMetadata(
 data class AccountSummary(
     val id: String,
     val label: String,
-    val email: String? = null
+    val email: String? = null,
+    val tokenId: String? = null,
+    val fingerprint: String? = null,
+    val expiresOn: String? = null,
+    val lastVerifiedAt: Long? = null
 )
 
-private fun AccountMetadata.toSummary() = AccountSummary(id, label, email)
+private fun AccountMetadata.toSummary() = AccountSummary(id, label, email, tokenId, fingerprint, expiresOn, lastVerifiedAt)
 
 class AccountMetadataStore(private val prefs: SharedPreferences) {
 
@@ -41,6 +53,20 @@ class AccountMetadataStore(private val prefs: SharedPreferences) {
 
     fun add(metadata: AccountMetadata) {
         saveAll(getAllMetadata() + metadata)
+    }
+
+    fun rename(id: String, label: String) {
+        saveAll(getAllMetadata().map { if (it.id == id) it.copy(label = label) else it })
+    }
+
+    fun setFingerprint(id: String, fingerprint: String) {
+        saveAll(getAllMetadata().map { if (it.id == id) it.copy(fingerprint = fingerprint) else it })
+    }
+
+    fun recordVerification(id: String, tokenId: String?, expiresOn: String?, at: Long) {
+        saveAll(getAllMetadata().map {
+            if (it.id == id) it.copy(tokenId = tokenId ?: it.tokenId, expiresOn = expiresOn, lastVerifiedAt = at) else it
+        })
     }
 
     fun remove(id: String) {
@@ -61,7 +87,9 @@ class AccountMetadataStore(private val prefs: SharedPreferences) {
         val raw = prefs.getString(KEY_ACCOUNTS, null) ?: return emptyList()
         return try {
             listAdapter.fromJson(raw) ?: emptyList()
-        } catch (e: Exception) {
+        } catch (e: java.io.IOException) {
+            emptyList()
+        } catch (e: com.squareup.moshi.JsonDataException) {
             emptyList()
         }
     }

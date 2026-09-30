@@ -17,6 +17,9 @@ interface ZoneDao {
     @Query("DELETE FROM zones WHERE accountId = :accountId")
     suspend fun clearForAccount(accountId: String)
 
+    @Query("DELETE FROM zones")
+    suspend fun clearAll()
+
     /** Replaces this account's entire cached zone list atomically, so a shorter result (a
      *  domain removed from the account) doesn't leave stale rows behind. */
     @Transaction

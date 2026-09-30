@@ -109,9 +109,12 @@ class AppContainer(context: Context) {
 
     val accountStore = AccountStore.create(appContext)
     val appLockState = AppLockState(AppLockPreferences.create(appContext))
+    val settings = dev.cfmobile.app.core.security.AppSettings.create(appContext)
+    val contextStore = dev.cfmobile.app.data.local.ContextStore.create(appContext).also { it.load(accountStore.getActiveId()) }
     val database = CfDatabase.create(appContext)
 
     val hosts = CloudflareHosts()
+    val connectivity = dev.cfmobile.app.core.net.ConnectivityMonitor(appContext)
     val networkStatus = NetworkStatus()
 
     /** Loaded once, off the main thread, from the schema-generated asset. */
@@ -156,6 +159,68 @@ class AppContainer(context: Context) {
         NetworkModule.BASE_URL
     )
     val rawApiClient = RawApiClient(httpClient, hosts)
+
+    val r2ObjectsRepository = dev.cfmobile.app.data.repository.R2ObjectsRepository(api)
+    val r2Credentials = dev.cfmobile.app.core.transfers.R2CredentialStore.create(appContext)
+
+    /** Separate client for R2's S3 endpoint: no Cloudflare token interceptor at all, and every
+     *  request is checked against the R2 host pattern inside [dev.cfmobile.app.core.transfers.R2S3Client]. */
+    val r2S3Client = dev.cfmobile.app.core.transfers.R2S3Client(
+        okhttp3.OkHttpClient.Builder()
+            .connectTimeout(20, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(120, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(120, java.util.concurrent.TimeUnit.SECONDS)
+            .followRedirects(false)
+            .build()
+    )
+    val transferRepository = dev.cfmobile.app.core.transfers.TransferRepository(appContext, database.transferDao(), r2Credentials)
+
+    val secureClipboard = dev.cfmobile.app.core.security.SecureClipboard(
+        appContext,
+        kotlinx.coroutines.CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
+        clearAfterMillis = { settings.state.value.clipboardClearSeconds * 1000L }
+    )
+
+    /** Removes everything this app stored for a profile: secret, context, capability cache,
+     *  request history and R2 S3 keys. Cloudflare itself is not affected (spec 340, 341). */
+    suspend fun forgetProfileData(profileId: String) {
+        contextStore.forgetProfile(profileId)
+        capabilityRepository.forgetProfile(profileId)
+        r2Credentials.removeProfile(profileId)
+        database.requestHistoryDao().clear(profileId)
+    }
+
+    val localDataActions = object : dev.cfmobile.app.ui.settings.LocalDataActions {
+        override suspend fun forgetProfile(profileId: String) = forgetProfileData(profileId)
+        override suspend fun clearCache() {
+            database.zoneDao().clearAll()
+            appContext.getSharedPreferences("cf_capabilities", Context.MODE_PRIVATE).edit().clear().apply()
+            appContext.cacheDir.listFiles()?.forEach { it.deleteRecursively() }
+        }
+        override suspend fun clearHistory() = database.requestHistoryDao().clearAll()
+        override suspend fun clearSavedRequests() = database.savedRequestDao().clearAll()
+        override suspend fun clearEverything() {
+            androidx.work.WorkManager.getInstance(appContext).cancelAllWorkByTag(dev.cfmobile.app.core.transfers.TransferRepository.TAG)
+            kotlinx.coroutines.withContext(Dispatchers.IO) { database.clearAllTables() }
+            clearCache()
+            r2Credentials.clearAll()
+            contextStore.clearAll()
+            settings.update { dev.cfmobile.app.core.security.AppSettingsSnapshot() }
+        }
+    }
+
+    fun startProfileTracking() {
+        appScope.launch {
+            accountStore.activeIdFlow.collect { id ->
+                contextStore.load(id)
+                capabilityRepository.onProfileActivated()
+            }
+        }
+        appScope.launch {
+            val days = settings.state.value.historyRetentionDays
+            database.requestHistoryDao().deleteOlderThan(System.currentTimeMillis() - days * 86_400_000L)
+        }
+    }
 
     val capabilityRepository: CapabilityRepository by lazy {
         CapabilityRepository(

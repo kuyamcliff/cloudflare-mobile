@@ -8,6 +8,9 @@ package dev.cfmobile.app.core.errors
 enum class CfErrorType {
     UNAUTHORIZED,
     FORBIDDEN,
+    /** A 403 whose Cloudflare message says the plan or entitlement is the reason, so telling
+     *  the user to change token permissions would be wrong (spec 79, 103). */
+    PLAN_RESTRICTED,
     NOT_FOUND,
     VALIDATION,
     RATE_LIMITED,

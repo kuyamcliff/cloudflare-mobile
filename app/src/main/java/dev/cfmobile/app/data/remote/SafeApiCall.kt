@@ -101,3 +101,48 @@ suspend fun <T> safeGraphQlCall(block: suspend () -> Response<GraphQlResponse<T>
         ApiResult.Failure(e.message?.let { "Unexpected error: $it" } ?: "Unexpected error")
     }
 }
+
+/** A page of results plus Cloudflare's pagination metadata. */
+data class Paged<T>(val items: List<T>, val info: dev.cfmobile.app.data.remote.dto.CfResultInfo?)
+
+suspend fun <T> safeApiCallPaged(block: suspend () -> Response<CfEnvelope<List<T>>>): ApiResult<Paged<T>> {
+    return try {
+        val response = block()
+        val envelope = response.body()
+        if (response.isSuccessful && envelope != null && envelope.success) {
+            ApiResult.Success(Paged(envelope.result.orEmpty(), envelope.resultInfo))
+        } else {
+            when (val r = response.toApiResult()) {
+                is ApiResult.Failure -> r
+                is ApiResult.Success -> ApiResult.Success(Paged(r.data, envelope?.resultInfo))
+            }
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: IOException) {
+        ApiResult.Failure(e.message?.let { "Network error: $it" } ?: "Unable to reach Cloudflare")
+    }
+}
+
+/**
+ * Walks page-numbered results up to [maxPages] (spec 157: never fetch thousands of pages
+ * without a reason). A failure on page one fails the call; a failure later returns what was
+ * already fetched, since partial data beats none for pickers and lists.
+ */
+suspend fun <T> fetchAllPages(maxPages: Int, fetch: suspend (page: Int) -> ApiResult<Paged<T>>): ApiResult<List<T>> {
+    val out = ArrayList<T>()
+    var page = 1
+    while (page <= maxPages) {
+        when (val r = fetch(page)) {
+            is ApiResult.Failure -> return if (page == 1) r else ApiResult.Success(out)
+            is ApiResult.Success -> {
+                out += r.data.items
+                val info = r.data.info
+                val totalPages = info?.totalPages ?: 1
+                if (r.data.items.isEmpty() || page >= totalPages) return ApiResult.Success(out)
+            }
+        }
+        page++
+    }
+    return ApiResult.Success(out)
+}

@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">CF Mobile</string>
+    <string name="app_name">Cloudflare Control</string>
+    <string name="shortcut_search_short">Search</string>
+    <string name="shortcut_search_long">Search zones and APIs</string>
+    <string name="shortcut_explorer_short">API Explorer</string>
+    <string name="shortcut_explorer_long">Open the API Explorer</string>
+    <string name="shortcut_transfers_short">Transfers</string>
+    <string name="shortcut_transfers_long">R2 uploads and downloads</string>
 </resources>

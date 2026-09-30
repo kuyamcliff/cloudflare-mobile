@@ -4,6 +4,7 @@ import dev.cfmobile.app.data.local.AccountStore
 import dev.cfmobile.app.data.local.AccountSummary
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
+import dev.cfmobile.app.data.remote.dto.TokenVerifyResult
 import dev.cfmobile.app.data.remote.safeApiCall
 
 /**
@@ -26,7 +27,12 @@ class AuthRepository(
 
         return when (val result = verify(trimmed)) {
             is ApiResult.Success -> {
-                val saved = accountStore.add(label = label.ifBlank { "Cloudflare account" }, token = trimmed)
+                val saved = accountStore.add(
+                    label = label.ifBlank { "Cloudflare account" },
+                    token = trimmed,
+                    tokenId = result.data?.id,
+                    expiresOn = result.data?.expiresOn
+                )
                 ApiResult.Success(saved)
             }
             is ApiResult.Failure -> result
@@ -42,19 +48,33 @@ class AuthRepository(
      * lightweight `/zones` call (which is what this app needs the token for anyway) is the
      * only way to tell a genuinely bad token from a valid account-owned one.
      */
-    private suspend fun verify(token: String): ApiResult<Unit> {
+    private suspend fun verify(token: String): ApiResult<TokenVerifyResult?> {
         val header = "Bearer $token"
 
         val userTokenCheck = safeApiCall { verifierApi.verifyTokenWithAuth(header) }
-        if (userTokenCheck is ApiResult.Success) return ApiResult.Success(Unit)
+        if (userTokenCheck is ApiResult.Success) {
+            val status = userTokenCheck.data.status
+            if (status.isNotBlank() && !status.equals("active", ignoreCase = true)) {
+                return ApiResult.Failure("Cloudflare reports this token is $status.", 401)
+            }
+            return ApiResult.Success(userTokenCheck.data)
+        }
 
         val zoneAccessCheck = safeApiCall { verifierApi.listZonesWithAuth(header) }
-        if (zoneAccessCheck is ApiResult.Success) return ApiResult.Success(Unit)
+        if (zoneAccessCheck is ApiResult.Success) return ApiResult.Success(null)
 
         return userTokenCheck as ApiResult.Failure
     }
 
     fun switchTo(id: String) = accountStore.setActive(id)
+
+    /** After rolling the active profile's own token, the old secret is dead; keep the new one. */
+    fun replaceActiveSecret(newSecret: String) {
+        val id = accountStore.getActiveId() ?: return
+        accountStore.replaceSecret(id, newSecret.trim())
+    }
+
+    fun renameProfile(id: String, label: String) = accountStore.rename(id, label.trim().ifBlank { "Cloudflare account" })
 
     fun removeAccount(id: String) = accountStore.remove(id)
 
