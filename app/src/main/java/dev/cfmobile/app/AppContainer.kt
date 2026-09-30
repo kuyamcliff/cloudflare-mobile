@@ -213,6 +213,7 @@ class AppContainer(context: Context) {
         appScope.launch {
             accountStore.activeIdFlow.collect { id ->
                 contextStore.load(id)
+                networkStatus.resetForProfile()
                 capabilityRepository.onProfileActivated()
             }
         }

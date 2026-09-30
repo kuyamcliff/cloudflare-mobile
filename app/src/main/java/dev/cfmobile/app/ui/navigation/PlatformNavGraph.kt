@@ -71,6 +71,7 @@ fun MainShellRoute(container: AppContainer, navController: NavHostController) {
         onAddProfile = { navController.navigate(Routes.LOGIN) },
         onSearch = { navController.navigate(Routes.SEARCH) },
         onRefresh = { home.refresh(); scope.launch { container.capabilityRepository.discover() } },
+        onReconnect = { navController.navigate(Routes.LOGIN) },
         home = { HomeContent(home) { navController.navigate(it) } },
         resources = { ResourcesContent(resources) { navController.navigate(it) } },
         activity = {

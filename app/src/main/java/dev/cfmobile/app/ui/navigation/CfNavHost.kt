@@ -214,7 +214,7 @@ fun CfNavHost(
     NavHost(navController = navController, startDestination = startDestination) {
 
         composable(Routes.LOGIN) {
-            val vm = viewModel<LoginViewModel>(factory = factoryOf { LoginViewModel(container.authRepository) })
+            val vm = viewModel<LoginViewModel>(factory = factoryOf { LoginViewModel(container.authRepository) { container.capabilityRepository.discover() } })
             LoginScreen(vm, onLoggedIn = { navController.navigateToDashboardClearingBackStack() })
         }
 

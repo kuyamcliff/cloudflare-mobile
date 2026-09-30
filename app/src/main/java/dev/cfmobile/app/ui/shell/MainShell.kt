@@ -63,6 +63,7 @@ fun MainShell(
     onAddProfile: () -> Unit,
     onSearch: () -> Unit,
     onRefresh: () -> Unit,
+    onReconnect: () -> Unit,
     home: @Composable () -> Unit,
     resources: @Composable () -> Unit,
     activity: @Composable () -> Unit,
@@ -104,12 +105,24 @@ fun MainShell(
             }
         }
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
+        Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
+            if (snapshot.tokenRejected) {
+                Column(Modifier.padding(16.dp)) {
+                    Text("Cloudflare rejected this token.", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.error)
+                    Text(
+                        "It may have been revoked, expired, or otherwise invalid. It is still saved on this device until you remove it.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    androidx.compose.material3.TextButton(onClick = onReconnect) { Text("Connect another token") }
+                }
+            }
+            Box(Modifier.weight(1f)) {
             when (tab) {
                 ShellTab.HOME -> home()
                 ShellTab.RESOURCES -> resources()
                 ShellTab.ACTIVITY -> activity()
                 ShellTab.MORE -> more()
+            }
             }
         }
     }
