@@ -19,6 +19,18 @@ class EndpointRegistryTest {
         }
     }
 
+    @Test fun `asset name survives Android asset packaging`() {
+        // AAPT strips a ".gz" suffix and stores the file decompressed under the shorter name,
+        // so a ".gz" asset would not be found at runtime in the packaged APK.
+        assertThat(EndpointRegistry.ASSET_NAME).doesNotContain(".gz")
+    }
+
+    @Test fun `shipped registry contains no credential-shaped examples`() {
+        val text = listOf("src/main/assets", "app/src/main/assets").map { File(it, EndpointRegistry.ASSET_NAME) }.first { it.exists() }
+            .inputStream().use { java.util.zip.GZIPInputStream(it).readBytes().toString(Charsets.UTF_8) }
+        assertThat(text).doesNotContainMatch("PRIVATE KEY-----\\\\n[A-Za-z0-9+/]{20}")
+    }
+
     @Test fun `registry is populated with metadata`() {
         assertThat(registry.endpoints.size).isGreaterThan(3000)
         assertThat(registry.schemaRevision).isNotEmpty()

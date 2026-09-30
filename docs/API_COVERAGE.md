@@ -6,8 +6,8 @@ Do not edit by hand.
 - Schema revision: `3d55f05897c73dcf44664096c73cdd95b81da061`
 - Generated: 2026-09-30T00:47:06Z
 - Endpoints in schema: 3627
-- Native UI: 321
-- Generic API (API Explorer and All Cloudflare APIs): 3306
+- Native UI: 337
+- Generic API (API Explorer and All Cloudflare APIs): 3290
 - Marked deprecated by Cloudflare: 334
 
 Every endpoint in the schema is reachable from the in-app API Explorer, constrained by
@@ -16,7 +16,9 @@ the active token. "Native" means a dedicated screen calls that exact method and 
 | Product group | Endpoints | Native | Coverage |
 | --- | ---: | ---: | --- |
 | R2 Bucket | 33 | 10 | Native + Generic API (30%) |
+| Account Owned API Tokens | 8 | 8 | Native (100%) |
 | Client-Side Security | 13 | 8 | Native + Generic API (62%) |
+| User API Tokens | 8 | 8 | Native (100%) |
 | DNS Records for a Zone | 14 | 7 | Native + Generic API (50%) |
 | Workers KV Namespace | 14 | 7 | Native + Generic API (50%) |
 | Waiting Room | 24 | 6 | Native + Generic API (25%) |
@@ -26,6 +28,7 @@ the active token. "Native" means a dedicated screen calls that exact method and 
 | Email Routing routing rules | 9 | 5 | Native + Generic API (56%) |
 | IP Address Management Address Maps | 11 | 5 | Native + Generic API (45%) |
 | Queue | 28 | 5 | Native + Generic API (18%) |
+| R2 Object | 5 | 5 | Native (100%) |
 | Secrets Store | 12 | 5 | Native + Generic API (42%) |
 | Zone Snippets | 8 | 5 | Native + Generic API (62%) |
 | Cloudflare Images | 11 | 4 | Native + Generic API (36%) |
@@ -69,7 +72,6 @@ the active token. "Native" means a dedicated screen calls that exact method and 
 | Stream Videos | 10 | 3 | Native + Generic API (30%) |
 | Tunnel Routing | 9 | 3 | Native + Generic API (33%) |
 | Tunnel Virtual Network | 5 | 3 | Native + Generic API (60%) |
-| User API Tokens | 8 | 3 | Native + Generic API (38%) |
 | Vectorize | 14 | 3 | Native + Generic API (21%) |
 | Web Analytics | 15 | 3 | Native + Generic API (20%) |
 | Web3 Hostname | 12 | 3 | Native + Generic API (25%) |
@@ -79,7 +81,6 @@ the active token. "Native" means a dedicated screen calls that exact method and 
 | Zone Holds | 5 | 3 | Native + Generic API (60%) |
 | Access Bookmark applications (Deprecated) | 5 | 2 | Native + Generic API (40%) |
 | Access mTLS authentication | 7 | 2 | Native + Generic API (29%) |
-| Account Owned API Tokens | 8 | 2 | Native + Generic API (25%) |
 | Account-Level Custom Nameservers Usage for a Zone | 2 | 2 | Native (100%) |
 | API Shield Client Certificates for a Zone | 7 | 2 | Native + Generic API (29%) |
 | Argo Smart Routing | 2 | 2 | Native (100%) |
@@ -424,7 +425,6 @@ the active token. "Native" means a dedicated screen calls that exact method and 
 | Query run | 1 | 0 | Generic API (0%) |
 | R2 Account | 1 | 0 | Generic API (0%) |
 | R2 Catalog Management | 5 | 0 | Generic API (0%) |
-| R2 Object | 5 | 0 | Generic API (0%) |
 | R2 Super Slurper | 12 | 0 | Generic API (0%) |
 | Radar Agent Readiness | 1 | 0 | Generic API (0%) |
 | Radar AI Bots | 5 | 0 | Generic API (0%) |

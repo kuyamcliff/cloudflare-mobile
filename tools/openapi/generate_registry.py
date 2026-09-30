@@ -25,7 +25,9 @@ import sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 API_KT = os.path.join(ROOT, "app/src/main/java/dev/cfmobile/app/data/remote/CloudflareApi.kt")
-ASSET = os.path.join(ROOT, "app/src/main/assets/cf_endpoints.json.gz")
+# Deliberately not ".gz": Android's asset packaging strips that suffix and stores the file
+# decompressed under a different name, which would break the runtime lookup.
+ASSET = os.path.join(ROOT, "app/src/main/assets/cf_endpoints.bin")
 COVERAGE_MD = os.path.join(ROOT, "docs/API_COVERAGE.md")
 COVERAGE_JSON = os.path.join(ROOT, "build/api-coverage.json")
 
@@ -150,6 +152,21 @@ def param_entry(res, p):
     return entry
 
 
+PEM = re.compile(r"-----BEGIN ([A-Z ]*)PRIVATE KEY-----.*?(-----END [A-Z ]*PRIVATE KEY-----|$)", re.S)
+
+
+def scrub(value):
+    """Replaces example private keys in Cloudflare's docs with a placeholder, so the shipped
+    registry never contains anything shaped like a credential."""
+    if isinstance(value, str):
+        return PEM.sub(lambda m: f"-----BEGIN {m.group(1)}PRIVATE KEY-----\\n<your private key>\\n-----END {m.group(1)}PRIVATE KEY-----", value)
+    if isinstance(value, list):
+        return [scrub(v) for v in value]
+    if isinstance(value, dict):
+        return {k: scrub(v) for k, v in value.items()}
+    return value
+
+
 def body_entry(res, op):
     rb = res.ref(op.get("requestBody", {}))
     content = rb.get("content", {})
@@ -167,7 +184,7 @@ def body_entry(res, op):
         example = res.template(media.get("schema", {}))
     out = {"ct": ctype}
     if example is not None and ctype.endswith("json"):
-        out["ex"] = example
+        out["ex"] = scrub(example)
     return out
 
 
@@ -292,7 +309,9 @@ def write_coverage(reg):
 
 
 def load_registry(path):
-    opener = gzip.open if path.endswith(".gz") else open
+    with open(path, "rb") as probe:
+        gzipped = probe.read(2) == b"\x1f\x8b"
+    opener = gzip.open if gzipped else open
     with opener(path, "rt", encoding="utf-8") as f:
         return json.load(f)
 

@@ -1,7 +1,6 @@
 package dev.cfmobile.app.ui.graphql
 
 import java.time.Instant
-import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 
@@ -30,8 +29,9 @@ data class GraphQlTemplate(
         val end = now.truncatedTo(ChronoUnit.SECONDS)
         val tagName = if (scope == TemplateScope.ZONE) "zoneTag" else "accountTag"
         return if (usesDates) {
-            val s = LocalDate.ofInstant(start, ZoneOffset.UTC)
-            val e = LocalDate.ofInstant(end, ZoneOffset.UTC)
+            // atZone().toLocalDate() works from API 26; LocalDate.ofInstant needs API 34.
+            val s = start.atZone(ZoneOffset.UTC).toLocalDate()
+            val e = end.atZone(ZoneOffset.UTC).toLocalDate()
             "{\n  \"$tagName\": \"$tag\",\n  \"since\": \"$s\",\n  \"until\": \"$e\"\n}"
         } else {
             "{\n  \"$tagName\": \"$tag\",\n  \"since\": \"$start\",\n  \"until\": \"$end\"\n}"

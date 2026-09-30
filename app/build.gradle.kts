@@ -1,8 +1,31 @@
+import java.util.Properties
+import java.util.zip.GZIPInputStream
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
 }
+
+/**
+ * Release signing comes from `keystore.properties` at the repository root (git-ignored) or,
+ * in CI, from environment variables. Nothing secret is ever committed (spec 7, 288).
+ */
+val signingProps = Properties().apply {
+    val file = rootProject.file("keystore.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+fun signingValue(key: String, env: String): String? = signingProps.getProperty(key) ?: System.getenv(env)
+
+/** Recorded in BuildConfig so diagnostics and About can say exactly what was built (spec 289). */
+val gitCommit: String = runCatching {
+    providers.exec { commandLine("git", "rev-parse", "--short=12", "HEAD") }.standardOutput.asText.get().trim()
+}.getOrDefault("unknown")
+val schemaRevision: String = runCatching {
+    val gz = GZIPInputStream(file("src/main/assets/cf_endpoints.bin").inputStream())
+    val head = gz.use { it.readNBytes(200).toString(Charsets.UTF_8) }
+    Regex("\"schemaRevision\":\"([^\"]+)\"").find(head)?.groupValues?.get(1) ?: "unknown"
+}.getOrDefault("unknown")
 
 android {
     namespace = "dev.cfmobile.app"
@@ -16,6 +39,22 @@ android {
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "GIT_COMMIT", "\"$gitCommit\"")
+        buildConfigField("String", "SCHEMA_REVISION", "\"$schemaRevision\"")
+    }
+
+    signingConfigs {
+        val storePath = signingValue("storeFile", "CF_RELEASE_STORE_FILE")
+        if (storePath != null) {
+            create("release") {
+                storeFile = rootProject.file(storePath)
+                storePassword = signingValue("storePassword", "CF_RELEASE_STORE_PASSWORD")
+                keyAlias = signingValue("keyAlias", "CF_RELEASE_KEY_ALIAS")
+                keyPassword = signingValue("keyPassword", "CF_RELEASE_KEY_PASSWORD")
+                enableV2Signing = true
+                enableV3Signing = true
+            }
+        }
     }
 
     buildTypes {
@@ -23,6 +62,8 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.findByName("release")
+            isDebuggable = false
         }
         debug {
             isMinifyEnabled = false

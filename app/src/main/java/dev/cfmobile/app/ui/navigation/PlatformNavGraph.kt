@@ -106,10 +106,11 @@ fun NavGraphBuilder.platformScreens(container: AppContainer, navController: NavH
         })
         val profileId = container.accountStore.getActiveId().orEmpty()
         val scope = androidx.compose.runtime.rememberCoroutineScope()
+        val workingContext by container.contextStore.state.collectAsState()
         ApiExplorerScreen(
             viewModel = vm,
             profileLabel = profileLabel(),
-            accountLabel = container.contextStore.state.value.account?.name,
+            accountLabel = workingContext.account?.name,
             connection = container.connectivity.state,
             templates = remember(profileId) { container.database.savedRequestDao().observe(profileId, ApiExplorerViewModel.KIND_REST) },
             onDeleteTemplate = { id -> scope.launch { container.database.savedRequestDao().delete(id) } },
@@ -213,8 +214,9 @@ fun NavGraphBuilder.platformScreens(container: AppContainer, navController: NavH
                 { container.settings.state.value }, { container.connectivity.current() }, context.cacheDir
             )
         })
+        val workingContext by container.contextStore.state.collectAsState()
         R2ObjectsScreen(
-            vm, profileLabel(), container.contextStore.state.value.account?.takeIf { it.id == accountId }?.name ?: accountId,
+            vm, profileLabel(), workingContext.account?.takeIf { it.id == accountId }?.name ?: accountId,
             onBack = back,
             onOpenSettings = { navController.navigate(Routes.r2Bucket(accountId, bucket)) },
             onOpenTransfers = { navController.navigate(Routes.TRANSFERS) }

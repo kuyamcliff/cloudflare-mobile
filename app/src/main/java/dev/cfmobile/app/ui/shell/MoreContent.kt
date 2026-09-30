@@ -61,7 +61,7 @@ fun MoreContent(accountId: String?, profileLabel: String?, fingerprint: String?,
         item("about") {
             SectionHeader("About")
             Text(
-                "Cloudflare Control ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})\n" +
+                "Cloudflare Control ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}, ${BuildConfig.GIT_COMMIT})\n" +
                     (schemaRevision?.let { "API schema $it\n" } ?: "") +
                     "An independent client for the Cloudflare API. Not made or endorsed by Cloudflare, Inc. " +
                     "Your tokens are stored only on this device and are sent only to Cloudflare.",

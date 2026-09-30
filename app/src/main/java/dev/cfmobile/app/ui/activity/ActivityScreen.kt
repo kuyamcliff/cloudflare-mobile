@@ -42,7 +42,6 @@ import dev.cfmobile.app.ui.components.ThinDivider
 import dev.cfmobile.app.ui.theme.StatusColors
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 
 /** Body of the Activity tab; the shell supplies the app bar. */
 @Composable
@@ -98,10 +97,10 @@ fun ActivityContent(
     }
 }
 
-private val timeFormat = SimpleDateFormat("MMM d, HH:mm:ss", Locale.getDefault())
-
 @Composable
 private fun HistoryRow(row: ActivityRow, onClick: () -> Unit) {
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val timeFormat = remember(locale) { SimpleDateFormat("MMM d, HH:mm:ss", locale) }
     val e = row.entry
     Column(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {

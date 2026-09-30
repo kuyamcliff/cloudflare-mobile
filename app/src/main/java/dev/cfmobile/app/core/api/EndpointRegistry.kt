@@ -104,7 +104,7 @@ class EndpointRegistry(
     }
 
     companion object {
-        const val ASSET_NAME = "cf_endpoints.json.gz"
+        const val ASSET_NAME = "cf_endpoints.bin"
 
         fun load(gzipped: InputStream): EndpointRegistry =
             GZIPInputStream(gzipped).source().buffer().use { parse(it) }
