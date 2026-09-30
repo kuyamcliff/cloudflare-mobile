@@ -6,6 +6,7 @@ import dev.cfmobile.app.data.remote.dto.CfEnvelope
 import dev.cfmobile.app.data.remote.dto.CfError
 import retrofit2.Response
 import java.io.IOException
+import kotlin.coroutines.cancellation.CancellationException
 
 @JsonClass(generateAdapter = true)
 internal data class ErrorEnvelope(
@@ -37,7 +38,11 @@ fun <T> Response<CfEnvelope<T>>.toApiResult(): ApiResult<T> {
     }
     val parsedErrors = try {
         errorBody()?.string()?.let { errorAdapter.fromJson(it)?.errors }
-    } catch (e: Exception) {
+    } catch (e: IOException) {
+        null
+    } catch (e: com.squareup.moshi.JsonDataException) {
+        null
+    } catch (e: com.squareup.moshi.JsonEncodingException) {
         null
     }
     return ApiResult.Failure(errorsToMessage(parsedErrors) ?: "HTTP ${code()}: ${message()}", code())
@@ -48,6 +53,10 @@ fun <T> Response<CfEnvelope<T>>.toApiResult(): ApiResult<T> {
 suspend fun <T> safeApiCall(block: suspend () -> Response<CfEnvelope<T>>): ApiResult<T> {
     return try {
         block().toApiResult()
+    } catch (e: CancellationException) {
+        // Never convert cancellation into a failure: the caller's scope is going away and
+        // structured concurrency depends on this propagating.
+        throw e
     } catch (e: IOException) {
         ApiResult.Failure(e.message?.let { "Network error: $it" } ?: "Unable to reach Cloudflare")
     } catch (e: Exception) {
@@ -82,6 +91,10 @@ suspend fun <T> safeGraphQlCall(block: suspend () -> Response<GraphQlResponse<T>
             data == null -> ApiResult.Failure("Cloudflare returned an empty result", response.code())
             else -> ApiResult.Success(data)
         }
+    } catch (e: CancellationException) {
+        // Never convert cancellation into a failure: the caller's scope is going away and
+        // structured concurrency depends on this propagating.
+        throw e
     } catch (e: IOException) {
         ApiResult.Failure(e.message?.let { "Network error: $it" } ?: "Unable to reach Cloudflare")
     } catch (e: Exception) {

@@ -30,6 +30,8 @@ class SnippetsRepository(private val api: CloudflareApi) {
             } else {
                 ApiResult.Failure("HTTP ${response.code()}: ${response.message()}", response.code())
             }
+        } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+            throw e
         } catch (e: java.io.IOException) {
             ApiResult.Failure(e.message?.let { "Network error: $it" } ?: "Unable to reach Cloudflare")
         } catch (e: Exception) {

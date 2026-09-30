@@ -1366,7 +1366,10 @@ data class ApiToken(
     @Json(name = "issued_on") val issuedOn: String? = null,
     @Json(name = "modified_on") val modifiedOn: String? = null,
     @Json(name = "expires_on") val expiresOn: String? = null,
-    @Json(name = "last_used_on") val lastUsedOn: String? = null
+    @Json(name = "last_used_on") val lastUsedOn: String? = null,
+    @Json(name = "not_before") val notBefore: String? = null,
+    val policies: List<TokenPolicy>? = null,
+    val condition: TokenCondition? = null
 )
 
 @JsonClass(generateAdapter = true)

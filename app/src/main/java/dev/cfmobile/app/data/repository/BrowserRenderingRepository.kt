@@ -44,6 +44,8 @@ class BrowserRenderingRepository(private val api: CloudflareApi) {
                 }.getOrNull()
                 ApiResult.Failure(message ?: "HTTP ${response.code()}: ${response.message()}", response.code())
             }
+        } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+            throw e
         } catch (e: IOException) {
             ApiResult.Failure(e.message?.let { "Network error: $it" } ?: "Unable to reach Cloudflare")
         } catch (e: Exception) {

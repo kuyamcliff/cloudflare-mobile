@@ -29,5 +29,10 @@ data class CfResultInfo(
     val page: Int = 1,
     @Json(name = "per_page") val perPage: Int = 20,
     @Json(name = "total_count") val totalCount: Int = 0,
-    @Json(name = "total_pages") val totalPages: Int = 1
+    @Json(name = "total_pages") val totalPages: Int = 1,
+    /** Cursor pagination (R2 objects, some newer APIs). */
+    val cursor: String? = null,
+    @Json(name = "is_truncated") val isTruncated: Boolean? = null,
+    /** R2's equivalent of S3 CommonPrefixes when listing with a delimiter. */
+    val delimited: List<String>? = null
 )
