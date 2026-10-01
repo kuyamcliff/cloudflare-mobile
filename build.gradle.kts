@@ -5,7 +5,7 @@ buildscript {
     dependencies {
         // Keep in sync with `kotlin` in gradle/libs.versions.toml - can't reference the
         // version catalog here since buildscript{} resolves before it's available.
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.10")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.20")
     }
 }
 
