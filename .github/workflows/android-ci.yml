@@ -38,7 +38,7 @@ jobs:
             --revision "$SCHEMA_REV" --previous /tmp/previous.bin | tee /tmp/schema-diff.txt
       - name: Upload coverage report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: api-coverage
           path: |
@@ -84,7 +84,7 @@ jobs:
         run: ./gradlew assembleRelease --stacktrace
 
       - name: Upload APKs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cloudflare-control-apks
           path: app/build/outputs/apk/**/*.apk
@@ -93,7 +93,7 @@ jobs:
 
       - name: Upload test and lint reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: reports
           path: |
