@@ -17,14 +17,14 @@ jobs:
   secret-scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Scan tracked files for credentials
         run: python3 tools/ci/secret_scan.py
 
   api-schema:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Fetch Cloudflare's OpenAPI schema
         run: |
           git clone --depth 1 https://github.com/cloudflare/api-schemas.git /tmp/api-schemas
@@ -51,7 +51,7 @@ jobs:
     needs: secret-scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
