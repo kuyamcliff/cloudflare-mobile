@@ -55,7 +55,7 @@ fun DdosScreen(zoneName: String, viewModel: DdosViewModel, onBack: () -> Unit) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(16.dp)
                         )
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                        dev.cfmobile.app.ui.design.RowDivider()
                     }
                     if (ruleset == null) {
                         item {
@@ -76,7 +76,7 @@ fun DdosScreen(zoneName: String, viewModel: DdosViewModel, onBack: () -> Unit) {
                                     Text("Updated $it", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                            dev.cfmobile.app.ui.design.RowDivider()
                         }
                         if (ruleset.rules.isEmpty()) {
                             item {
@@ -90,7 +90,7 @@ fun DdosScreen(zoneName: String, viewModel: DdosViewModel, onBack: () -> Unit) {
                         } else {
                             items(ruleset.rules, key = { it.id }) { rule ->
                                 DdosRuleRow(rule)
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                                dev.cfmobile.app.ui.design.RowDivider()
                             }
                         }
                     }

@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.Web3Hostname
@@ -11,7 +12,7 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class Web3Repository(private val api: CloudflareApi) {
 
     suspend fun listHostnames(zoneId: String): ApiResult<List<Web3Hostname>> =
-        safeApiCall { api.listWeb3Hostnames(zoneId) }
+        safeApiCall { api.listWeb3Hostnames(zoneId) }.emptyListOnNullResult()
 
     suspend fun createHostname(
         zoneId: String,

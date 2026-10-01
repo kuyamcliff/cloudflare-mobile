@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.Ruleset
@@ -47,5 +48,5 @@ class RulesetPhaseRepository(private val api: CloudflareApi) {
      *  and this is the only place their human-readable names come from - a deployment rule
      *  carries just the id. */
     suspend fun listRulesets(zoneId: String): ApiResult<List<Ruleset>> =
-        safeApiCall { api.listRulesets(zoneId) }
+        safeApiCall { api.listRulesets(zoneId) }.emptyListOnNullResult()
 }

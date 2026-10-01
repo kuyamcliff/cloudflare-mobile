@@ -36,7 +36,16 @@ import dev.cfmobile.app.ui.r2.TransfersScreen
 import dev.cfmobile.app.ui.search.SearchScreen
 import dev.cfmobile.app.ui.search.SearchViewModel
 import dev.cfmobile.app.ui.shell.MainShell
-import dev.cfmobile.app.ui.shell.MoreContent
+import dev.cfmobile.app.ui.shell.ProfileScreen
+import dev.cfmobile.app.ui.command.CommandScreen
+import dev.cfmobile.app.ui.command.CommandViewModel
+import dev.cfmobile.app.ui.command.PickerSheet
+import dev.cfmobile.app.ui.action.ActionScreen
+import dev.cfmobile.app.ui.action.ActionViewModel
+import dev.cfmobile.app.core.command.ActionDraft
+import dev.cfmobile.app.data.local.NamedRef
+import dev.cfmobile.app.data.remote.ApiResult
+import androidx.compose.runtime.mutableStateOf
 import dev.cfmobile.app.ui.tokens.TokenAccessScreen
 import dev.cfmobile.app.ui.tokens.TokenAccessViewModel
 import dev.cfmobile.app.ui.tokens.TokenCreateScreen
@@ -46,6 +55,7 @@ import dev.cfmobile.app.ui.tokens.TokenDetailViewModel
 import kotlinx.coroutines.launch
 
 /** The top-level shell. Its view models are scoped to this back stack entry. */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun MainShellRoute(container: AppContainer, navController: NavHostController) {
     val activeId by container.accountStore.activeIdFlow.collectAsState()
@@ -57,23 +67,28 @@ fun MainShellRoute(container: AppContainer, navController: NavHostController) {
     val activity = viewModel<ActivityViewModel>(key = "act-$activeId", factory = factoryOf {
         ActivityViewModel(container.database.requestHistoryDao(), activeId, container::endpointRegistry)
     })
-    val profile = container.authRepository.activeAccount
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
-    var schemaRevision by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
-    androidx.compose.runtime.LaunchedEffect(Unit) { schemaRevision = container.endpointRegistry().schemaRevision.take(12) }
+    val pins by container.actionStore.pins.collectAsState()
+    val recents by container.actionStore.recents.collectAsState()
+    val homeUi by home.uiState.collectAsState()
+    var accountSheet by remember { mutableStateOf(false) }
 
     MainShell(
-        profile = profile,
-        profiles = container.authRepository.savedAccounts,
+        profile = container.authRepository.activeAccount,
+        accountName = ctx.account?.name,
         networkStatus = container.networkStatus,
         connection = container.connectivity.state,
-        onSwitchProfile = { id -> container.authRepository.switchTo(id) },
-        onAddProfile = { navController.navigate(Routes.LOGIN) },
-        onSearch = { navController.navigate(Routes.SEARCH) },
-        onRefresh = { home.refresh(); scope.launch { container.capabilityRepository.discover() } },
+        onSwitchAccount = { accountSheet = true },
+        onOpenProfile = { navController.navigate(Routes.PROFILE) },
+        onOpenCommand = { navController.navigate(Routes.command()) },
         onReconnect = { navController.navigate(Routes.LOGIN) },
-        home = { HomeContent(home) { navController.navigate(it) } },
-        resources = { ResourcesContent(resources) { navController.navigate(it) } },
+        home = {
+            HomeContent(
+                home, pins, recents,
+                onNavigate = { navController.navigate(it) },
+                onOpenSaved = { a -> navController.navigate(Routes.action(container.actionStore.put(a.toDraft()))) }
+            )
+        },
+        browse = { ResourcesContent(resources) { navController.navigate(it) } },
         activity = {
             ActivityContent(
                 activity,
@@ -81,12 +96,23 @@ fun MainShellRoute(container: AppContainer, navController: NavHostController) {
                 onOpenTransfers = { navController.navigate(Routes.TRANSFERS) },
                 onOpenAuditLogs = ctx.account?.let { a -> { navController.navigate(Routes.auditLogs(a.id)) } }
             )
-        },
-        more = {
-            MoreContent(ctx.account?.id, profile?.label, profile?.fingerprint, schemaRevision) { navController.navigate(it) }
         }
     )
+    if (accountSheet) {
+        PickerSheet(
+            title = "Account",
+            options = homeUi.accounts.map { NamedRef(it.id, it.name) },
+            selectedId = ctx.account?.id,
+            allowNone = false,
+            onPick = { picked -> accountSheet = false; homeUi.accounts.firstOrNull { it.id == picked?.id }?.let(home::selectAccount) },
+            onDismiss = { accountSheet = false }
+        )
+    }
 }
+
+/** Hands a draft to the action screen. */
+fun NavHostController.openDraft(container: AppContainer, draft: ActionDraft) =
+    navigate(Routes.action(container.actionStore.put(draft)))
 
 fun NavGraphBuilder.platformScreens(container: AppContainer, navController: NavHostController) {
     val back: () -> Unit = { navController.popBackStack() }
@@ -147,7 +173,7 @@ fun NavGraphBuilder.platformScreens(container: AppContainer, navController: NavH
 
     composable(Routes.CATALOG) {
         val vm = viewModel<ApiCatalogViewModel>(factory = factoryOf { ApiCatalogViewModel(container::endpointRegistry, container.capabilityRepository) })
-        ApiCatalogScreen(vm, onBack = back, onOpen = { id -> navController.navigate(Routes.explorer(endpointId = id)) })
+        ApiCatalogScreen(vm, onBack = back, onOpen = { id -> navController.navigate(Routes.action(endpointId = id)) })
     }
 
     composable(Routes.GRAPHQL) {
@@ -220,6 +246,91 @@ fun NavGraphBuilder.platformScreens(container: AppContainer, navController: NavH
             onBack = back,
             onOpenSettings = { navController.navigate(Routes.r2Bucket(accountId, bucket)) },
             onOpenTransfers = { navController.navigate(Routes.TRANSFERS) }
+        )
+    }
+
+    composable(Routes.COMMAND, arguments = listOf(navArgument("q") { type = NavType.StringType; defaultValue = "" })) { entry ->
+        val initial = entry.arguments?.getString("q")?.let(Routes::decodeArg).orEmpty()
+        val vm = viewModel<CommandViewModel>(factory = factoryOf {
+            CommandViewModel(
+                engineProvider = { container.commandEngine() },
+                planner = container.aiPlanner,
+                contextFlow = container.contextStore.state,
+                pinsFlow = container.actionStore.pins,
+                recentsFlow = container.actionStore.recents,
+                loadZones = { account ->
+                    (container.zonesRepository.listZones(accountId = account, maxPages = 4) as? ApiResult.Success)?.data.orEmpty()
+                        .map { NamedRef(it.id, it.name, it.account?.id) }
+                },
+                loadAccounts = { (container.accountsRepository.listAccounts() as? ApiResult.Success)?.data.orEmpty().map { NamedRef(it.id, it.name) } },
+                loadResources = { account -> container.resourceIndex.resources(account) },
+                selectAccount = container.contextStore::selectAccount,
+                selectZone = container.contextStore::selectZone,
+                initialQuery = initial
+            )
+        })
+        CommandScreen(
+            vm,
+            onClose = back,
+            onOpenDraft = { d -> navController.popBackStack(); navController.openDraft(container, d) },
+            onNavigate = { r -> navController.popBackStack(); navController.navigate(r) }
+        )
+    }
+
+    composable(
+        Routes.ACTION,
+        arguments = listOf("draft", "endpoint").map { n -> navArgument(n) { type = NavType.StringType; defaultValue = "" } }
+    ) { entry ->
+        val draftId = entry.arguments?.getString("draft")?.let(Routes::decodeArg)?.takeIf { it.isNotBlank() }
+        val endpointId = entry.arguments?.getString("endpoint")?.let(Routes::decodeArg)?.takeIf { it.isNotBlank() }
+        val draft = draftId?.let(container.actionStore::get)
+        val vm = viewModel<ActionViewModel>(factory = factoryOf {
+            ActionViewModel(
+                registryProvider = { container.endpointRegistry() },
+                client = container.rawApiClient,
+                tokenState = { e, account, zone ->
+                    container.capabilityRepository.state.value.capabilities?.evaluate(e, accountId = account, zoneId = zone, zoneAccountId = account)
+                        ?: dev.cfmobile.app.core.capabilities.CapabilityState.UNKNOWN
+                },
+                workingContext = { container.contextStore.state.value },
+                zones = {
+                    val ctxNow = container.contextStore.state.value
+                    (container.zonesRepository.listZones(accountId = ctxNow.account?.id, maxPages = 4) as? ApiResult.Success)?.data.orEmpty()
+                        .map { NamedRef(it.id, it.name, it.account?.id) }
+                },
+                accounts = { (container.accountsRepository.listAccounts() as? ApiResult.Success)?.data.orEmpty().map { NamedRef(it.id, it.name) } },
+                onRan = container.actionStore::recordRun,
+                isPinned = container.actionStore::isPinned,
+                togglePin = container.actionStore::togglePin,
+                draft = draft,
+                endpointId = endpointId
+            )
+        })
+        val wc by container.contextStore.state.collectAsState()
+        val label = listOfNotNull(wc.zone?.name, wc.account?.name).joinToString(" · ").ifBlank { null }
+        ActionScreen(
+            vm,
+            contextLabel = label,
+            onBack = back,
+            onOpenDraft = { d -> navController.openDraft(container, d) },
+            onOpenExplorer = { m, p, q -> navController.navigate(Routes.explorer(method = m, path = p, query = q)) }
+        )
+    }
+
+    composable(Routes.PROFILE) {
+        val wc by container.contextStore.state.collectAsState()
+        val activeId by container.accountStore.activeIdFlow.collectAsState()
+        var schemaRevision by remember { mutableStateOf<String?>(null) }
+        androidx.compose.runtime.LaunchedEffect(Unit) { schemaRevision = container.endpointRegistry().schemaRevision.take(12) }
+        ProfileScreen(
+            accountId = wc.account?.id,
+            profile = container.authRepository.activeAccount?.takeIf { it.id == activeId } ?: container.authRepository.activeAccount,
+            profiles = container.authRepository.savedAccounts,
+            schemaRevision = schemaRevision,
+            onSwitchProfile = { id -> container.authRepository.switchTo(id); back() },
+            onAddProfile = { navController.navigate(Routes.LOGIN) },
+            onBack = back,
+            onNavigate = { navController.navigate(it) }
         )
     }
 

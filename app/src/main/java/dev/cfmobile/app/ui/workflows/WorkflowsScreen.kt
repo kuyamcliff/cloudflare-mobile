@@ -108,7 +108,7 @@ private fun InstancesSheet(
                                 onResume = { viewModel.setInstanceStatus(instance, "resume") },
                                 onTerminate = { confirmTerminate = instance }
                             )
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                            dev.cfmobile.app.ui.design.RowDivider()
                         }
                     }
                 }

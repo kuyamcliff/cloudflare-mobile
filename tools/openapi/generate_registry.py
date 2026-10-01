@@ -167,6 +167,119 @@ def scrub(value):
     return value
 
 
+MAX_FIELDS = 40
+
+
+def scalar_type(s):
+    t = s.get("type")
+    if isinstance(t, list):
+        t = next((x for x in t if x != "null"), "string")
+    if not t:
+        if "properties" in s:
+            t = "object"
+        elif "items" in s:
+            t = "array"
+        else:
+            t = "string"
+    return t
+
+
+def collect_fields(res, schema, depth=0):
+    """Top-level body properties as (name -> field) plus the required names. oneOf/anyOf
+    variants are unioned (a DNS record body is a oneOf per record type, and the form must
+    offer every type), with required narrowed to what every variant requires."""
+    s = res.ref(schema)
+    if not isinstance(s, dict) or depth > 6:
+        return {}, set()
+    fields, required = {}, set(s.get("required") or [])
+    for part in s.get("allOf", []):
+        f, r = collect_fields(res, part, depth + 1)
+        merge_fields(fields, f)
+        required |= r
+    for key in ("oneOf", "anyOf"):
+        variants = s.get(key) or []
+        if variants:
+            common = None
+            for v in variants:
+                f, r = collect_fields(res, v, depth + 1)
+                merge_fields(fields, f)
+                common = r if common is None else common & r
+            required |= common or set()
+    for name, prop in (s.get("properties") or {}).items():
+        p = res.merged(prop)
+        if not isinstance(p, dict) or p.get("readOnly"):
+            continue
+        f = {"n": name, "t": scalar_type(p)}
+        raw = res.ref(prop)
+        variants = (raw.get("oneOf") or raw.get("anyOf") or []) if isinstance(raw, dict) else []
+        if len(variants) > 1:
+            # A property that is itself a union (a zone setting's value is "on"/"off" for
+            # one setting, a number or an object for another): offer every enum value and
+            # fall back to free JSON when the variants disagree on type.
+            kinds, values = set(), []
+            for v in variants:
+                vm = res.merged(v)
+                if isinstance(vm, dict):
+                    kinds.add(scalar_type(vm))
+                    values += [str(x) for x in vm.get("enum") or []]
+            if len(kinds) > 1:
+                f["t"] = "any"
+            p = dict(p)
+            # The first variant's description names that variant only; keep the union's own.
+            p["description"] = raw.get("description") or raw.get("title")
+            p.pop("title", None)
+            if values:
+                p["enum"] = list(dict.fromkeys(values))
+        if f["t"] == "array":
+            item = res.merged(p.get("items", {}))
+            if isinstance(item, dict):
+                f["it"] = scalar_type(item)
+                if item.get("enum"):
+                    f["e"] = [str(x) for x in item["enum"][:MAX_ENUM]]
+        if p.get("enum") and "e" not in f:
+            f["e"] = [str(x) for x in p["enum"][:MAX_ENUM]]
+        d = short(p.get("description") or p.get("title"))
+        if d:
+            f["d"] = d
+        for k in ("default", "example"):
+            v = p.get(k)
+            if v is not None and not isinstance(v, (dict, list)) and len(str(v)) <= 200:
+                f["x"] = v if k == "default" else f.get("x", v)
+                if k == "default":
+                    f["def"] = 1
+                break
+        merge_fields(fields, {name: f})
+    return fields, required
+
+
+def merge_fields(into, more):
+    for name, f in more.items():
+        cur = into.get(name)
+        if cur is None:
+            into[name] = dict(f)
+            continue
+        if "e" in f:
+            merged = list(dict.fromkeys(cur.get("e", []) + f["e"]))
+            cur["e"] = merged[:MAX_ENUM * 2]
+        for k in ("d", "x", "it"):
+            if k not in cur and k in f:
+                cur[k] = f[k]
+
+
+def body_fields(res, schema):
+    fields, required = collect_fields(res, schema)
+    out = []
+    for name, f in fields.items():
+        f = dict(f)
+        if name in required:
+            f["r"] = 1
+        if "x" in f:
+            f["x"] = scrub(f["x"])
+        out.append(f)
+    out.sort(key=lambda f: (0 if f.get("r") else 1))
+    return out[:MAX_FIELDS]
+
+
 def body_entry(res, op):
     rb = res.ref(op.get("requestBody", {}))
     content = rb.get("content", {})
@@ -174,6 +287,9 @@ def body_entry(res, op):
         return None
     ctype = next(iter(content))
     media = content[ctype]
+    out_fields = None
+    if ctype.endswith("json") or ctype.startswith("multipart/") or ctype.endswith("x-www-form-urlencoded"):
+        out_fields = body_fields(res, media.get("schema", {})) or None
     example = None
     if media.get("examples"):
         first = res.ref(next(iter(media["examples"].values())))
@@ -185,6 +301,10 @@ def body_entry(res, op):
     out = {"ct": ctype}
     if example is not None and ctype.endswith("json"):
         out["ex"] = scrub(example)
+    if out_fields:
+        out["f"] = out_fields
+    if rb.get("required"):
+        out["r"] = 1
     return out
 
 

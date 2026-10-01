@@ -6,8 +6,10 @@ import com.squareup.moshi.JsonClass
 @JsonClass(generateAdapter = true)
 data class CfEnvelope<T>(
     val success: Boolean = false,
-    val errors: List<CfError> = emptyList(),
-    val messages: List<CfMessage> = emptyList(),
+    // Nullable: some APIs (Queues, Durable Objects, Worker domains, zone holds) send
+    // "errors": null on success, which a non-null property rejects outright.
+    val errors: List<CfError>? = emptyList(),
+    val messages: List<CfMessage>? = emptyList(),
     val result: T? = null,
     @Json(name = "result_info") val resultInfo: CfResultInfo? = null
 )
@@ -27,7 +29,8 @@ data class CfMessage(
 @JsonClass(generateAdapter = true)
 data class CfResultInfo(
     val page: Int = 1,
-    @Json(name = "per_page") val perPage: Int = 20,
+    // Long: Load Balancing reports per_page as 9223372036854775807 when unpaginated.
+    @Json(name = "per_page") val perPage: Long = 20,
     @Json(name = "total_count") val totalCount: Int = 0,
     @Json(name = "total_pages") val totalPages: Int = 1,
     /** Cursor pagination (R2 objects, some newer APIs). */

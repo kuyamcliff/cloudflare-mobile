@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.KvNamespace
@@ -15,7 +16,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 class KvRepository(private val api: CloudflareApi) {
 
     suspend fun listNamespaces(accountId: String): ApiResult<List<KvNamespace>> =
-        safeApiCall { api.listKvNamespaces(accountId) }
+        safeApiCall { api.listKvNamespaces(accountId) }.emptyListOnNullResult()
 
     suspend fun createNamespace(accountId: String, title: String): ApiResult<KvNamespace> =
         safeApiCall { api.createKvNamespace(accountId, KvNamespaceCreate(title = title)) }
@@ -24,7 +25,7 @@ class KvRepository(private val api: CloudflareApi) {
         safeApiCallUnit { api.deleteKvNamespace(accountId, namespaceId) }
 
     suspend fun listKeys(accountId: String, namespaceId: String): ApiResult<List<KvKey>> =
-        safeApiCall { api.listKvKeys(accountId, namespaceId) }
+        safeApiCall { api.listKvKeys(accountId, namespaceId) }.emptyListOnNullResult()
 
     /** Values come back as raw bytes rather than JSON, so this reads the body itself. A value
      *  that isn't UTF-8 text can't be shown meaningfully on a phone, and is reported as such

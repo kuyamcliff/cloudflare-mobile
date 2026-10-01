@@ -141,7 +141,7 @@ private fun MonitorsTab(uiState: LoadBalancingUiState, viewModel: LoadBalancingV
                         confirmText = "Pools using this monitor will stop health-checking their origins, so failover stops too.",
                         onDelete = { viewModel.deleteMonitor(monitor) }
                     )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                    dev.cfmobile.app.ui.design.RowDivider()
                 }
             }
         }
@@ -228,7 +228,7 @@ private fun PoolsTab(uiState: LoadBalancingUiState, viewModel: LoadBalancingView
                         isDeleting = uiState.deletingPoolId == pool.id,
                         onDelete = { viewModel.deletePool(pool) }
                     )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                    dev.cfmobile.app.ui.design.RowDivider()
                 }
             }
         }
@@ -305,7 +305,7 @@ private fun LoadBalancersTab(uiState: LoadBalancingUiState, viewModel: LoadBalan
                 LazyColumn(contentPadding = PaddingValues(bottom = 96.dp)) {
                     items(balancers, key = { it.id }) { lb ->
                         LoadBalancerRow(lb, isDeleting = uiState.deletingLbId == lb.id, onDelete = { viewModel.deleteLoadBalancer(lb) })
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                        dev.cfmobile.app.ui.design.RowDivider()
                     }
                 }
             }

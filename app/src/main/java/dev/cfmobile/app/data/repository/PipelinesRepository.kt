@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.Pipeline
@@ -11,7 +12,7 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class PipelinesRepository(private val api: CloudflareApi) {
 
     suspend fun listPipelines(accountId: String): ApiResult<List<Pipeline>> =
-        safeApiCall { api.listPipelines(accountId) }
+        safeApiCall { api.listPipelines(accountId) }.emptyListOnNullResult()
 
     suspend fun deletePipeline(accountId: String, pipelineName: String): ApiResult<Unit> =
         safeApiCallUnit { api.deletePipeline(accountId, pipelineName) }

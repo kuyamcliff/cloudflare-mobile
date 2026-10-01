@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.RulesList
@@ -16,10 +17,10 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class BulkRedirectsRepository(private val api: CloudflareApi) {
 
     suspend fun listLists(accountId: String): ApiResult<List<RulesList>> =
-        safeApiCall { api.listRulesLists(accountId) }
+        safeApiCall { api.listRulesLists(accountId) }.emptyListOnNullResult()
 
     suspend fun listItems(accountId: String, listId: String): ApiResult<List<RulesListItem>> =
-        safeApiCall { api.listRulesListItems(accountId, listId) }
+        safeApiCall { api.listRulesListItems(accountId, listId) }.emptyListOnNullResult()
 
     suspend fun createList(accountId: String, name: String, kind: String, description: String?): ApiResult<RulesList> =
         safeApiCall { api.createRulesList(accountId, RulesListCreate(name = name, kind = kind, description = description)) }

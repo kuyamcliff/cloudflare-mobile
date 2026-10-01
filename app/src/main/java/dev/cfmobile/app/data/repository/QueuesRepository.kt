@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.QueueConsumer
@@ -13,7 +14,7 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class QueuesRepository(private val api: CloudflareApi) {
 
     suspend fun listQueues(accountId: String): ApiResult<List<CfQueue>> =
-        safeApiCall { api.listQueues(accountId) }
+        safeApiCall { api.listQueues(accountId) }.emptyListOnNullResult()
 
     suspend fun createQueue(accountId: String, name: String): ApiResult<CfQueue> =
         safeApiCall { api.createQueue(accountId, QueueCreate(queueName = name)) }
@@ -25,7 +26,7 @@ class QueuesRepository(private val api: CloudflareApi) {
      *  called. Adding a consumer is part of a Worker's own configuration, not something this
      *  app can write. */
     suspend fun listConsumers(accountId: String, queueId: String): ApiResult<List<QueueConsumer>> =
-        safeApiCall { api.listQueueConsumers(accountId, queueId) }
+        safeApiCall { api.listQueueConsumers(accountId, queueId) }.emptyListOnNullResult()
 
     suspend fun deleteConsumer(accountId: String, queueId: String, consumerId: String): ApiResult<Unit> =
         safeApiCallUnit { api.deleteQueueConsumer(accountId, queueId, consumerId) }

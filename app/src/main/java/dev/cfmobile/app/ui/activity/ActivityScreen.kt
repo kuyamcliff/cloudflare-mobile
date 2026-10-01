@@ -1,5 +1,10 @@
 package dev.cfmobile.app.ui.activity
 
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.Policy
+import androidx.compose.material.icons.filled.History
+import dev.cfmobile.app.ui.design.groupItem
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -54,36 +59,47 @@ fun ActivityContent(
     val ui by viewModel.uiState.collectAsStateWithLifecycle()
     var confirmClear by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize()) {
-        PrimaryTabRow(selectedTabIndex = ui.tab.ordinal) {
+        PrimaryTabRow(selectedTabIndex = ui.tab.ordinal, containerColor = MaterialTheme.colorScheme.background) {
             ActivityTab.entries.forEach { t -> Tab(selected = ui.tab == t, onClick = { viewModel.setTab(t) }, text = { Text(t.label) }) }
         }
-        Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            StatusFilter.entries.forEach { f -> FilterChip(selected = ui.filter == f, onClick = { viewModel.setFilter(f) }, label = { Text(f.label) }) }
-            Row(Modifier.weight(1f)) {}
-            IconButton(onClick = { confirmClear = true }) { Icon(Icons.Filled.DeleteSweep, "Clear local history") }
-        }
-        OutlinedTextField(
-            value = ui.query, onValueChange = viewModel::setQuery, placeholder = { Text("Filter") }, singleLine = true,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
-        )
-        LazyColumn(Modifier.fillMaxSize()) {
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)) {
+            item("filters") {
+                Row(Modifier.padding(start = 16.dp, end = 4.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    StatusFilter.entries.forEach { f ->
+                        dev.cfmobile.app.ui.design.Pill(f.label, selected = ui.filter == f, onClick = { viewModel.setFilter(f) })
+                    }
+                    Row(Modifier.weight(1f)) {}
+                    IconButton(onClick = { confirmClear = true }) { Icon(Icons.Filled.DeleteSweep, "Clear local history", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                }
+                dev.cfmobile.app.ui.common.ListSearchField(ui.query, viewModel::setQuery, "Filter by path or operation")
+            }
             item("links") {
-                NavRow("Transfers", "Uploads and downloads", onClick = onOpenTransfers)
-                onOpenAuditLogs?.let { NavRow("Cloudflare audit log", "Server-side history recorded by Cloudflare", onClick = it) }
-                Text(
-                    "Local activity from this device. Headers, bodies and tokens are never recorded.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-                ThinDivider()
+                dev.cfmobile.app.ui.design.Group(footer = "Local activity from this device. Headers, bodies and tokens are never recorded.") {
+                    dev.cfmobile.app.ui.design.ListRow("Transfers", subtitle = "R2 uploads and downloads", icon = Icons.Filled.CloudSync, onClick = onOpenTransfers)
+                    onOpenAuditLogs?.let {
+                        dev.cfmobile.app.ui.design.RowDivider(inset = 64.dp)
+                        dev.cfmobile.app.ui.design.ListRow("Cloudflare audit log", subtitle = "Every change on the account, from any source", icon = Icons.Filled.Policy, onClick = it)
+                    }
+                }
             }
             if (ui.loaded && ui.rows.isEmpty()) {
                 item("empty") {
-                    EmptyState(if (ui.tab == ActivityTab.CHANGES) "No changes made from this device yet." else "No requests recorded yet.")
+                    dev.cfmobile.app.ui.design.EmptyMessage(
+                        if (ui.tab == ActivityTab.CHANGES) "No changes yet" else "No requests yet",
+                        body = if (ui.tab == ActivityTab.CHANGES) "Changes you make from this device appear here." else "Every request this device sends appears here.",
+                        icon = Icons.Filled.History,
+                        fill = false
+                    )
+                }
+            } else if (ui.rows.isNotEmpty()) {
+                item("rows-h") { dev.cfmobile.app.ui.design.GroupTitle(if (ui.tab == ActivityTab.CHANGES) "Changes" else "Requests") }
+            }
+            itemsIndexed(ui.rows, key = { _, r -> r.entry.id }) { i, row ->
+                Column(Modifier.groupItem(i, ui.rows.size)) {
+                    HistoryRow(row, onClick = { onRepeat(row.entry) })
+                    if (i < ui.rows.size - 1) dev.cfmobile.app.ui.design.RowDivider()
                 }
             }
-            items(ui.rows, key = { it.entry.id }) { row -> HistoryRow(row, onClick = { onRepeat(row.entry) }) }
         }
     }
     if (confirmClear) {
@@ -102,7 +118,7 @@ private fun HistoryRow(row: ActivityRow, onClick: () -> Unit) {
     val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
     val timeFormat = remember(locale) { SimpleDateFormat("MMM d, HH:mm:ss", locale) }
     val e = row.entry
-    Column(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 8.dp)) {
+    Column(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(timeFormat.format(Date(e.timestamp)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(120.dp))
             Text(row.label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -123,5 +139,4 @@ private fun HistoryRow(row: ActivityRow, onClick: () -> Unit) {
             Text("${e.durationMillis} ms", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
-    ThinDivider()
 }

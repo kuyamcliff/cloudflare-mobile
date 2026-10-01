@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.WorkerDeployment
@@ -19,7 +20,7 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class WorkersRepository(private val api: CloudflareApi) {
 
     suspend fun listScripts(accountId: String): ApiResult<List<WorkerScript>> =
-        safeApiCall { api.listWorkerScripts(accountId) }
+        safeApiCall { api.listWorkerScripts(accountId) }.emptyListOnNullResult()
 
     suspend fun deleteScript(accountId: String, scriptName: String): ApiResult<Unit> =
         safeApiCallUnit { api.deleteWorkerScript(accountId, scriptName) }
@@ -53,7 +54,7 @@ class WorkersRepository(private val api: CloudflareApi) {
     /** Worker routes are zone-scoped, not account-scoped - a route binds a URL pattern on one
      *  zone to a script. */
     suspend fun listRoutes(zoneId: String): ApiResult<List<WorkerRoute>> =
-        safeApiCall { api.listWorkerRoutes(zoneId) }
+        safeApiCall { api.listWorkerRoutes(zoneId) }.emptyListOnNullResult()
 
     suspend fun createRoute(zoneId: String, pattern: String, script: String): ApiResult<WorkerRoute> =
         safeApiCall { api.createWorkerRoute(zoneId, WorkerRouteWrite(pattern = pattern, script = script)) }
@@ -67,7 +68,7 @@ class WorkersRepository(private val api: CloudflareApi) {
     /** Names and types only: Cloudflare never returns a secret's value, and this app never
      *  asks for one back. */
     suspend fun listSecrets(accountId: String, scriptName: String): ApiResult<List<WorkerSecret>> =
-        safeApiCall { api.listWorkerSecrets(accountId, scriptName) }
+        safeApiCall { api.listWorkerSecrets(accountId, scriptName) }.emptyListOnNullResult()
 
     suspend fun putSecret(accountId: String, scriptName: String, name: String, value: String): ApiResult<WorkerSecret> =
         safeApiCall { api.putWorkerSecret(accountId, scriptName, WorkerSecretWrite(name = name, text = value)) }
@@ -77,7 +78,7 @@ class WorkersRepository(private val api: CloudflareApi) {
 
     /** A custom domain binds a hostname straight to a Worker, without a route on the zone. */
     suspend fun listDomains(accountId: String): ApiResult<List<WorkerDomain>> =
-        safeApiCall { api.listWorkerDomains(accountId) }
+        safeApiCall { api.listWorkerDomains(accountId) }.emptyListOnNullResult()
 
     suspend fun attachDomain(
         accountId: String,

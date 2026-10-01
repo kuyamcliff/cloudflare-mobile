@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.DeviceSettingsPolicy
@@ -14,10 +15,10 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class DevicePostureRepository(private val api: CloudflareApi) {
 
     suspend fun listDevices(accountId: String): ApiResult<List<EnrolledDevice>> =
-        safeApiCall { api.listEnrolledDevices(accountId) }
+        safeApiCall { api.listEnrolledDevices(accountId) }.emptyListOnNullResult()
 
     suspend fun listPostureRules(accountId: String): ApiResult<List<PostureRule>> =
-        safeApiCall { api.listPostureRules(accountId) }
+        safeApiCall { api.listPostureRules(accountId) }.emptyListOnNullResult()
 
     /** Revokes one device's registration. The user has to re-enrol before that device can
      *  reach anything behind Zero Trust again. */
@@ -27,5 +28,5 @@ class DevicePostureRepository(private val api: CloudflareApi) {
     /** WARP device settings profiles, read-only: each carries a match expression plus split
      *  tunnel and fallback-domain lists that are their own screens' worth of editing. */
     suspend fun listSettingsPolicies(accountId: String): ApiResult<List<DeviceSettingsPolicy>> =
-        safeApiCall { api.listDeviceSettingsPolicies(accountId) }
+        safeApiCall { api.listDeviceSettingsPolicies(accountId) }.emptyListOnNullResult()
 }

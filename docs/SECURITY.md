@@ -11,6 +11,7 @@
 | Capability cache: token policies (permission names and resource IDs) | SharedPreferences | Not secret, no token value |
 | Request history: method, path, status, duration | Room | No headers, no bodies, credential-like query values redacted |
 | Transfers and saved request templates | Room | No credentials |
+| Recent and pinned actions | SharedPreferences (`cf_actions`) | Method, path template, path and query values, title. Request bodies are never stored, since they can carry secrets |
 
 Backups and device-to-device transfer exclude every domain (`data_extraction_rules.xml`,
 `allowBackup=false`).
@@ -31,6 +32,26 @@ Token secrets and R2 secrets are only ever sent to Cloudflare:
   `api.cloudflare.com`; cURL export prints `Bearer <REDACTED>`.
 
 There is no application backend, no analytics SDK, no crash reporter and no advertising SDK.
+
+## Typed commands and Workers AI
+
+Everything typed into the command bar is matched on the device: recipes, screens, the user's
+own resource names and the bundled operation registry. Nothing typed is sent anywhere while
+matching.
+
+Planning with Workers AI happens only when the user asks for it (the "Plan with Workers AI"
+row, or pressing enter when nothing local explains the request). It is a normal API call to
+`POST /accounts/{account_id}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast` on the user's own
+account, through the same host-bound client as every other call, so the token still goes only
+to `api.cloudflare.com`. The prompt contains the typed text, the working zone and account IDs,
+up to 30 zone names with their IDs, and the descriptions of candidate operations. The model's
+answer only ever becomes a draft: the user reviews every field in the action form and nothing
+is sent until they press run and, for changes, confirm.
+
+Every action, typed or planned, goes through the same rails as the native screens: local
+validation, a confirmation sheet showing the exact method, path, target and body for anything
+that is not a read, and a typed confirmation for deleting zones, buckets, databases,
+namespaces, Workers, Pages projects, tunnels, members and tokens.
 
 ## Logs
 

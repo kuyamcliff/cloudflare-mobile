@@ -67,7 +67,7 @@ fun GatewayScreen(viewModel: GatewayViewModel, onBack: () -> Unit) {
                 LazyColumn(Modifier.padding(padding), contentPadding = PaddingValues(bottom = 96.dp)) {
                     items(rules, key = { it.id }) { rule ->
                         GatewayRuleRow(rule, isDeleting = uiState.deletingId == rule.id, onDelete = { viewModel.delete(rule) })
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                        dev.cfmobile.app.ui.design.RowDivider()
                     }
                 }
             }

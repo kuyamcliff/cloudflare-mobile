@@ -137,3 +137,7 @@ fun capabilityIcon(capability: Capability): ImageVector = when (capability.id) {
     "cache_behaviour" -> Icons.Filled.Http
     else -> Icons.Filled.Extension
 }
+
+/** Icon for a capability by id, for surfaces that only carry the id (command results). */
+fun iconFor(capabilityId: String): ImageVector =
+    dev.cfmobile.app.core.capabilities.CapabilityRegistry.byId(capabilityId)?.let(::capabilityIcon) ?: Icons.Filled.Widgets

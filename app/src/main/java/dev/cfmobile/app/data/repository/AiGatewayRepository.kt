@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.AiGateway
@@ -11,7 +12,7 @@ import dev.cfmobile.app.data.remote.safeApiCall
 class AiGatewayRepository(private val api: CloudflareApi) {
 
     suspend fun listGateways(accountId: String): ApiResult<List<AiGateway>> =
-        safeApiCall { api.listAiGateways(accountId) }
+        safeApiCall { api.listAiGateways(accountId) }.emptyListOnNullResult()
 
     suspend fun createGateway(accountId: String, gateway: AiGatewayWrite): ApiResult<AiGateway> =
         safeApiCall { api.createAiGateway(accountId, gateway) }

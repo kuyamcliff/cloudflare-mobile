@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.ClientCertificate
@@ -17,7 +18,7 @@ import dev.cfmobile.app.data.remote.safeApiCall
 class MutualTlsRepository(private val api: CloudflareApi) {
 
     suspend fun listClientCertificates(zoneId: String): ApiResult<List<ClientCertificate>> =
-        safeApiCall { api.listClientCertificates(zoneId) }
+        safeApiCall { api.listClientCertificates(zoneId) }.emptyListOnNullResult()
 
     /** Cloudflare keeps a revoked certificate on record rather than deleting it, so the row
      *  comes back with a revoked status instead of disappearing. */

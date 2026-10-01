@@ -75,7 +75,7 @@ fun ApiShieldScreen(zoneName: String, viewModel: ApiShieldViewModel, onBack: () 
                                 subtitle = operation.host,
                                 detail = operation.lastUpdated?.let { "Updated $it" }
                             )
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                            dev.cfmobile.app.ui.design.RowDivider()
                         }
                     }
                 }

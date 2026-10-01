@@ -104,6 +104,9 @@ object Routes {
     const val SEARCH = "search"
     const val DIAGNOSTICS = "diagnostics"
     const val ACTIVITY = "activity"
+    const val COMMAND = "command?q={q}"
+    const val ACTION = "action?draft={draft}&endpoint={endpoint}"
+    const val PROFILE = "profile"
 
     /** Token owner route segment: "user" or the owning account's ID. */
     const val USER_OWNER = "user"
@@ -208,6 +211,8 @@ object Routes {
         "explorer?endpoint=${encode(endpointId.orEmpty())}&method=${encode(method.orEmpty())}&path=${encode(path.orEmpty())}&query=${encode(query.orEmpty())}"
     fun tokenDetail(ownerAccountId: String?, tokenId: String) = "token/${ownerAccountId ?: USER_OWNER}/$tokenId"
     fun tokenCreate(ownerAccountId: String?) = "tokencreate/${ownerAccountId ?: USER_OWNER}"
+    fun command(query: String = "") = "command?q=${encode(query)}"
+    fun action(draftId: String? = null, endpointId: String? = null) = "action?draft=${encode(draftId.orEmpty())}&endpoint=${encode(endpointId.orEmpty())}"
     fun r2Objects(accountId: String, bucketName: String, jurisdiction: String?) =
         "account/$accountId/r2/${encode(bucketName)}/objects?j=${encode(jurisdiction.orEmpty())}"
 }

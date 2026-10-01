@@ -53,7 +53,7 @@ fun SslScreen(viewModel: SslViewModel, zoneName: String, onBack: () -> Unit) {
                     ),
                     onSelect = { viewModel.update(StringSetting.SSL, it) }
                 )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                dev.cfmobile.app.ui.design.RowDivider()
 
                 ToggleRow(
                     title = "Always Use HTTPS",
@@ -62,7 +62,7 @@ fun SslScreen(viewModel: SslViewModel, zoneName: String, onBack: () -> Unit) {
                     isSaving = savingKey == StringSetting.ALWAYS_USE_HTTPS,
                     onToggle = { viewModel.update(StringSetting.ALWAYS_USE_HTTPS, if (it) "on" else "off") }
                 )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                dev.cfmobile.app.ui.design.RowDivider()
 
                 OptionRow(
                     title = "Minimum TLS version",
@@ -71,7 +71,7 @@ fun SslScreen(viewModel: SslViewModel, zoneName: String, onBack: () -> Unit) {
                     options = listOf("1.0" to "TLS 1.0", "1.1" to "TLS 1.1", "1.2" to "TLS 1.2", "1.3" to "TLS 1.3"),
                     onSelect = { viewModel.update(StringSetting.MIN_TLS_VERSION, it) }
                 )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                dev.cfmobile.app.ui.design.RowDivider()
 
                 ToggleRow(
                     title = "Automatic HTTPS Rewrites",
@@ -80,7 +80,7 @@ fun SslScreen(viewModel: SslViewModel, zoneName: String, onBack: () -> Unit) {
                     isSaving = savingKey == StringSetting.AUTOMATIC_HTTPS_REWRITES,
                     onToggle = { viewModel.update(StringSetting.AUTOMATIC_HTTPS_REWRITES, if (it) "on" else "off") }
                 )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                dev.cfmobile.app.ui.design.RowDivider()
 
                 OptionRow(
                     title = "Security level",

@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.LogpushJob
@@ -13,7 +14,7 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class LogpushRepository(private val api: CloudflareApi) {
 
     suspend fun listJobs(accountId: String): ApiResult<List<LogpushJob>> =
-        safeApiCall { api.listLogpushJobs(accountId) }
+        safeApiCall { api.listLogpushJobs(accountId) }.emptyListOnNullResult()
 
     suspend fun setEnabled(accountId: String, jobId: Long, enabled: Boolean): ApiResult<LogpushJob> =
         safeApiCall { api.updateLogpushJob(accountId, jobId, LogpushJobUpdate(enabled)) }

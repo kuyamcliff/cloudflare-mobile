@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.DnsFirewallCluster
@@ -12,7 +13,7 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class DnsFirewallRepository(private val api: CloudflareApi) {
 
     suspend fun listClusters(accountId: String): ApiResult<List<DnsFirewallCluster>> =
-        safeApiCall { api.listDnsFirewallClusters(accountId) }
+        safeApiCall { api.listDnsFirewallClusters(accountId) }.emptyListOnNullResult()
 
     suspend fun createCluster(accountId: String, name: String, upstreamIps: List<String>): ApiResult<DnsFirewallCluster> =
         safeApiCall {

@@ -140,7 +140,7 @@ private fun ResultBlock(index: Int, total: Int, result: D1QueryResult) {
                         )
                     }
                 }
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                dev.cfmobile.app.ui.design.RowDivider()
                 result.results.orEmpty().forEach { row ->
                     Row(Modifier.padding(vertical = 4.dp)) {
                         columns.forEach { column ->
@@ -155,6 +155,6 @@ private fun ResultBlock(index: Int, total: Int, result: D1QueryResult) {
                 }
             }
         }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+        dev.cfmobile.app.ui.design.RowDivider()
     }
 }

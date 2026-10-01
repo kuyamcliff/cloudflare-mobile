@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.CertificatePack
@@ -22,7 +23,7 @@ class CertificatesRepository(private val api: CloudflareApi) {
         safeApiCall { api.updateDnssec(zoneId, DnssecUpdate(if (enabled) "active" else "disabled")) }
 
     suspend fun listCustomHostnames(zoneId: String): ApiResult<List<CustomHostname>> =
-        safeApiCall { api.listCustomHostnames(zoneId) }
+        safeApiCall { api.listCustomHostnames(zoneId) }.emptyListOnNullResult()
 
     suspend fun createCustomHostname(zoneId: String, hostname: String, method: String): ApiResult<CustomHostname> =
         safeApiCall {
@@ -39,5 +40,5 @@ class CertificatesRepository(private val api: CloudflareApi) {
         }
 
     suspend fun listCertificatePacks(zoneId: String): ApiResult<List<CertificatePack>> =
-        safeApiCall { api.listCertificatePacks(zoneId) }
+        safeApiCall { api.listCertificatePacks(zoneId) }.emptyListOnNullResult()
 }

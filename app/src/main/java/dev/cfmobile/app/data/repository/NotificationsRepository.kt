@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.NotificationHistoryEntry
@@ -15,7 +16,7 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class NotificationsRepository(private val api: CloudflareApi) {
 
     suspend fun listPolicies(accountId: String): ApiResult<List<NotificationPolicy>> =
-        safeApiCall { api.listNotificationPolicies(accountId) }
+        safeApiCall { api.listNotificationPolicies(accountId) }.emptyListOnNullResult()
 
     /** Cloudflare merges the PATCH into the stored policy, so sending only `enabled` leaves
      *  the alert type and its destinations untouched. */
@@ -27,7 +28,7 @@ class NotificationsRepository(private val api: CloudflareApi) {
 
     /** Where alerts can be sent, beyond the email addresses a policy lists inline. */
     suspend fun listWebhooks(accountId: String): ApiResult<List<NotificationWebhook>> =
-        safeApiCall { api.listNotificationWebhooks(accountId) }
+        safeApiCall { api.listNotificationWebhooks(accountId) }.emptyListOnNullResult()
 
     suspend fun createWebhook(accountId: String, name: String, url: String): ApiResult<NotificationWebhook> =
         safeApiCall { api.createNotificationWebhook(accountId, NotificationWebhookWrite(name = name, url = url)) }
@@ -38,5 +39,5 @@ class NotificationsRepository(private val api: CloudflareApi) {
     /** What Cloudflare actually sent, which is the difference between a policy being
      *  configured and it working. */
     suspend fun listHistory(accountId: String): ApiResult<List<NotificationHistoryEntry>> =
-        safeApiCall { api.listNotificationHistory(accountId) }
+        safeApiCall { api.listNotificationHistory(accountId) }.emptyListOnNullResult()
 }

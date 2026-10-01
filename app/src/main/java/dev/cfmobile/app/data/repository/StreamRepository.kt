@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.StreamCaption
@@ -25,7 +26,7 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class StreamRepository(private val api: CloudflareApi) {
 
     suspend fun listVideos(accountId: String): ApiResult<List<StreamVideo>> =
-        safeApiCall { api.listStreamVideos(accountId) }
+        safeApiCall { api.listStreamVideos(accountId) }.emptyListOnNullResult()
 
     suspend fun deleteVideo(accountId: String, videoId: String): ApiResult<Unit> =
         safeApiCallUnit { api.deleteStreamVideo(accountId, videoId) }
@@ -58,13 +59,13 @@ class StreamRepository(private val api: CloudflareApi) {
         safeApiCallUnit { api.deleteStreamLiveInput(accountId, inputId) }
 
     suspend fun listWatermarks(accountId: String): ApiResult<List<StreamWatermark>> =
-        safeApiCall { api.listStreamWatermarks(accountId) }
+        safeApiCall { api.listStreamWatermarks(accountId) }.emptyListOnNullResult()
 
     suspend fun deleteWatermark(accountId: String, watermarkId: String): ApiResult<Unit> =
         safeApiCallUnit { api.deleteStreamWatermark(accountId, watermarkId) }
 
     suspend fun listCaptions(accountId: String, videoId: String): ApiResult<List<StreamCaption>> =
-        safeApiCall { api.listStreamCaptions(accountId, videoId) }
+        safeApiCall { api.listStreamCaptions(accountId, videoId) }.emptyListOnNullResult()
 
     suspend fun deleteCaption(accountId: String, videoId: String, language: String): ApiResult<Unit> =
         safeApiCallUnit { api.deleteStreamCaption(accountId, videoId, language) }
@@ -72,7 +73,7 @@ class StreamRepository(private val api: CloudflareApi) {
     /** Metadata only: the private half of a signing key exists solely in the create response,
      *  and this app doesn't make that call. */
     suspend fun listSigningKeys(accountId: String): ApiResult<List<StreamSigningKey>> =
-        safeApiCall { api.listStreamSigningKeys(accountId) }
+        safeApiCall { api.listStreamSigningKeys(accountId) }.emptyListOnNullResult()
 
     suspend fun deleteSigningKey(accountId: String, keyId: String): ApiResult<Unit> =
         safeApiCallUnit { api.deleteStreamSigningKey(accountId, keyId) }

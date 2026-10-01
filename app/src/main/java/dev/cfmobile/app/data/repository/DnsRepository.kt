@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.DnsBatchDeleteRef
@@ -17,7 +18,7 @@ import java.io.IOException
 
 class DnsRepository(private val api: CloudflareApi) {
     suspend fun listRecords(zoneId: String): ApiResult<List<DnsRecord>> =
-        safeApiCall { api.listDnsRecords(zoneId) }
+        safeApiCall { api.listDnsRecords(zoneId) }.emptyListOnNullResult()
 
     suspend fun createRecord(zoneId: String, record: DnsRecordWrite): ApiResult<DnsRecord> =
         safeApiCall { api.createDnsRecord(zoneId, record) }

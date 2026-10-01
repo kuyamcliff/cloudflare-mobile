@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.D1Database
@@ -14,7 +15,7 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class D1Repository(private val api: CloudflareApi) {
 
     suspend fun listDatabases(accountId: String): ApiResult<List<D1Database>> =
-        safeApiCall { api.listD1Databases(accountId) }
+        safeApiCall { api.listD1Databases(accountId) }.emptyListOnNullResult()
 
     suspend fun createDatabase(accountId: String, name: String): ApiResult<D1Database> =
         safeApiCall { api.createD1Database(accountId, D1DatabaseCreate(name = name)) }
@@ -25,5 +26,5 @@ class D1Repository(private val api: CloudflareApi) {
     /** Runs SQL against a database. Cloudflare answers with one result per statement, so a
      *  multi-statement script returns several. */
     suspend fun query(accountId: String, databaseId: String, sql: String): ApiResult<List<D1QueryResult>> =
-        safeApiCall { api.queryD1Database(accountId, databaseId, D1QueryRequest(sql)) }
+        safeApiCall { api.queryD1Database(accountId, databaseId, D1QueryRequest(sql)) }.emptyListOnNullResult()
 }

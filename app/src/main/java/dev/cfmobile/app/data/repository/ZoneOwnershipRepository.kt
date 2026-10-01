@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.CustomNameserver
@@ -16,7 +17,7 @@ class ZoneOwnershipRepository(private val api: CloudflareApi) {
 
     /** Custom nameserver sets are configured per account; a zone only picks one. */
     suspend fun listAccountNameservers(accountId: String): ApiResult<List<CustomNameserver>> =
-        safeApiCall { api.listAccountCustomNameservers(accountId) }
+        safeApiCall { api.listAccountCustomNameservers(accountId) }.emptyListOnNullResult()
 
     suspend fun getZoneNameservers(zoneId: String): ApiResult<ZoneCustomNameservers> =
         safeApiCall { api.getZoneCustomNameservers(zoneId) }

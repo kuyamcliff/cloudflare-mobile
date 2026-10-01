@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.RegistrarDomain
@@ -14,5 +15,5 @@ import dev.cfmobile.app.data.remote.safeApiCall
 class RegistrarRepository(private val api: CloudflareApi) {
 
     suspend fun listDomains(accountId: String): ApiResult<List<RegistrarDomain>> =
-        safeApiCall { api.listRegistrarDomains(accountId) }
+        safeApiCall { api.listRegistrarDomains(accountId) }.emptyListOnNullResult()
 }

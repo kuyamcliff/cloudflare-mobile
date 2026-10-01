@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.GatewayList
@@ -19,7 +20,7 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class GatewayRepository(private val api: CloudflareApi) {
 
     suspend fun listRules(accountId: String): ApiResult<List<GatewayRule>> =
-        safeApiCall { api.listGatewayRules(accountId) }
+        safeApiCall { api.listGatewayRules(accountId) }.emptyListOnNullResult()
 
     suspend fun createRule(accountId: String, rule: GatewayRuleCreate): ApiResult<GatewayRule> =
         safeApiCall { api.createGatewayRule(accountId, rule) }
@@ -28,11 +29,11 @@ class GatewayRepository(private val api: CloudflareApi) {
         safeApiCallUnit { api.deleteGatewayRule(accountId, ruleId) }
 
     suspend fun listLists(accountId: String): ApiResult<List<GatewayList>> =
-        safeApiCall { api.listGatewayLists(accountId) }
+        safeApiCall { api.listGatewayLists(accountId) }.emptyListOnNullResult()
 
     /** A list's items are a separate request - the list itself only reports how many it holds. */
     suspend fun listItems(accountId: String, listId: String): ApiResult<List<GatewayListItem>> =
-        safeApiCall { api.listGatewayListItems(accountId, listId) }
+        safeApiCall { api.listGatewayListItems(accountId, listId) }.emptyListOnNullResult()
 
     suspend fun createList(accountId: String, list: GatewayListCreate): ApiResult<GatewayList> =
         safeApiCall { api.createGatewayList(accountId, list) }
@@ -42,7 +43,7 @@ class GatewayRepository(private val api: CloudflareApi) {
 
     /** DNS locations: the resolver addresses a network's queries arrive on. */
     suspend fun listLocations(accountId: String): ApiResult<List<GatewayLocation>> =
-        safeApiCall { api.listGatewayLocations(accountId) }
+        safeApiCall { api.listGatewayLocations(accountId) }.emptyListOnNullResult()
 
     suspend fun createLocation(
         accountId: String,

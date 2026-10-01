@@ -67,7 +67,7 @@ fun PagesScreen(viewModel: PagesViewModel, onBack: () -> Unit) {
                 LazyColumn(Modifier.padding(padding), contentPadding = PaddingValues(bottom = 16.dp)) {
                     items(projects, key = { it.name }) { project ->
                         PagesProjectRow(project, onClick = { viewModel.selectProject(project) })
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                        dev.cfmobile.app.ui.design.RowDivider()
                     }
                 }
             }
@@ -135,7 +135,7 @@ private fun DeploymentsSheet(
         Column(Modifier.padding(20.dp).heightIn(max = 480.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(projectName, style = MaterialTheme.typography.titleMedium, fontFamily = FontFamily.Monospace)
             DomainsSection(domains, domainForm, deletingDomain, viewModel)
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            dev.cfmobile.app.ui.design.RowDivider()
             Text("Deployment history", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Button(onClick = { confirmDeploy = true }, enabled = !isDeploying) {
                 if (isDeploying) CircularProgressIndicator(Modifier.padding(end = 6.dp))
@@ -163,7 +163,7 @@ private fun DeploymentsSheet(
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             items(deployments.value, key = { it.id }) { deployment ->
                                 DeploymentRow(deployment, isDeploying = isDeploying, onRetry = { onRetry(deployment) })
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                                dev.cfmobile.app.ui.design.RowDivider()
                             }
                         }
                     }

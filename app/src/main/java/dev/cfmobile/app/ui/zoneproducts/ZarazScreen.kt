@@ -128,7 +128,7 @@ private fun ZarazBody(config: ZarazConfig) {
 private fun Section(title: String, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(title, style = MaterialTheme.typography.titleSmall)
-        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+        dev.cfmobile.app.ui.design.RowDivider()
         content()
     }
 }

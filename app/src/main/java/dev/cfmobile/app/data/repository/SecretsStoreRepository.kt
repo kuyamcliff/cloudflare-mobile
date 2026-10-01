@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.SecretStore
@@ -16,17 +17,17 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class SecretsStoreRepository(private val api: CloudflareApi) {
 
     suspend fun listStores(accountId: String): ApiResult<List<SecretStore>> =
-        safeApiCall { api.listSecretStores(accountId) }
+        safeApiCall { api.listSecretStores(accountId) }.emptyListOnNullResult()
 
     /** Cloudflare answers the create with a list, since it accepts several at once. */
     suspend fun createStore(accountId: String, name: String): ApiResult<List<SecretStore>> =
-        safeApiCall { api.createSecretStore(accountId, SecretStoreWrite(name)) }
+        safeApiCall { api.createSecretStore(accountId, SecretStoreWrite(name)) }.emptyListOnNullResult()
 
     suspend fun deleteStore(accountId: String, storeId: String): ApiResult<Unit> =
         safeApiCallUnit { api.deleteSecretStore(accountId, storeId) }
 
     suspend fun listSecrets(accountId: String, storeId: String): ApiResult<List<StoredSecret>> =
-        safeApiCall { api.listStoredSecrets(accountId, storeId) }
+        safeApiCall { api.listStoredSecrets(accountId, storeId) }.emptyListOnNullResult()
 
     suspend fun deleteSecret(accountId: String, storeId: String, secretId: String): ApiResult<Unit> =
         safeApiCallUnit { api.deleteStoredSecret(accountId, storeId, secretId) }

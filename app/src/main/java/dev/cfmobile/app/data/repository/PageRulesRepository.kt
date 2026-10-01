@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.PageRule
@@ -13,7 +14,7 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class PageRulesRepository(private val api: CloudflareApi) {
 
     suspend fun listRules(zoneId: String): ApiResult<List<PageRule>> =
-        safeApiCall { api.listPageRules(zoneId) }
+        safeApiCall { api.listPageRules(zoneId) }.emptyListOnNullResult()
 
     suspend fun createRule(zoneId: String, urlPattern: String, actionId: String, actionValue: Any?, priority: Int): ApiResult<PageRule> =
         safeApiCall {

@@ -59,7 +59,7 @@ fun SecurityEventsScreen(zoneName: String, viewModel: SecurityEventsViewModel, o
                 isSaving = false,
                 onSelect = { viewModel.selectWindow(EventWindow.valueOf(it)) }
             )
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            dev.cfmobile.app.ui.design.RowDivider()
             RefreshableStateContent(
                 state = uiState.events,
                 isRefreshing = uiState.isRefreshing,
@@ -73,7 +73,7 @@ fun SecurityEventsScreen(zoneName: String, viewModel: SecurityEventsViewModel, o
                     LazyColumn(contentPadding = PaddingValues(bottom = 16.dp)) {
                         items(events, key = { it.datetime.orEmpty() + it.clientIP.orEmpty() + it.ruleId.orEmpty() }) { event ->
                             EventRow(event, onClick = { detailEvent = event })
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                            dev.cfmobile.app.ui.design.RowDivider()
                         }
                     }
                 }

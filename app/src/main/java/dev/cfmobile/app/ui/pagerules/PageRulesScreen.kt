@@ -69,7 +69,7 @@ fun PageRulesScreen(viewModel: PageRulesViewModel, zoneName: String, onBack: () 
                 LazyColumn(Modifier.padding(padding), contentPadding = PaddingValues(bottom = 96.dp)) {
                     items(rules, key = { it.id }) { rule ->
                         PageRuleRow(rule, zoneName = zoneName, onToggle = { viewModel.toggleActive(rule) }, onDelete = { viewModel.delete(rule) })
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                        dev.cfmobile.app.ui.design.RowDivider()
                     }
                 }
             }

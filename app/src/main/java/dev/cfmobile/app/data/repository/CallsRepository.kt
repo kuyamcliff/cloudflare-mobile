@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.CallsApp
@@ -14,7 +15,7 @@ import dev.cfmobile.app.data.remote.safeApiCall
 class CallsRepository(private val api: CloudflareApi) {
 
     suspend fun listApps(accountId: String): ApiResult<List<CallsApp>> =
-        safeApiCall { api.listCallsApps(accountId) }
+        safeApiCall { api.listCallsApps(accountId) }.emptyListOnNullResult()
 
     suspend fun createApp(accountId: String, name: String): ApiResult<CallsApp> =
         safeApiCall { api.createCallsApp(accountId, CallsAppWrite(name)) }

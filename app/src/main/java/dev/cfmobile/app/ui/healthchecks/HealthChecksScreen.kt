@@ -89,7 +89,7 @@ fun HealthChecksScreen(zoneName: String, viewModel: HealthChecksViewModel, onBac
                                     }
                                 }
                             )
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                            dev.cfmobile.app.ui.design.RowDivider()
                         }
                     }
                 }

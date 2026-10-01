@@ -51,7 +51,7 @@ fun SecurityScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(16.dp, 16.dp, 16.dp, 4.dp)
             )
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            dev.cfmobile.app.ui.design.RowDivider()
 
             val biometricLabel = when (biometricAvailability) {
                 BiometricAvailability.AVAILABLE -> "Available on this device"
@@ -71,7 +71,7 @@ fun SecurityScreen(
                     }
                 }
             )
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            dev.cfmobile.app.ui.design.RowDivider()
 
             if (uiState.appLockEnabled) {
                 OptionRow(
@@ -81,7 +81,7 @@ fun SecurityScreen(
                     options = LOCK_TIMEOUT_OPTIONS_SECONDS.map { it.toString() to timeoutLabel(it) },
                     onSelect = { viewModel.setLockTimeoutSeconds(it.toInt()) }
                 )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                dev.cfmobile.app.ui.design.RowDivider()
             }
 
             ToggleRow(
@@ -91,7 +91,7 @@ fun SecurityScreen(
                 isSaving = false,
                 onToggle = viewModel::setScreenshotProtectionEnabled
             )
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            dev.cfmobile.app.ui.design.RowDivider()
 
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Backup", style = MaterialTheme.typography.bodyLarge)
@@ -101,7 +101,7 @@ fun SecurityScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            dev.cfmobile.app.ui.design.RowDivider()
 
             if (uiState.appLockEnabled) {
                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
