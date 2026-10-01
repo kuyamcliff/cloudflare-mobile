@@ -44,6 +44,7 @@ fun LoginScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showToken by remember { mutableStateOf(false) }
+    dev.cfmobile.app.ui.components.SecureWindow()
 
     LaunchedEffect(state.success) {
         if (state.success) onLoggedIn()
@@ -58,11 +59,11 @@ fun LoginScreen(
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Connect Cloudflare", style = MaterialTheme.typography.titleLarge)
+            Text("Cloudflare Control", style = MaterialTheme.typography.titleLarge)
+            Text("Connect your Cloudflare account", style = MaterialTheme.typography.titleMedium)
             Text(
-                "Paste an API token from your Cloudflare dashboard (Profile → API Tokens → " +
-                    "Create Token). It's encrypted and stored only on this device - never sent " +
-                    "anywhere but api.cloudflare.com.",
+                "Paste an API token created in the Cloudflare dashboard under My Profile, API Tokens. " +
+                    "Your token stays on this device, encrypted with the Android Keystore, and is sent only to Cloudflare.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -112,8 +113,27 @@ fun LoginScreen(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
-                Text(if (state.isVerifying) "Verifying..." else "Connect")
+                Text(if (state.isVerifying) "Connecting" else "Connect")
             }
+
+            state.step?.let { current ->
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    ConnectStep.entries.forEach { step ->
+                        val reached = step.ordinal <= current.ordinal
+                        Text(
+                            step.label,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (reached) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        )
+                    }
+                }
+            }
+
+            Text(
+                "Use an API token, not the legacy Global API Key. The app shows only what the token is allowed to do.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

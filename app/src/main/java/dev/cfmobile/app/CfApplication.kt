@@ -12,6 +12,8 @@ class CfApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         container = AppContainer(this)
+        container.startProfileTracking()
+        dev.cfmobile.app.core.transfers.TransferNotifications.ensureChannels(this)
 
         // Tracks whole-app foreground/background transitions (not per-Activity) so app lock
         // triggers correctly across screen rotations, multi-window, and navigating within the

@@ -4,18 +4,42 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverter
+import androidx.room.TypeConverters
 
-/** Local cache only - never a source of truth and never holds secrets (tokens live in
- *  CredentialStore's encrypted prefs, not here). Losing this database costs nothing but a
- *  network round trip on next launch. */
-@Database(entities = [ZoneEntity::class], version = 1, exportSchema = false)
+class DbConverters {
+    @TypeConverter fun directionToString(value: TransferDirection): String = value.name
+    @TypeConverter fun stringToDirection(value: String): TransferDirection = TransferDirection.valueOf(value)
+    @TypeConverter fun stateToString(value: TransferState): String = value.name
+    @TypeConverter fun stringToState(value: String): TransferState = TransferState.valueOf(value)
+}
+
+/** Local cache and app-owned metadata. Never holds a secret: tokens and R2 secret keys live
+ *  in the Keystore-encrypted credential store, not here (spec 214). */
+@Database(
+    entities = [
+        ZoneEntity::class,
+        RequestHistoryEntity::class,
+        SavedRequestEntity::class,
+        TransferEntity::class,
+        TransferPartEntity::class
+    ],
+    version = 2,
+    exportSchema = false
+)
+@TypeConverters(DbConverters::class)
 abstract class CfDatabase : RoomDatabase() {
     abstract fun zoneDao(): ZoneDao
+    abstract fun requestHistoryDao(): RequestHistoryDao
+    abstract fun savedRequestDao(): SavedRequestDao
+    abstract fun transferDao(): TransferDao
 
     companion object {
         fun create(context: Context): CfDatabase =
             Room.databaseBuilder(context.applicationContext, CfDatabase::class.java, "cf_cache.db")
-                .fallbackToDestructiveMigration(true)
+                // Version 1 held only the zone cache, so dropping it on upgrade loses nothing
+                // that a refresh does not restore.
+                .fallbackToDestructiveMigrationFrom(true, 1)
                 .build()
     }
 }

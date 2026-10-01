@@ -22,3 +22,12 @@ val DarkOutline = Color(0xFF333335)
 val StatusGreen = Color(0xFF16A34A)
 val StatusRed = Color(0xFFDC2626)
 val StatusAmber = Color(0xFFD97706)
+
+/** Semantic status colors (spec 82, 243). Orange stays the brand accent, not a status. */
+object StatusColors {
+    // Mid-tone values chosen to keep at least 3:1 contrast on both the light and dark surfaces.
+    val success = Color(0xFF1F9D55)
+    val warning = Color(0xFFC27C0E)
+    val error = Color(0xFFE5484D)
+    val info = Color(0xFF3B82F6)
+}

@@ -17,6 +17,34 @@ data class ClassifiedError(
 
 object ErrorClassifier {
 
+    private val PLAN_HINT = Regex("(\\bplan\\b|entitle|subscription|not available for|upgrade|enterprise)", RegexOption.IGNORE_CASE)
+
+    /** What happened, in one line (spec 250). Cloudflare's own text stays in [ClassifiedError.message]. */
+    fun headline(type: CfErrorType): String = when (type) {
+        CfErrorType.UNAUTHORIZED -> "Cloudflare rejected this token."
+        CfErrorType.FORBIDDEN -> "Cloudflare denied this request."
+        CfErrorType.PLAN_RESTRICTED -> "Not available on this plan."
+        CfErrorType.NOT_FOUND -> "Cloudflare could not find this resource."
+        CfErrorType.VALIDATION -> "Cloudflare did not accept this request."
+        CfErrorType.RATE_LIMITED -> "Cloudflare rate limit reached."
+        CfErrorType.SERVER_ERROR -> "Cloudflare returned a server error."
+        CfErrorType.NETWORK_FAILURE -> "Could not reach Cloudflare."
+        CfErrorType.UNKNOWN -> "The request did not complete."
+    }
+
+    /** What it means and what to do now. */
+    fun explanation(type: CfErrorType): String = when (type) {
+        CfErrorType.UNAUTHORIZED -> "It may have been revoked, expired, or otherwise invalid. The token is still saved on this device until you remove it."
+        CfErrorType.FORBIDDEN -> "This token may not have the permission this action needs, or it may not cover this account or zone."
+        CfErrorType.PLAN_RESTRICTED -> "Cloudflare reports this feature is limited by the account's plan or entitlements. Changing token permissions will not change that."
+        CfErrorType.NOT_FOUND -> "It may have been deleted, or it belongs to an account this token cannot see."
+        CfErrorType.VALIDATION -> "Check the values and try again. Cloudflare's reason is shown below."
+        CfErrorType.RATE_LIMITED -> "The API has temporarily limited requests from this token. The app waits for the delay Cloudflare asks for before retrying."
+        CfErrorType.SERVER_ERROR -> "This is a problem on Cloudflare's side, not with your configuration. Try again shortly."
+        CfErrorType.NETWORK_FAILURE -> "Check the connection. Cached data is shown where available."
+        CfErrorType.UNKNOWN -> "Try again. If it keeps happening, the details below may help."
+    }
+
     fun classify(failure: ApiResult.Failure): ClassifiedError {
         val code = failure.httpCode
         val message = failure.message
@@ -26,6 +54,7 @@ object ErrorClassifier {
         val type = when {
             isNetworkFailure -> CfErrorType.NETWORK_FAILURE
             code == 401 -> CfErrorType.UNAUTHORIZED
+            code == 403 && PLAN_HINT.containsMatchIn(message) -> CfErrorType.PLAN_RESTRICTED
             code == 403 -> CfErrorType.FORBIDDEN
             code == 404 -> CfErrorType.NOT_FOUND
             code == 429 -> CfErrorType.RATE_LIMITED
@@ -37,6 +66,7 @@ object ErrorClassifier {
         val actions = when (type) {
             CfErrorType.UNAUTHORIZED -> listOf(RecoveryAction.REAUTHENTICATE, RecoveryAction.GO_BACK)
             CfErrorType.FORBIDDEN -> listOf(RecoveryAction.OPEN_TOKEN_PERMISSIONS, RecoveryAction.GO_BACK)
+            CfErrorType.PLAN_RESTRICTED -> listOf(RecoveryAction.GO_BACK)
             CfErrorType.NOT_FOUND -> listOf(RecoveryAction.REFRESH, RecoveryAction.GO_BACK)
             CfErrorType.VALIDATION -> listOf(RecoveryAction.GO_BACK)
             CfErrorType.RATE_LIMITED -> listOf(RecoveryAction.CONTINUE_WITH_CACHED)

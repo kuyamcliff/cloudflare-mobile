@@ -32,7 +32,13 @@ class AccountStoreTest {
     fun `add stores the secret separately from the summary the UI sees`() {
         val summary = store.add(label = "Personal", token = "cf-token-123")
 
-        assertThat(summary).isEqualTo(AccountSummary(id = summary.id, label = "Personal", email = null))
+        assertThat(summary.label).isEqualTo("Personal")
+        assertThat(summary.email).isNull()
+        // The summary identifies the token by a hash-derived fingerprint, never by the secret.
+        assertThat(summary.fingerprint).isEqualTo(AccountStore.fingerprint("cf-token-123"))
+        assertThat(summary.fingerprint).doesNotContain("cf-token")
+        assertThat(summary.toString()).doesNotContain("cf-token-123")
+        assertThat(summary.lastVerifiedAt).isNotNull()
         assertThat(store.getActiveToken()).isEqualTo("cf-token-123")
         assertThat(store.getAll()).containsExactly(summary)
     }

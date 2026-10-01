@@ -1,11 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Nothing this app stores is backed up or transferred: tokens are Keystore-bound and would be
+     unreadable elsewhere anyway, and history or caches are not worth moving (spec 7, 117). -->
 <data-extraction-rules>
-    <cloud-backup disableIfNoEncryptionCapability="false">
-        <exclude domain="sharedpref" />
+    <cloud-backup disableIfNoEncryptionCapability="true">
+        <exclude domain="root" />
+        <exclude domain="file" />
         <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
     </cloud-backup>
     <device-transfer>
-        <exclude domain="sharedpref" />
+        <exclude domain="root" />
+        <exclude domain="file" />
         <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
     </device-transfer>
 </data-extraction-rules>

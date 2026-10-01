@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="cf_orange">#F6821F</color>
-    <color name="ic_launcher_background">#0F0F10</color>
+    <color name="ic_launcher_background">#1B1A19</color>
+    <color name="window_light">#FBF9F7</color>
+    <color name="window_dark">#121110</color>
 </resources>

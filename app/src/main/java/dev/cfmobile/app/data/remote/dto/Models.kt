@@ -549,7 +549,10 @@ data class LoadBalancerWrite(
 @JsonClass(generateAdapter = true)
 data class R2Bucket(
     val name: String = "",
-    @Json(name = "creation_date") val creationDate: String? = null
+    @Json(name = "creation_date") val creationDate: String? = null,
+    val location: String? = null,
+    val jurisdiction: String? = null,
+    @Json(name = "storage_class") val storageClass: String? = null
 )
 
 /** R2's list-buckets response nests the array under "buckets" rather than returning it as
@@ -1366,7 +1369,10 @@ data class ApiToken(
     @Json(name = "issued_on") val issuedOn: String? = null,
     @Json(name = "modified_on") val modifiedOn: String? = null,
     @Json(name = "expires_on") val expiresOn: String? = null,
-    @Json(name = "last_used_on") val lastUsedOn: String? = null
+    @Json(name = "last_used_on") val lastUsedOn: String? = null,
+    @Json(name = "not_before") val notBefore: String? = null,
+    val policies: List<TokenPolicy>? = null,
+    val condition: TokenCondition? = null
 )
 
 @JsonClass(generateAdapter = true)

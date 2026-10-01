@@ -20,8 +20,6 @@ import dev.cfmobile.app.ui.botmanagement.BotManagementScreen
 import dev.cfmobile.app.ui.botmanagement.BotManagementViewModel
 import dev.cfmobile.app.ui.caching.CachingScreen
 import dev.cfmobile.app.ui.caching.CachingViewModel
-import dev.cfmobile.app.ui.dashboard.DashboardScreen
-import dev.cfmobile.app.ui.dashboard.DashboardViewModel
 import dev.cfmobile.app.ui.addressing.AddressingScreen
 import dev.cfmobile.app.ui.addressing.AddressingViewModel
 import dev.cfmobile.app.ui.diagnostics.TracerScreen
@@ -190,8 +188,20 @@ import dev.cfmobile.app.ui.zones.ZonesScreen
 import dev.cfmobile.app.ui.zones.ZonesViewModel
 
 @Composable
-fun CfNavHost(container: AppContainer, startDestination: String, authenticator: BiometricAuthenticator) {
+fun CfNavHost(
+    container: AppContainer,
+    startDestination: String,
+    authenticator: BiometricAuthenticator,
+    deepLink: String? = null,
+    onDeepLinkHandled: () -> Unit = {}
+) {
     val navController = rememberNavController()
+    androidx.compose.runtime.LaunchedEffect(deepLink) {
+        if (deepLink != null) {
+            navController.navigate(deepLink)
+            onDeepLinkHandled()
+        }
+    }
 
     /** Every account-scoped screen takes the same single {accountId} path argument, so declare
      *  that plumbing once instead of repeating the navArgument/extract dance per destination. */
@@ -204,21 +214,12 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
     NavHost(navController = navController, startDestination = startDestination) {
 
         composable(Routes.LOGIN) {
-            val vm = viewModel<LoginViewModel>(factory = factoryOf { LoginViewModel(container.authRepository) })
+            val vm = viewModel<LoginViewModel>(factory = factoryOf { LoginViewModel(container.authRepository) { container.capabilityRepository.discover() } })
             LoginScreen(vm, onLoggedIn = { navController.navigateToDashboardClearingBackStack() })
         }
 
         composable(Routes.DASHBOARD) {
-            val vm = viewModel<DashboardViewModel>(
-                factory = factoryOf { DashboardViewModel(container.zonesRepository, container.accountsRepository, container.authRepository) }
-            )
-            DashboardScreen(
-                vm,
-                onDomainsClick = { navController.navigate(Routes.ZONES) },
-                onNavigate = { route -> navController.navigate(route) },
-                onSecurityClick = { navController.navigate(Routes.SECURITY) },
-                onManageAccountsClick = { navController.navigate(Routes.SETTINGS) }
-            )
+            MainShellRoute(container, navController)
         }
 
         composable(Routes.ZONES) {
@@ -232,7 +233,7 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
         }
 
         composable(Routes.SETTINGS) {
-            val vm = viewModel<SettingsViewModel>(factory = factoryOf { SettingsViewModel(container.authRepository) })
+            val vm = viewModel<SettingsViewModel>(factory = factoryOf { SettingsViewModel(container.authRepository, container.settings, container.localDataActions) })
             SettingsScreen(
                 vm,
                 onBack = { navController.popBackStack() },
@@ -304,7 +305,7 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
             R2Screen(
                 vm,
                 onBack = { navController.popBackStack() },
-                onOpenBucket = { bucket -> navController.navigate(Routes.r2Bucket(accountId, bucket.name)) }
+                onOpenBucket = { bucket -> navController.navigate(Routes.r2Objects(accountId, bucket.name, bucket.jurisdiction)) }
             )
         }
 
@@ -411,7 +412,12 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
             val vm = viewModel<ApiTokensViewModel>(
                 factory = factoryOf { ApiTokensViewModel(accountId, container.apiTokensRepository) }
             )
-            ApiTokensScreen(vm, onBack = { navController.popBackStack() })
+            ApiTokensScreen(
+                vm,
+                onBack = { navController.popBackStack() },
+                onOpen = { token, accountOwned -> navController.navigate(Routes.tokenDetail(if (accountOwned) accountId else null, token.id)) },
+                onCreate = { accountOwned -> navController.navigate(Routes.tokenCreate(if (accountOwned) accountId else null)) }
+            )
         }
 
         accountScreen(Routes.NOTIFICATIONS) { accountId ->
@@ -901,6 +907,8 @@ fun CfNavHost(container: AppContainer, startDestination: String, authenticator: 
             DnsSettingsScreen(zoneName = zoneName, viewModel = vm, onBack = { navController.popBackStack() })
         }
 
+        platformScreens(container, navController)
+
         accountScreen(Routes.TRACER) { accountId ->
             val vm = viewModel<TracerViewModel>(
                 factory = factoryOf { TracerViewModel(accountId, container.diagnosticsRepository) }
@@ -916,14 +924,14 @@ private fun NavHostController.navigateToDashboardClearingBackStack() {
     }
 }
 
-private fun NavHostController.navigateToLoginClearingBackStack() {
+internal fun NavHostController.navigateToLoginClearingBackStack() {
     navigate(Routes.LOGIN) {
         popUpTo(0) { inclusive = true }
     }
 }
 
 /** Small helper so every screen can build a one-off ViewModel factory without a DI framework. */
-private inline fun <reified VM : androidx.lifecycle.ViewModel> factoryOf(crossinline create: () -> VM) =
+internal inline fun <reified VM : androidx.lifecycle.ViewModel> factoryOf(crossinline create: () -> VM) =
     viewModelFactory {
         initializer { create() }
     }

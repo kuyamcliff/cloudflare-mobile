@@ -15,3 +15,4 @@ app/release/
 *.aab
 *.jks
 *.keystore
+keystore.properties

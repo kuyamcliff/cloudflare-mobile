@@ -93,6 +93,20 @@ object Routes {
     const val BOT_MANAGEMENT = "zone/{zoneId}/{zoneName}/botmanagement"
     const val WEB3 = "zone/{zoneId}/{zoneName}/web3"
     const val DNS_SETTINGS = "zone/{zoneId}/{zoneName}/dnssettings"
+    const val EXPLORER = "explorer?endpoint={endpoint}&method={method}&path={path}&query={query}"
+    const val CATALOG = "catalog"
+    const val GRAPHQL = "graphql"
+    const val TOKEN_ACCESS = "token/access"
+    const val TOKEN_DETAIL = "token/{owner}/{tokenId}"
+    const val TOKEN_CREATE = "tokencreate/{owner}"
+    const val R2_OBJECTS = "account/{accountId}/r2/{bucketName}/objects?j={jurisdiction}"
+    const val TRANSFERS = "transfers"
+    const val SEARCH = "search"
+    const val DIAGNOSTICS = "diagnostics"
+    const val ACTIVITY = "activity"
+
+    /** Token owner route segment: "user" or the owning account's ID. */
+    const val USER_OWNER = "user"
 
     /** Zone names (domains) only ever contain URL-safe characters, but this encodes anyway
      *  rather than assuming - a nav route argument is still a URL path segment. */
@@ -190,4 +204,10 @@ object Routes {
     fun botManagement(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/botmanagement"
     fun web3(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/web3"
     fun dnsSettings(zoneId: String, zoneName: String) = "zone/$zoneId/${encode(zoneName)}/dnssettings"
+    fun explorer(endpointId: String? = null, method: String? = null, path: String? = null, query: String? = null): String =
+        "explorer?endpoint=${encode(endpointId.orEmpty())}&method=${encode(method.orEmpty())}&path=${encode(path.orEmpty())}&query=${encode(query.orEmpty())}"
+    fun tokenDetail(ownerAccountId: String?, tokenId: String) = "token/${ownerAccountId ?: USER_OWNER}/$tokenId"
+    fun tokenCreate(ownerAccountId: String?) = "tokencreate/${ownerAccountId ?: USER_OWNER}"
+    fun r2Objects(accountId: String, bucketName: String, jurisdiction: String?) =
+        "account/$accountId/r2/${encode(bucketName)}/objects?j=${encode(jurisdiction.orEmpty())}"
 }

@@ -1041,6 +1041,105 @@ interface CloudflareApi {
         @Path("tokenId") tokenId: String
     ): Response<CfEnvelope<Map<String, String>>>
 
+    @GET("user/tokens/{tokenId}")
+    suspend fun getApiToken(@Path("tokenId") tokenId: String): Response<CfEnvelope<ApiToken>>
+
+    /** The response's `value` is the new token secret. Cloudflare never returns it again. */
+    @POST("user/tokens")
+    suspend fun createApiToken(@Body body: TokenWrite): Response<CfEnvelope<CreatedToken>>
+
+    @PUT("user/tokens/{tokenId}")
+    suspend fun updateApiToken(@Path("tokenId") tokenId: String, @Body body: TokenWrite): Response<CfEnvelope<ApiToken>>
+
+    /** Rolls the secret: the old value stops working and the result is the new secret. */
+    @PUT("user/tokens/{tokenId}/value")
+    suspend fun rollApiToken(@Path("tokenId") tokenId: String, @Body body: EmptyBody = EmptyBody()): Response<CfEnvelope<String>>
+
+    @GET("user/tokens/permission_groups")
+    suspend fun listUserPermissionGroups(): Response<CfEnvelope<List<PermissionGroup>>>
+
+    @GET("accounts/{accountId}/tokens/verify")
+    suspend fun verifyAccountToken(@Path("accountId") accountId: String): Response<CfEnvelope<TokenVerifyResult>>
+
+    @GET("accounts/{accountId}/tokens/{tokenId}")
+    suspend fun getAccountApiToken(
+        @Path("accountId") accountId: String,
+        @Path("tokenId") tokenId: String
+    ): Response<CfEnvelope<ApiToken>>
+
+    @POST("accounts/{accountId}/tokens")
+    suspend fun createAccountApiToken(
+        @Path("accountId") accountId: String,
+        @Body body: TokenWrite
+    ): Response<CfEnvelope<CreatedToken>>
+
+    @PUT("accounts/{accountId}/tokens/{tokenId}")
+    suspend fun updateAccountApiToken(
+        @Path("accountId") accountId: String,
+        @Path("tokenId") tokenId: String,
+        @Body body: TokenWrite
+    ): Response<CfEnvelope<ApiToken>>
+
+    @PUT("accounts/{accountId}/tokens/{tokenId}/value")
+    suspend fun rollAccountApiToken(
+        @Path("accountId") accountId: String,
+        @Path("tokenId") tokenId: String,
+        @Body body: EmptyBody = EmptyBody()
+    ): Response<CfEnvelope<String>>
+
+    @GET("accounts/{accountId}/tokens/permission_groups")
+    suspend fun listAccountPermissionGroups(@Path("accountId") accountId: String): Response<CfEnvelope<List<PermissionGroup>>>
+
+    // ---- R2 objects (REST data plane; S3 multipart lives in core/transfers) ----
+
+    @GET("accounts/{accountId}/r2/buckets/{bucketName}/objects")
+    suspend fun listR2Objects(
+        @Path("accountId") accountId: String,
+        @Path("bucketName") bucketName: String,
+        @Query("prefix") prefix: String? = null,
+        @Query("delimiter") delimiter: String? = "/",
+        @Query("cursor") cursor: String? = null,
+        @Query("per_page") perPage: Int = 200,
+        @Header("cf-r2-jurisdiction") jurisdiction: String? = null
+    ): Response<CfEnvelope<List<R2Object>>>
+
+    /** Keys keep their `/` literally (Cloudflare requires it), so the key is pre-encoded per
+     *  segment by the caller and passed with encoded = true. */
+    @DELETE("accounts/{accountId}/r2/buckets/{bucketName}/objects/{objectKey}")
+    suspend fun deleteR2Object(
+        @Path("accountId") accountId: String,
+        @Path("bucketName") bucketName: String,
+        @Path("objectKey", encoded = true) encodedKey: String,
+        @Header("cf-r2-jurisdiction") jurisdiction: String? = null
+    ): Response<CfEnvelope<Any>>
+
+    @HTTP(method = "DELETE", path = "accounts/{accountId}/r2/buckets/{bucketName}/objects", hasBody = true)
+    suspend fun deleteR2Objects(
+        @Path("accountId") accountId: String,
+        @Path("bucketName") bucketName: String,
+        @Body keys: List<String>,
+        @Header("cf-r2-jurisdiction") jurisdiction: String? = null
+    ): Response<CfEnvelope<Any>>
+
+    @Streaming
+    @GET("accounts/{accountId}/r2/buckets/{bucketName}/objects/{objectKey}")
+    suspend fun getR2Object(
+        @Path("accountId") accountId: String,
+        @Path("bucketName") bucketName: String,
+        @Path("objectKey", encoded = true) encodedKey: String,
+        @Header("cf-r2-jurisdiction") jurisdiction: String? = null
+    ): Response<ResponseBody>
+
+    @PUT("accounts/{accountId}/r2/buckets/{bucketName}/objects/{objectKey}")
+    suspend fun putR2Object(
+        @Path("accountId") accountId: String,
+        @Path("bucketName") bucketName: String,
+        @Path("objectKey", encoded = true) encodedKey: String,
+        @Body body: RequestBody,
+        @Header("cf-r2-storage-class") storageClass: String? = null,
+        @Header("cf-r2-jurisdiction") jurisdiction: String? = null
+    ): Response<CfEnvelope<R2UploadResult>>
+
     // ---- Notifications (alerting policies) ----
 
     @GET("accounts/{accountId}/alerting/v3/policies")

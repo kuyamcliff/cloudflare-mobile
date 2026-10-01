@@ -6,7 +6,7 @@ enum class CapabilityStatus {
     IMPLEMENTED,
     NOT_IMPLEMENTED,
     /** Cloudflare requires a browser/dashboard-only workflow this app cannot safely replicate
-     *  from the device - see PRD §115's "LIMITATION — EXTERNAL PLATFORM REQUIREMENT" rule. */
+     *  from the device - see PRD §115's "LIMITATION: EXTERNAL PLATFORM REQUIREMENT" rule. */
     LIMITATION_EXTERNAL_PLATFORM
 }
 

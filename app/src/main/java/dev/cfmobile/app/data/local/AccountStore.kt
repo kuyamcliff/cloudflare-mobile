@@ -18,6 +18,13 @@ class AccountStore(
     private val credentials: CredentialStore,
     private val metadata: AccountMetadataStore
 ) {
+    private val _activeId = kotlinx.coroutines.flow.MutableStateFlow(metadata.getActiveId())
+
+    /** Emits whenever the active profile changes, so per-profile state follows it (spec 347). */
+    val activeIdFlow: kotlinx.coroutines.flow.StateFlow<String?> = _activeId
+
+    private fun publish() { _activeId.value = metadata.getActiveId() }
+
     fun getAll(): List<AccountSummary> = metadata.getAll()
 
     fun getActiveId(): String? = metadata.getActiveId()
@@ -31,28 +38,54 @@ class AccountStore(
      *  provider for [dev.cfmobile.app.data.remote.AuthInterceptor], and nothing UI-facing. */
     fun getActiveToken(): String? = getActiveId()?.let { credentials.get(it) }
 
-    fun setActive(id: String) = metadata.setActive(id)
+    fun setActive(id: String) { metadata.setActive(id); publish() }
 
     /** Adds an account and makes it active. Returns the non-secret summary. */
-    fun add(label: String, token: String, email: String? = null): AccountSummary {
+    fun add(label: String, token: String, email: String? = null, tokenId: String? = null, expiresOn: String? = null): AccountSummary {
         val id = UUID.randomUUID().toString()
         credentials.put(id, token)
-        metadata.add(AccountMetadata(id = id, label = label, email = email))
+        val now = System.currentTimeMillis()
+        metadata.add(
+            AccountMetadata(
+                id = id, label = label, email = email, tokenId = tokenId, fingerprint = fingerprint(token),
+                expiresOn = expiresOn, lastVerifiedAt = now, createdAt = now
+            )
+        )
         metadata.setActive(id)
-        return AccountSummary(id = id, label = label, email = email)
+        publish()
+        return getAll().first { it.id == id }
     }
+
+    fun recordVerification(id: String, tokenId: String?, expiresOn: String?) =
+        metadata.recordVerification(id, tokenId, expiresOn, System.currentTimeMillis())
+
+    /** Swaps the stored secret after this profile's own token is rolled in Cloudflare. */
+    fun replaceSecret(id: String, token: String) {
+        if (metadata.getAll().none { it.id == id }) return
+        credentials.put(id, token)
+        metadata.setFingerprint(id, fingerprint(token))
+    }
+
+    fun rename(id: String, label: String) = metadata.rename(id, label)
 
     fun remove(id: String) {
         credentials.remove(id)
         metadata.remove(id)
+        publish()
     }
 
     fun clearAll() {
         credentials.clearAll()
         metadata.clearAll()
+        publish()
     }
 
     companion object {
+        fun fingerprint(token: String): String {
+            val digest = java.security.MessageDigest.getInstance("SHA-256").digest(token.toByteArray(Charsets.UTF_8))
+            return digest.joinToString("") { "%02x".format(it) }.take(12)
+        }
+
         /** Builds the real stores and migrates any pre-split-storage data before returning. */
         fun create(context: Context): AccountStore {
             val credentialStore = CredentialStore.create(context)

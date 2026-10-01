@@ -1,6 +1,22 @@
 package dev.cfmobile.app
 
 import android.content.Context
+import android.content.pm.ApplicationInfo
+import android.util.Log
+import dev.cfmobile.app.core.api.EndpointRegistry
+import dev.cfmobile.app.core.api.RawApiClient
+import dev.cfmobile.app.core.capabilities.CapabilityRepository
+import dev.cfmobile.app.data.local.db.RequestHistoryEntity
+import dev.cfmobile.app.data.remote.CloudflareHosts
+import dev.cfmobile.app.data.remote.NetworkStatus
+import dev.cfmobile.app.data.remote.RequestRecorder
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import dev.cfmobile.app.core.security.AppLockPreferences
 import dev.cfmobile.app.core.security.AppLockState
 import dev.cfmobile.app.data.local.AccountStore
@@ -80,12 +96,142 @@ import dev.cfmobile.app.data.repository.ZonesRepository
 /** Simple hand-rolled service locator: this app is small enough that a DI framework would
  *  add more ceremony than it saves. Every repository is built once and shared. */
 class AppContainer(context: Context) {
-    val accountStore = AccountStore.create(context.applicationContext)
-    val appLockState = AppLockState(AppLockPreferences.create(context.applicationContext))
-    private val database = CfDatabase.create(context.applicationContext)
+    private val appContext = context.applicationContext
+    val isDebuggable: Boolean = (appContext.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
 
-    private val api = NetworkModule.createApi { accountStore.getActiveToken() }
-    private val verifierApi = NetworkModule.createVerifierApi()
+    /** App-lifetime scope for work that outlives a screen (history writes, discovery). Errors
+     *  are logged by class name only, never with a message that could carry data. */
+    val appScope = CoroutineScope(
+        SupervisorJob() + Dispatchers.IO + CoroutineExceptionHandler { _, e ->
+            if (isDebuggable) Log.w("CfControl", "Background task failed: ${e.javaClass.simpleName}")
+        }
+    )
+
+    val accountStore = AccountStore.create(appContext)
+    val appLockState = AppLockState(AppLockPreferences.create(appContext))
+    val settings = dev.cfmobile.app.core.security.AppSettings.create(appContext)
+    val contextStore = dev.cfmobile.app.data.local.ContextStore.create(appContext).also { it.load(accountStore.getActiveId()) }
+    val database = CfDatabase.create(appContext)
+
+    val hosts = CloudflareHosts()
+    val connectivity = dev.cfmobile.app.core.net.ConnectivityMonitor(appContext)
+    val networkStatus = NetworkStatus()
+
+    /** Loaded once, off the main thread, from the schema-generated asset. */
+    private val registryDeferred: Deferred<EndpointRegistry> = appScope.async(start = kotlinx.coroutines.CoroutineStart.LAZY) {
+        appContext.assets.open(EndpointRegistry.ASSET_NAME).use { EndpointRegistry.load(it) }
+    }
+    suspend fun endpointRegistry(): EndpointRegistry = registryDeferred.await()
+
+    private val historyRecorder = RequestRecorder { record ->
+        val profile = accountStore.getActiveId() ?: return@RequestRecorder
+        appScope.launch {
+            database.requestHistoryDao().insert(
+                RequestHistoryEntity(
+                    profileId = profile,
+                    method = record.method,
+                    path = record.path,
+                    query = record.query,
+                    statusCode = record.statusCode,
+                    durationMillis = record.durationMillis,
+                    timestamp = record.timestamp,
+                    errorClass = record.errorClass
+                )
+            )
+        }
+        capabilityRepository.onRequestObserved(record)
+    }
+
+    val httpClient = NetworkModule.createClient(
+        NetworkModule.Options(
+            hosts = hosts,
+            recorder = historyRecorder,
+            status = networkStatus,
+            debugLogging = isDebuggable,
+            logSink = { line -> Log.d("CfHttp", line) }
+        ),
+        activeTokenProvider = { accountStore.getActiveToken() }
+    )
+
+    private val api = NetworkModule.createRetrofitApi(httpClient, NetworkModule.BASE_URL)
+    private val verifierApi = NetworkModule.createRetrofitApi(
+        NetworkModule.createClient(NetworkModule.Options(hosts = hosts), activeTokenProvider = { null }),
+        NetworkModule.BASE_URL
+    )
+    val rawApiClient = RawApiClient(httpClient, hosts)
+
+    val r2ObjectsRepository = dev.cfmobile.app.data.repository.R2ObjectsRepository(api)
+    val r2Credentials = dev.cfmobile.app.core.transfers.R2CredentialStore.create(appContext)
+
+    /** Separate client for R2's S3 endpoint: no Cloudflare token interceptor at all, and every
+     *  request is checked against the R2 host pattern inside [dev.cfmobile.app.core.transfers.R2S3Client]. */
+    val r2S3Client = dev.cfmobile.app.core.transfers.R2S3Client(
+        okhttp3.OkHttpClient.Builder()
+            .connectTimeout(20, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(120, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(120, java.util.concurrent.TimeUnit.SECONDS)
+            .followRedirects(false)
+            .build()
+    )
+    val transferRepository = dev.cfmobile.app.core.transfers.TransferRepository(appContext, database.transferDao(), r2Credentials)
+
+    val secureClipboard = dev.cfmobile.app.core.security.SecureClipboard(
+        appContext,
+        kotlinx.coroutines.CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
+        clearAfterMillis = { settings.state.value.clipboardClearSeconds * 1000L }
+    )
+
+    /** Removes everything this app stored for a profile: secret, context, capability cache,
+     *  request history and R2 S3 keys. Cloudflare itself is not affected (spec 340, 341). */
+    suspend fun forgetProfileData(profileId: String) {
+        contextStore.forgetProfile(profileId)
+        capabilityRepository.forgetProfile(profileId)
+        r2Credentials.removeProfile(profileId)
+        database.requestHistoryDao().clear(profileId)
+    }
+
+    val localDataActions = object : dev.cfmobile.app.ui.settings.LocalDataActions {
+        override suspend fun forgetProfile(profileId: String) = forgetProfileData(profileId)
+        override suspend fun clearCache() {
+            database.zoneDao().clearAll()
+            appContext.getSharedPreferences("cf_capabilities", Context.MODE_PRIVATE).edit().clear().apply()
+            appContext.cacheDir.listFiles()?.forEach { it.deleteRecursively() }
+        }
+        override suspend fun clearHistory() = database.requestHistoryDao().clearAll()
+        override suspend fun clearSavedRequests() = database.savedRequestDao().clearAll()
+        override suspend fun clearEverything() {
+            androidx.work.WorkManager.getInstance(appContext).cancelAllWorkByTag(dev.cfmobile.app.core.transfers.TransferRepository.TAG)
+            kotlinx.coroutines.withContext(Dispatchers.IO) { database.clearAllTables() }
+            clearCache()
+            r2Credentials.clearAll()
+            contextStore.clearAll()
+            settings.update { dev.cfmobile.app.core.security.AppSettingsSnapshot() }
+        }
+    }
+
+    fun startProfileTracking() {
+        appScope.launch {
+            accountStore.activeIdFlow.collect { id ->
+                contextStore.load(id)
+                networkStatus.resetForProfile()
+                capabilityRepository.onProfileActivated()
+            }
+        }
+        appScope.launch {
+            val days = settings.state.value.historyRetentionDays
+            database.requestHistoryDao().deleteOlderThan(System.currentTimeMillis() - days * 86_400_000L)
+        }
+    }
+
+    val capabilityRepository: CapabilityRepository by lazy {
+        CapabilityRepository(
+            api = api,
+            registryProvider = { endpointRegistry() },
+            cache = appContext.getSharedPreferences("cf_capabilities", Context.MODE_PRIVATE),
+            scope = appScope,
+            activeProfileId = { accountStore.getActiveId() }
+        )
+    }
 
     val authRepository = AuthRepository(verifierApi, accountStore)
     val accountsRepository = AccountsRepository(api)
