@@ -70,7 +70,7 @@ fun AccessScreen(viewModel: AccessViewModel, onBack: () -> Unit) {
                             isDeleting = uiState.deletingId == application.id,
                             onDelete = { viewModel.delete(application) }
                         )
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                        dev.cfmobile.app.ui.design.RowDivider()
                     }
                 }
             }

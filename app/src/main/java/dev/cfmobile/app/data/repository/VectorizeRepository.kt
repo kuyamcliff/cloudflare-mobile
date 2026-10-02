@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.VectorizeIndex
@@ -13,7 +14,7 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class VectorizeRepository(private val api: CloudflareApi) {
 
     suspend fun listIndexes(accountId: String): ApiResult<List<VectorizeIndex>> =
-        safeApiCall { api.listVectorizeIndexes(accountId) }
+        safeApiCall { api.listVectorizeIndexes(accountId) }.emptyListOnNullResult()
 
     suspend fun createIndex(
         accountId: String,

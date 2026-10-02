@@ -92,7 +92,7 @@ fun TransformRulesScreen(viewModel: TransformRulesViewModel, zoneName: String, o
                                 onToggleEnabled = { viewModel.toggleEnabled(rule) },
                                 onDelete = { viewModel.delete(rule) }
                             )
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                            dev.cfmobile.app.ui.design.RowDivider()
                         }
                     }
                 }

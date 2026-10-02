@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.TunnelRoute
@@ -18,7 +19,7 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class TunnelsRepository(private val api: CloudflareApi) {
 
     suspend fun listTunnels(accountId: String): ApiResult<List<CfTunnel>> =
-        safeApiCall { api.listTunnels(accountId) }
+        safeApiCall { api.listTunnels(accountId) }.emptyListOnNullResult()
 
     suspend fun createTunnel(accountId: String, name: String): ApiResult<CfTunnel> =
         safeApiCall { api.createTunnel(accountId, TunnelCreate(name = name)) }
@@ -31,7 +32,7 @@ class TunnelsRepository(private val api: CloudflareApi) {
 
     /** Private network routes reachable through a tunnel. */
     suspend fun listRoutes(accountId: String): ApiResult<List<TunnelRoute>> =
-        safeApiCall { api.listTunnelRoutes(accountId) }
+        safeApiCall { api.listTunnelRoutes(accountId) }.emptyListOnNullResult()
 
     suspend fun createRoute(
         accountId: String,
@@ -62,7 +63,7 @@ class TunnelsRepository(private val api: CloudflareApi) {
 
     /** Virtual networks let overlapping private ranges coexist behind different tunnels. */
     suspend fun listVirtualNetworks(accountId: String): ApiResult<List<VirtualNetwork>> =
-        safeApiCall { api.listVirtualNetworks(accountId) }
+        safeApiCall { api.listVirtualNetworks(accountId) }.emptyListOnNullResult()
 
     suspend fun createVirtualNetwork(accountId: String, name: String, comment: String?): ApiResult<VirtualNetwork> =
         safeApiCall { api.createVirtualNetwork(accountId, VirtualNetworkWrite(name = name, comment = comment)) }

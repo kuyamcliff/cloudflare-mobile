@@ -109,7 +109,7 @@ fun PageShieldScreen(zoneName: String, viewModel: PageShieldViewModel, onBack: (
                                         script.lastSeenAt?.let { "Last seen $it" }
                                     ).joinToString(" · ").ifBlank { null }
                                 )
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                                dev.cfmobile.app.ui.design.RowDivider()
                             }
                         }
                     }
@@ -132,7 +132,7 @@ fun PageShieldScreen(zoneName: String, viewModel: PageShieldViewModel, onBack: (
                                     subtitle = connection.url,
                                     detail = connection.lastSeenAt?.let { "Last seen $it" }
                                 )
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                                dev.cfmobile.app.ui.design.RowDivider()
                             }
                         }
                     }
@@ -176,7 +176,7 @@ fun PageShieldScreen(zoneName: String, viewModel: PageShieldViewModel, onBack: (
                                         onDelete = { viewModel.deletePolicy(policy) },
                                         onClick = { viewModel.openPolicyForm(policy) }
                                     )
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                                    dev.cfmobile.app.ui.design.RowDivider()
                                 }
                             }
                         }

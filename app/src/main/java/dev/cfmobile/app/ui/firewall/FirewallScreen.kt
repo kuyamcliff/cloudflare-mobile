@@ -81,7 +81,7 @@ fun FirewallScreen(viewModel: FirewallViewModel, zoneName: String, onBack: () ->
                         LazyColumn(contentPadding = PaddingValues(bottom = 96.dp)) {
                             items(rules, key = { it.id }) { rule ->
                                 FirewallRuleRow(rule, zoneName = zoneName, onDelete = { viewModel.deleteRule(rule) })
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                                dev.cfmobile.app.ui.design.RowDivider()
                             }
                         }
                     }
@@ -94,7 +94,7 @@ fun FirewallScreen(viewModel: FirewallViewModel, zoneName: String, onBack: () ->
                         LazyColumn(contentPadding = PaddingValues(bottom = 96.dp)) {
                             items(rules, key = { it.id }) { rule ->
                                 AccessRuleRow(rule, zoneName = zoneName, onDelete = { viewModel.deleteAccessRule(rule) })
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                                dev.cfmobile.app.ui.design.RowDivider()
                             }
                         }
                     }

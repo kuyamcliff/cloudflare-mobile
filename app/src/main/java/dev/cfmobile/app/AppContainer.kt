@@ -160,6 +160,31 @@ class AppContainer(context: Context) {
     )
     val rawApiClient = RawApiClient(httpClient, hosts)
 
+    /** Drafts in flight to the action screen, plus each profile's recent and pinned actions. */
+    val actionStore = dev.cfmobile.app.core.command.ActionStore.create(appContext).also { it.load(accountStore.getActiveId()) }
+    val resourceIndex = dev.cfmobile.app.core.command.ResourceIndex(rawApiClient)
+    val aiPlanner = dev.cfmobile.app.core.command.AiPlanner(rawApiClient, { endpointRegistry() })
+
+    /** Built once the registry is loaded; checks every hit against the token's policies. */
+    suspend fun commandEngine(): dev.cfmobile.app.core.command.CommandEngine {
+        commandEngineCache?.let { return it }
+        val registry = endpointRegistry()
+        return dev.cfmobile.app.core.command.CommandEngine(
+            registry,
+            allowed = { e, account, zone ->
+                val caps = capabilityRepository.state.value.capabilities ?: return@CommandEngine null
+                when (caps.evaluate(e, accountId = account, zoneId = zone, zoneAccountId = account)) {
+                    dev.cfmobile.app.core.capabilities.CapabilityState.TOKEN_RESTRICTED -> false
+                    dev.cfmobile.app.core.capabilities.CapabilityState.AVAILABLE_READ,
+                    dev.cfmobile.app.core.capabilities.CapabilityState.AVAILABLE_WRITE -> true
+                    else -> null
+                }
+            },
+            placeAllowed = { _, _, _ -> null }
+        ).also { commandEngineCache = it }
+    }
+    @Volatile private var commandEngineCache: dev.cfmobile.app.core.command.CommandEngine? = null
+
     val r2ObjectsRepository = dev.cfmobile.app.data.repository.R2ObjectsRepository(api)
     val r2Credentials = dev.cfmobile.app.core.transfers.R2CredentialStore.create(appContext)
 
@@ -188,6 +213,7 @@ class AppContainer(context: Context) {
         capabilityRepository.forgetProfile(profileId)
         r2Credentials.removeProfile(profileId)
         database.requestHistoryDao().clear(profileId)
+        actionStore.forgetProfile(profileId)
     }
 
     val localDataActions = object : dev.cfmobile.app.ui.settings.LocalDataActions {
@@ -205,6 +231,7 @@ class AppContainer(context: Context) {
             clearCache()
             r2Credentials.clearAll()
             contextStore.clearAll()
+            actionStore.clearAll()
             settings.update { dev.cfmobile.app.core.security.AppSettingsSnapshot() }
         }
     }
@@ -213,6 +240,8 @@ class AppContainer(context: Context) {
         appScope.launch {
             accountStore.activeIdFlow.collect { id ->
                 contextStore.load(id)
+                actionStore.load(id)
+                resourceIndex.invalidate()
                 networkStatus.resetForProfile()
                 capabilityRepository.onProfileActivated()
             }

@@ -92,7 +92,7 @@ fun WaitingRoomScreen(zoneName: String, viewModel: WaitingRoomViewModel, onBack:
                                     )
                                 }
                             )
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                            dev.cfmobile.app.ui.design.RowDivider()
                         }
                     }
                 }

@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.MagicGreTunnel
@@ -55,7 +56,7 @@ class MagicNetworkRepository(private val api: CloudflareApi) {
         }
 
     suspend fun listSites(accountId: String): ApiResult<List<MagicSite>> =
-        safeApiCall { api.listMagicSites(accountId) }
+        safeApiCall { api.listMagicSites(accountId) }.emptyListOnNullResult()
 
     suspend fun listSiteLans(accountId: String, siteId: String): ApiResult<List<MagicSiteLan>> =
         when (val result = safeApiCall { api.listMagicSiteLans(accountId, siteId) }) {

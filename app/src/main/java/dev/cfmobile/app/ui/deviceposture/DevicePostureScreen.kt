@@ -90,7 +90,7 @@ fun DevicePostureScreen(viewModel: DevicePostureViewModel, onBack: () -> Unit) {
                                     confirmText = "\"${deviceLabel(device)}\" loses access to everything behind Zero Trust until its user enrols again.",
                                     onDelete = { viewModel.revoke(device) }
                                 )
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                                dev.cfmobile.app.ui.design.RowDivider()
                             }
                         }
                     }
@@ -112,7 +112,7 @@ fun DevicePostureScreen(viewModel: DevicePostureViewModel, onBack: () -> Unit) {
                                     subtitle = rule.type,
                                     detail = rule.description ?: rule.schedule?.let { "Every $it" }
                                 )
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                                dev.cfmobile.app.ui.design.RowDivider()
                             }
                         }
                     }

@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.AccessRule
@@ -14,7 +15,7 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class FirewallRepository(private val api: CloudflareApi) {
 
     suspend fun listRules(zoneId: String): ApiResult<List<FirewallRule>> =
-        safeApiCall { api.listFirewallRules(zoneId) }
+        safeApiCall { api.listFirewallRules(zoneId) }.emptyListOnNullResult()
 
     suspend fun createRule(zoneId: String, expression: String, action: String, description: String?): ApiResult<List<FirewallRule>> =
         safeApiCall {
@@ -28,7 +29,7 @@ class FirewallRepository(private val api: CloudflareApi) {
         safeApiCallUnit { api.deleteFirewallRule(zoneId, ruleId) }
 
     suspend fun listAccessRules(zoneId: String): ApiResult<List<AccessRule>> =
-        safeApiCall { api.listAccessRules(zoneId) }
+        safeApiCall { api.listAccessRules(zoneId) }.emptyListOnNullResult()
 
     suspend fun createAccessRule(zoneId: String, mode: String, ip: String, notes: String?): ApiResult<AccessRule> =
         safeApiCall {

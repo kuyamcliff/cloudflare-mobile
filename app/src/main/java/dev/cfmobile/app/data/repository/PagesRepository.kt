@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.PagesDeployment
@@ -14,10 +15,10 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class PagesRepository(private val api: CloudflareApi) {
 
     suspend fun listProjects(accountId: String): ApiResult<List<PagesProject>> =
-        safeApiCall { api.listPagesProjects(accountId) }
+        safeApiCall { api.listPagesProjects(accountId) }.emptyListOnNullResult()
 
     suspend fun listDeployments(accountId: String, projectName: String): ApiResult<List<PagesDeployment>> =
-        safeApiCall { api.listPagesDeployments(accountId, projectName) }
+        safeApiCall { api.listPagesDeployments(accountId, projectName) }.emptyListOnNullResult()
 
     /** Rebuilds and redeploys the project's production branch. */
     suspend fun createDeployment(accountId: String, projectName: String): ApiResult<PagesDeployment> =
@@ -27,7 +28,7 @@ class PagesRepository(private val api: CloudflareApi) {
         safeApiCall { api.retryPagesDeployment(accountId, projectName, deploymentId) }
 
     suspend fun listDomains(accountId: String, projectName: String): ApiResult<List<PagesDomain>> =
-        safeApiCall { api.listPagesDomains(accountId, projectName) }
+        safeApiCall { api.listPagesDomains(accountId, projectName) }.emptyListOnNullResult()
 
     /** Cloudflare verifies ownership asynchronously, so a domain added here starts pending. */
     suspend fun addDomain(accountId: String, projectName: String, name: String): ApiResult<PagesDomain> =

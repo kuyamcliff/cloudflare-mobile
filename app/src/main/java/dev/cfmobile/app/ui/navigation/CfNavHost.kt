@@ -258,12 +258,26 @@ fun CfNavHost(
         ) { backStackEntry ->
             val zoneId = backStackEntry.arguments?.getString("zoneId").orEmpty()
             val zoneName = backStackEntry.arguments?.getString("zoneName").orEmpty()
-            val vm = viewModel<ZoneMenuViewModel>(factory = factoryOf { ZoneMenuViewModel(zoneId, container.zonesRepository) })
+            val vm = viewModel<ZoneMenuViewModel>(factory = factoryOf { ZoneMenuViewModel(zoneId, container.zonesRepository, container.zoneSettingsRepository) {
+                    val caps = container.capabilityRepository.state.value.capabilities ?: return@ZoneMenuViewModel null
+                    val purge = container.endpointRegistry().endpoints.firstOrNull { it.method == "POST" && it.path == "zones/{zone_id}/purge_cache" } ?: return@ZoneMenuViewModel null
+                    when (caps.evaluate(purge, zoneId = zoneId)) {
+                        dev.cfmobile.app.core.capabilities.CapabilityState.TOKEN_RESTRICTED -> false
+                        dev.cfmobile.app.core.capabilities.CapabilityState.AVAILABLE_WRITE -> true
+                        else -> null
+                    }
+                } })
+            val decodedName = Routes.decodeZoneName(zoneName)
             ZoneMenuScreen(
-                zoneName = zoneName,
+                zoneName = decodedName,
                 viewModel = vm,
                 onBack = { navController.popBackStack() },
-                onFeatureClick = { route -> navController.navigate(route) }
+                onFeatureClick = { route -> navController.navigate(route) },
+                onAsk = {
+                    container.contextStore.selectZone(dev.cfmobile.app.data.local.NamedRef(zoneId, decodedName, container.contextStore.state.value.zone?.takeIf { it.id == zoneId }?.parentId))
+                    navController.navigate(Routes.command())
+                },
+                onAllOperations = { navController.navigate(Routes.CATALOG) }
             )
         }
 

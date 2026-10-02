@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.ApiToken
@@ -29,7 +30,7 @@ class ApiTokensRepository(private val api: CloudflareApi) {
         safeApiCallUnit { api.deleteApiToken(tokenId) }
 
     suspend fun listAccountTokens(accountId: String): ApiResult<List<ApiToken>> =
-        safeApiCall { api.listAccountApiTokens(accountId) }
+        safeApiCall { api.listAccountApiTokens(accountId) }.emptyListOnNullResult()
 
     suspend fun deleteAccountToken(accountId: String, tokenId: String): ApiResult<Unit> =
         safeApiCallUnit { api.deleteAccountApiToken(accountId, tokenId) }

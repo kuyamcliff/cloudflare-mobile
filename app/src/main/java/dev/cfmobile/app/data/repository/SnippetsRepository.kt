@@ -1,5 +1,7 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnMissingEntrypoint
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.Snippet
@@ -18,7 +20,7 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class SnippetsRepository(private val api: CloudflareApi) {
 
     suspend fun listSnippets(zoneId: String): ApiResult<List<Snippet>> =
-        safeApiCall { api.listSnippets(zoneId) }
+        safeApiCall { api.listSnippets(zoneId) }.emptyListOnNullResult()
 
     /** The snippet's JavaScript. Cloudflare returns it as a file, so the body is read directly
      *  and unwrapped if it arrives as multipart. */
@@ -43,10 +45,10 @@ class SnippetsRepository(private val api: CloudflareApi) {
         safeApiCallUnit { api.deleteSnippet(zoneId, snippetName) }
 
     suspend fun listRules(zoneId: String): ApiResult<List<SnippetRule>> =
-        safeApiCall { api.listSnippetRules(zoneId) }
+        safeApiCall { api.listSnippetRules(zoneId) }.emptyListOnNullResult().emptyListOnMissingEntrypoint()
 
     /** Cloudflare replaces the zone's whole rule list, so callers send the full list they want
      *  to end up with rather than a single change. */
     suspend fun putRules(zoneId: String, rules: List<SnippetRule>): ApiResult<List<SnippetRule>> =
-        safeApiCall { api.putSnippetRules(zoneId, SnippetRulesWrite(rules)) }
+        safeApiCall { api.putSnippetRules(zoneId, SnippetRulesWrite(rules)) }.emptyListOnNullResult()
 }

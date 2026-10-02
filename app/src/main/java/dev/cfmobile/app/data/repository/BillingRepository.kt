@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.AccountSubscription
@@ -12,5 +13,5 @@ import dev.cfmobile.app.data.remote.safeApiCall
 class BillingRepository(private val api: CloudflareApi) {
 
     suspend fun listSubscriptions(accountId: String): ApiResult<List<AccountSubscription>> =
-        safeApiCall { api.listSubscriptions(accountId) }
+        safeApiCall { api.listSubscriptions(accountId) }.emptyListOnNullResult()
 }

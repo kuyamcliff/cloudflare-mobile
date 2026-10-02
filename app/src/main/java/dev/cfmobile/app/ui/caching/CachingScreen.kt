@@ -61,7 +61,7 @@ fun CachingScreen(viewModel: CachingViewModel, zoneName: String, onBack: () -> U
                     ),
                     onSelect = viewModel::setCacheLevel
                 )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                dev.cfmobile.app.ui.design.RowDivider()
 
                 ToggleRow(
                     title = "Development Mode",
@@ -70,7 +70,7 @@ fun CachingScreen(viewModel: CachingViewModel, zoneName: String, onBack: () -> U
                     isSaving = uiState.saving == SavingField.DEV_MODE,
                     onToggle = viewModel::setDevelopmentMode
                 )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                dev.cfmobile.app.ui.design.RowDivider()
 
                 OptionRow(
                     title = "Browser cache TTL",
@@ -86,7 +86,7 @@ fun CachingScreen(viewModel: CachingViewModel, zoneName: String, onBack: () -> U
                     ),
                     onSelect = { viewModel.setBrowserCacheTtl(it.toInt()) }
                 )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                dev.cfmobile.app.ui.design.RowDivider()
 
                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Purge Cache", style = MaterialTheme.typography.bodyLarge)

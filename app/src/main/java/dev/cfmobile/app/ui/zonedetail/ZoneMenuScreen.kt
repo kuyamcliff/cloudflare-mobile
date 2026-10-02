@@ -2,30 +2,36 @@ package dev.cfmobile.app.ui.zonedetail
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.net.Uri
+import androidx.core.net.toUri
 import android.widget.Toast
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Api
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,182 +40,175 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import dev.cfmobile.app.core.capabilities.Capability
 import dev.cfmobile.app.core.capabilities.CapabilityRegistry
 import dev.cfmobile.app.core.capabilities.CapabilityScope
-import dev.cfmobile.app.core.capabilities.CapabilityStatus
-import dev.cfmobile.app.core.capabilities.RoadmapPhase
 import dev.cfmobile.app.data.remote.dto.CfZone
 import dev.cfmobile.app.ui.common.CopyIconButton
-import dev.cfmobile.app.ui.common.capabilityIcon
 import dev.cfmobile.app.ui.common.FreshnessLabel
 import dev.cfmobile.app.ui.common.StateContent
 import dev.cfmobile.app.ui.common.StatusPill
+import dev.cfmobile.app.ui.common.capabilityIcon
 import dev.cfmobile.app.ui.common.zoneStatusColor
+import dev.cfmobile.app.ui.design.GroupTitle
+import dev.cfmobile.app.ui.design.ListRow
+import dev.cfmobile.app.ui.design.RowDivider
+import dev.cfmobile.app.ui.design.Sections
+import dev.cfmobile.app.ui.design.Space
+import dev.cfmobile.app.ui.design.groupItem
+import dev.cfmobile.app.ui.theme.CfTheme
 
+/**
+ * A zone's home: what state it is in, the switches people reach for in an incident, and every
+ * zone feature grouped by what it is for.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ZoneMenuScreen(
     zoneName: String,
     viewModel: ZoneMenuViewModel,
     onBack: () -> Unit,
-    onFeatureClick: (String) -> Unit
+    onFeatureClick: (String) -> Unit,
+    onAsk: () -> Unit = {},
+    onAllOperations: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val lastUpdatedAt by viewModel.lastUpdatedAt.collectAsStateWithLifecycle()
-    var notImplementedInfo by remember { mutableStateOf<Capability?>(null) }
+    val toggles by viewModel.toggles.collectAsStateWithLifecycle()
+    val purge by viewModel.purge.collectAsStateWithLifecycle()
+    val purgeBlocked by viewModel.purgeBlocked.collectAsStateWithLifecycle()
+    var confirmPurge by remember { mutableStateOf(false) }
+    var confirmToggle by remember { mutableStateOf<Pair<QuickToggle, Boolean>?>(null) }
+    val context = LocalContext.current
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text(zoneName) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
+                title = { Text(zoneName, style = MaterialTheme.typography.titleMedium) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") } },
+                actions = {
+                    IconButton(onClick = onAsk) { Icon(Icons.Filled.AutoAwesome, "Ask about this zone", tint = CfTheme.colors.accent) }
+                    IconButton(onClick = { openInDashboard(context, zoneName) }) { Icon(Icons.AutoMirrored.Filled.OpenInNew, "Open in Cloudflare dashboard") }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         }
     ) { padding ->
         StateContent(state = state, onRetry = viewModel::load) { zone ->
-            Column(Modifier.padding(padding)) {
-                ZoneOverviewCard(zone, lastUpdatedAt)
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-                // Zone-scoped capabilities only: account-scoped products (R2, Workers, Zero
-                // Trust, ...) belong to the account, not to this domain, and are reached from
-                // the Dashboard instead - listing them under a single zone implied a
-                // relationship that doesn't exist.
-                val zoneNotImplemented = CapabilityRegistry.notYetImplementedForScope(CapabilityScope.ZONE)
-                LazyColumn {
-                    items(CapabilityRegistry.implementedForScope(CapabilityScope.ZONE), key = { it.id }) { capability ->
-                        CapabilityRow(capability, implemented = true) {
-                            capability.zoneRoute?.invoke(zone.id, zone.name)?.let(onFeatureClick)
-                        }
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            val sections = CapabilityRegistry.implementedForScope(CapabilityScope.ZONE)
+                .groupBy { Sections.of(it.product, it.id) }
+                .toList()
+                .sortedBy { Sections.rank(it.first) }
+            LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(bottom = Space.xxl)) {
+                item("overview") { Overview(zone, lastUpdatedAt) }
+
+                item("quick-h") { GroupTitle("Quick controls") }
+                itemsIndexed(toggles, key = { _, t -> "t-${t.settingId}" }) { i, t ->
+                    Column(Modifier.groupItem(i, toggles.size + 1)) {
+                        ListRow(
+                            title = t.label,
+                            subtitle = t.error ?: t.detail,
+                            trailing = {
+                                when {
+                                    t.saving || (t.value == null && t.error == null) -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                                    t.value != null -> Switch(checked = t.isOn, onCheckedChange = { on -> confirmToggle = t to on })
+                                    else -> Unit
+                                }
+                            }
+                        )
+                        RowDivider()
                     }
-                    if (zoneNotImplemented.isNotEmpty()) {
-                        item {
-                            Text(
-                                "More Cloudflare products",
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.padding(16.dp, 20.dp, 16.dp, 4.dp)
+                }
+                item("purge") {
+                    Column(Modifier.groupItem(toggles.size, toggles.size + 1)) {
+                        ListRow(
+                            title = "Purge everything",
+                            subtitle = when {
+                                purgeBlocked -> "This token doesn't have the Cache Purge permission"
+                                else -> purge ?: "Remove every cached file for this zone"
+                            },
+                            icon = Icons.Filled.CleaningServices,
+                            enabled = !purgeBlocked,
+                            onClick = { confirmPurge = true },
+                            showChevron = false
+                        )
+                    }
+                }
+
+                sections.forEach { (section, caps) ->
+                    item("s-$section") { GroupTitle(section) }
+                    itemsIndexed(caps, key = { _, c -> "c-${c.id}" }) { i, cap ->
+                        Column(Modifier.groupItem(i, caps.size)) {
+                            ListRow(
+                                title = cap.displayName,
+                                subtitle = cap.description,
+                                icon = capabilityIcon(cap),
+                                onClick = { cap.zoneRoute?.invoke(zone.id, zone.name)?.let(onFeatureClick) }
                             )
-                            Text(
-                                "Not yet implemented in this app - tap to see status.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(16.dp, 0.dp, 16.dp, 8.dp)
-                            )
+                            if (i < caps.size - 1) RowDivider(inset = 64.dp)
                         }
-                        items(zoneNotImplemented, key = { it.id }) { capability ->
-                            CapabilityRow(capability, implemented = false) { notImplementedInfo = capability }
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-                        }
+                    }
+                }
+                item("all-h") { GroupTitle("Everything else") }
+                item("all") {
+                    Column(Modifier.groupItem(0, 1)) {
+                        ListRow(
+                            title = "All zone operations",
+                            subtitle = "Every zone-level operation in Cloudflare's API, as forms",
+                            icon = Icons.Filled.Api,
+                            onClick = onAllOperations
+                        )
                     }
                 }
             }
         }
     }
 
-    notImplementedInfo?.let { capability ->
-        NotImplementedDialog(capability, onDismiss = { notImplementedInfo = null })
+    if (confirmPurge) {
+        AlertDialog(
+            onDismissRequest = { confirmPurge = false },
+            title = { Text("Purge everything on $zoneName?") },
+            text = { Text("Every cached file is removed. Your origin serves the next requests, so expect a short load increase.") },
+            confirmButton = { TextButton(onClick = { confirmPurge = false; viewModel.purgeEverything() }) { Text("Purge", color = MaterialTheme.colorScheme.error) } },
+            dismissButton = { TextButton(onClick = { confirmPurge = false }) { Text("Cancel") } }
+        )
+    }
+    confirmToggle?.let { (t, on) ->
+        AlertDialog(
+            onDismissRequest = { confirmToggle = null },
+            title = { Text("${if (on) "Turn on" else "Turn off"} ${t.label.replaceFirstChar { it.lowercase() }}?") },
+            text = { Text("This changes $zoneName right away for every visitor.") },
+            confirmButton = { TextButton(onClick = { confirmToggle = null; viewModel.setToggle(t.settingId, on) }) { Text(if (on) "Turn on" else "Turn off") } },
+            dismissButton = { TextButton(onClick = { confirmToggle = null }) { Text("Cancel") } }
+        )
     }
 }
 
 @Composable
-private fun ZoneOverviewCard(zone: CfZone, lastUpdatedAt: Long?) {
-    val context = LocalContext.current
-    Column(Modifier.fillMaxWidth().padding(16.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(zone.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-            CopyIconButton(value = zone.name, label = "domain")
+private fun Overview(zone: CfZone, lastUpdatedAt: Long?) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = Space.gutter + 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(zone.name, style = MaterialTheme.typography.headlineMedium)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
+            StatusPill(if (zone.paused) "Paused" else zone.status.replaceFirstChar { it.uppercase() }, zoneStatusColor(if (zone.paused) "pending" else zone.status))
+            zone.plan?.let { Text(it.name, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             CopyIconButton(value = zone.id, label = "zone ID")
-            IconButton(onClick = { openInDashboard(context, zone.name) }) {
-                Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = "Open in Cloudflare dashboard")
-            }
-        }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            StatusPill(zone.status.replaceFirstChar { it.uppercase() }, zoneStatusColor(zone.status))
-            zone.plan?.let {
-                Text(it.name, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
         }
         if (zone.nameServers.isNotEmpty()) {
-            Text(
-                "Nameservers: ${zone.nameServers.joinToString(", ")}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp)
-            )
+            Text(zone.nameServers.joinToString("   "), style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        FreshnessLabel(lastUpdatedAt, modifier = Modifier.padding(top = 4.dp))
+        FreshnessLabel(lastUpdatedAt)
     }
 }
 
-/** PRD §46: hand off to the Cloudflare web dashboard for anything this app doesn't (yet) cover,
- *  rather than dead-ending the user - dash.cloudflare.com resolves the account slug itself from
- *  the zone name, so no account ID needs to be known here. */
+/** Hands off to the Cloudflare dashboard for anything only it offers (spec 46). */
 private fun openInDashboard(context: android.content.Context, zoneName: String) {
-    val uri = Uri.parse("https://dash.cloudflare.com/?to=/:account/$zoneName")
+    val uri = "https://dash.cloudflare.com/?to=/:account/$zoneName".toUri()
     try {
         context.startActivity(Intent(Intent.ACTION_VIEW, uri))
     } catch (e: ActivityNotFoundException) {
         Toast.makeText(context, "No browser app available", Toast.LENGTH_SHORT).show()
     }
-}
-
-@Composable
-private fun CapabilityRow(capability: Capability, implemented: Boolean, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        val tint = if (implemented) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-        Icon(capabilityIcon(capability), contentDescription = null, tint = tint)
-        Column(Modifier.weight(1f)) {
-            Text(
-                capability.displayName,
-                style = MaterialTheme.typography.bodyLarge,
-                color = if (implemented) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(capability.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (implemented && capability.migrationHint != null) {
-                Text(
-                    capability.migrationHint,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.tertiary
-                )
-            }
-        }
-        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-@Composable
-private fun NotImplementedDialog(capability: Capability, onDismiss: () -> Unit) {
-    val phaseLabel = when (capability.roadmapPhase) {
-        RoadmapPhase.P0 -> "Planned next"
-        RoadmapPhase.P1 -> "Planned"
-        RoadmapPhase.P2 -> "Planned, further out"
-    }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(capability.displayName) },
-        text = {
-            Text(
-                when (capability.status) {
-                    CapabilityStatus.LIMITATION_EXTERNAL_PLATFORM ->
-                        "Cloudflare requires this workflow in the web dashboard - it can't be safely done from a mobile app."
-                    else -> "This isn't implemented in this app yet. $phaseLabel on the Cloudflare product roadmap."
-                }
-            )
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("OK") } }
-    )
 }

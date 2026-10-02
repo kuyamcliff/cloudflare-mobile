@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import com.squareup.moshi.Moshi
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
@@ -27,7 +28,7 @@ class CustomPagesRepository(private val api: CloudflareApi) {
         writeAdapter.toJson(write).toRequestBody(JSON_MEDIA_TYPE)
 
     suspend fun listPages(zoneId: String): ApiResult<List<CustomPage>> =
-        safeApiCall { api.listCustomPages(zoneId) }
+        safeApiCall { api.listCustomPages(zoneId) }.emptyListOnNullResult()
 
     suspend fun customize(zoneId: String, pageId: String, url: String): ApiResult<CustomPage> =
         safeApiCall {

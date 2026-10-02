@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.DurableObjectNamespace
@@ -10,5 +11,5 @@ import dev.cfmobile.app.data.remote.safeApiCall
 class DurableObjectsRepository(private val api: CloudflareApi) {
 
     suspend fun listNamespaces(accountId: String): ApiResult<List<DurableObjectNamespace>> =
-        safeApiCall { api.listDurableObjectNamespaces(accountId) }
+        safeApiCall { api.listDurableObjectNamespaces(accountId) }.emptyListOnNullResult()
 }

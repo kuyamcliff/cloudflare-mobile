@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.PageShieldPolicy
@@ -22,13 +23,13 @@ class PageShieldRepository(private val api: CloudflareApi) {
         safeApiCall { api.updatePageShieldSettings(zoneId, PageShieldSettingsUpdate(enabled)) }
 
     suspend fun listScripts(zoneId: String): ApiResult<List<PageShieldScript>> =
-        safeApiCall { api.listPageShieldScripts(zoneId) }
+        safeApiCall { api.listPageShieldScripts(zoneId) }.emptyListOnNullResult()
 
     suspend fun listConnections(zoneId: String): ApiResult<List<PageShieldConnection>> =
-        safeApiCall { api.listPageShieldConnections(zoneId) }
+        safeApiCall { api.listPageShieldConnections(zoneId) }.emptyListOnNullResult()
 
     suspend fun listPolicies(zoneId: String): ApiResult<List<PageShieldPolicy>> =
-        safeApiCall { api.listPageShieldPolicies(zoneId) }
+        safeApiCall { api.listPageShieldPolicies(zoneId) }.emptyListOnNullResult()
 
     suspend fun createPolicy(zoneId: String, policy: PageShieldPolicyWrite): ApiResult<PageShieldPolicy> =
         safeApiCall { api.createPageShieldPolicy(zoneId, policy) }

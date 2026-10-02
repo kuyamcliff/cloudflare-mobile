@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.UserAgentRule
@@ -18,7 +19,7 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class ZoneFirewallLegacyRepository(private val api: CloudflareApi) {
 
     suspend fun listLockdowns(zoneId: String): ApiResult<List<ZoneLockdown>> =
-        safeApiCall { api.listZoneLockdowns(zoneId) }
+        safeApiCall { api.listZoneLockdowns(zoneId) }.emptyListOnNullResult()
 
     suspend fun createLockdown(zoneId: String, lockdown: ZoneLockdownWrite): ApiResult<ZoneLockdown> =
         safeApiCall { api.createZoneLockdown(zoneId, lockdown) }
@@ -30,7 +31,7 @@ class ZoneFirewallLegacyRepository(private val api: CloudflareApi) {
         safeApiCallUnit { api.deleteZoneLockdown(zoneId, lockdownId) }
 
     suspend fun listUserAgentRules(zoneId: String): ApiResult<List<UserAgentRule>> =
-        safeApiCall { api.listUserAgentRules(zoneId) }
+        safeApiCall { api.listUserAgentRules(zoneId) }.emptyListOnNullResult()
 
     suspend fun createUserAgentRule(zoneId: String, rule: UserAgentRuleWrite): ApiResult<UserAgentRule> =
         safeApiCall { api.createUserAgentRule(zoneId, rule) }

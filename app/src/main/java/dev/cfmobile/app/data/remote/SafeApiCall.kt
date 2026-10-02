@@ -33,7 +33,7 @@ fun <T> Response<CfEnvelope<T>>.toApiResult(): ApiResult<T> {
         return if (envelope != null && envelope.success && result != null) {
             ApiResult.Success(result)
         } else {
-            ApiResult.Failure(errorsToMessage(envelope?.errors) ?: "Cloudflare returned an empty result", code())
+            ApiResult.Failure(errorsToMessage(envelope?.errors) ?: EMPTY_RESULT, code())
         }
     }
     val parsedErrors = try {
@@ -65,13 +65,28 @@ suspend fun <T> safeApiCall(block: suspend () -> Response<CfEnvelope<T>>): ApiRe
 }
 
 /** Same as [safeApiCall] but for endpoints that return no meaningful result payload
- *  (delete/purge calls) where we only care whether `success` was true. */
+ *  (delete/purge/put calls) where we only care whether `success` was true. Cloudflare often
+ *  answers these with `"result": null`, which is a success, not an empty result. */
 suspend fun safeApiCallUnit(block: suspend () -> Response<CfEnvelope<Map<String, String>>>): ApiResult<Unit> {
     return when (val result = safeApiCall(block)) {
         is ApiResult.Success -> ApiResult.Success(Unit)
-        is ApiResult.Failure -> result
+        is ApiResult.Failure -> if (result.isEmptyResult()) ApiResult.Success(Unit) else result
     }
 }
+
+/** Message for a 2xx envelope with `success: true` and no `result`. */
+const val EMPTY_RESULT = "Cloudflare returned an empty result"
+
+fun ApiResult.Failure.isEmptyResult(): Boolean = message == EMPTY_RESULT && httpCode in 200..299
+
+/** Rules that live in a phase entrypoint ruleset: Cloudflare answers code 10003 ("could not
+ *  find entrypoint ruleset") until the first rule exists, which means "no rules yet". */
+fun <T> ApiResult<List<T>>.emptyListOnMissingEntrypoint(): ApiResult<List<T>> =
+    if (this is ApiResult.Failure && message.contains("(code 10003)")) ApiResult.Success(emptyList()) else this
+
+/** A list endpoint that answers `"result": null` has nothing in it. */
+fun <T> ApiResult<List<T>>.emptyListOnNullResult(): ApiResult<List<T>> =
+    if (this is ApiResult.Failure && isEmptyResult()) ApiResult.Success(emptyList()) else this
 
 /**
  * GraphQL counterpart to [safeApiCall]. Cloudflare's analytics GraphQL API does not use the
@@ -88,7 +103,7 @@ suspend fun <T> safeGraphQlCall(block: suspend () -> Response<GraphQlResponse<T>
         when {
             errorMessage != null -> ApiResult.Failure(errorMessage, response.code())
             !response.isSuccessful -> ApiResult.Failure("HTTP ${response.code()}: ${response.message()}", response.code())
-            data == null -> ApiResult.Failure("Cloudflare returned an empty result", response.code())
+            data == null -> ApiResult.Failure(EMPTY_RESULT, response.code())
             else -> ApiResult.Success(data)
         }
     } catch (e: CancellationException) {
@@ -121,6 +136,9 @@ suspend fun <T> safeApiCallPaged(block: suspend () -> Response<CfEnvelope<List<T
         throw e
     } catch (e: IOException) {
         ApiResult.Failure(e.message?.let { "Network error: $it" } ?: "Unable to reach Cloudflare")
+    } catch (e: Exception) {
+        // A response the DTOs can't read must surface as an error, never crash the screen.
+        ApiResult.Failure(e.message?.let { "Unexpected error: $it" } ?: "Unexpected error")
     }
 }
 

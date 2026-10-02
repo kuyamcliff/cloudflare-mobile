@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.WaitingRoom
@@ -13,7 +14,7 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class WaitingRoomRepository(private val api: CloudflareApi) {
 
     suspend fun listRooms(zoneId: String): ApiResult<List<WaitingRoom>> =
-        safeApiCall { api.listWaitingRooms(zoneId) }
+        safeApiCall { api.listWaitingRooms(zoneId) }.emptyListOnNullResult()
 
     suspend fun createRoom(
         zoneId: String,
@@ -40,7 +41,7 @@ class WaitingRoomRepository(private val api: CloudflareApi) {
 
     /** Events are scheduled windows that override a room's thresholds for a sale or a drop. */
     suspend fun listEvents(zoneId: String, roomId: String): ApiResult<List<WaitingRoomEvent>> =
-        safeApiCall { api.listWaitingRoomEvents(zoneId, roomId) }
+        safeApiCall { api.listWaitingRoomEvents(zoneId, roomId) }.emptyListOnNullResult()
 
     suspend fun createEvent(zoneId: String, roomId: String, event: WaitingRoomEventWrite): ApiResult<WaitingRoomEvent> =
         safeApiCall { api.createWaitingRoomEvent(zoneId, roomId, event) }

@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.AddressMap
@@ -21,7 +22,7 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class AddressingRepository(private val api: CloudflareApi) {
 
     suspend fun listPrefixes(accountId: String): ApiResult<List<AddressingPrefix>> =
-        safeApiCall { api.listAddressingPrefixes(accountId) }
+        safeApiCall { api.listAddressingPrefixes(accountId) }.emptyListOnNullResult()
 
     suspend fun setDescription(accountId: String, prefixId: String, description: String): ApiResult<AddressingPrefix> =
         safeApiCall { api.updatePrefixDescription(accountId, prefixId, PrefixDescriptionWrite(description)) }
@@ -35,7 +36,7 @@ class AddressingRepository(private val api: CloudflareApi) {
         safeApiCall { api.setPrefixBgpStatus(accountId, prefixId, PrefixBgpStatusWrite(advertised)) }
 
     suspend fun listAddressMaps(accountId: String): ApiResult<List<AddressMap>> =
-        safeApiCall { api.listAddressMaps(accountId) }
+        safeApiCall { api.listAddressMaps(accountId) }.emptyListOnNullResult()
 
     /** The list response carries no ips or memberships - only this single read does. */
     suspend fun getAddressMap(accountId: String, addressMapId: String): ApiResult<AddressMap> =

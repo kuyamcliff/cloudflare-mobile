@@ -125,29 +125,23 @@ class HomeViewModel(
         }
     }
 
+    /** Account products the token can use, for the Home shortcuts grid. Zone controls live on
+     *  the zone hub, and everything else is in the command bar. */
     private suspend fun quickActions(ctx: WorkingContext): List<QuickAction> {
-        val account = ctx.account?.id
-        val zone = ctx.zone
-        val candidates = buildList {
-            if (zone != null) {
-                add(Triple("dns.records", "DNS records", Routes.dns(zone.id, zone.name)))
-                add(Triple("caching", "Purge cache", Routes.caching(zone.id, zone.name)))
-                add(Triple("analytics", "Zone analytics", Routes.analytics(zone.id, zone.name)))
-                add(Triple("ssl.tls", "SSL/TLS", Routes.ssl(zone.id, zone.name)))
-            }
-            if (account != null) {
-                add(Triple("r2", "R2 storage", Routes.r2(account)))
-                add(Triple("workers", "Workers", Routes.workers(account)))
-                add(Triple("access", "Zero Trust Access", Routes.access(account)))
-            }
-            add(Triple("api_tokens", "Create token", Routes.tokenCreate(null)))
-        }
-        val actions = candidates.filter { (cap, _, _) ->
-            val zoneScoped = cap in ZONE_CAPS
-            val state = capabilities.stateFor(cap, accountId = account, zoneId = if (zoneScoped) zone?.id else null, zoneAccountId = zone?.parentId)
-            state != CapabilityState.TOKEN_RESTRICTED
+        val account = ctx.account?.id ?: return emptyList()
+        val candidates = listOf(
+            Triple("workers", "Workers", Routes.workers(account)),
+            Triple("r2", "R2", Routes.r2(account)),
+            Triple("kv", "KV", Routes.kv(account)),
+            Triple("d1", "D1", Routes.d1(account)),
+            Triple("pages", "Pages", Routes.pages(account)),
+            Triple("tunnels", "Tunnels", Routes.tunnels(account)),
+            Triple("access", "Access", Routes.access(account)),
+            Triple("api_tokens", "API tokens", Routes.apiTokens(account))
+        )
+        return candidates.filter { (cap, _, _) ->
+            capabilities.stateFor(cap, accountId = account) != CapabilityState.TOKEN_RESTRICTED
         }.map { (cap, label, route) -> QuickAction(cap, label, route) }
-        return actions + QuickAction("graphql", "Analytics query", Routes.GRAPHQL) + QuickAction("explorer", "API Explorer", Routes.explorer())
     }
 
     private fun expiryWarning(profile: AccountSummary?): String? {
@@ -160,7 +154,4 @@ class HomeViewModel(
         }
     }
 
-    companion object {
-        private val ZONE_CAPS = setOf("dns.records", "caching", "analytics", "ssl.tls")
-    }
 }

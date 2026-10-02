@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.AiModel
@@ -10,5 +11,5 @@ import dev.cfmobile.app.data.remote.safeApiCall
 class WorkersAiRepository(private val api: CloudflareApi) {
 
     suspend fun listModels(accountId: String): ApiResult<List<AiModel>> =
-        safeApiCall { api.searchAiModels(accountId) }
+        safeApiCall { api.searchAiModels(accountId) }.emptyListOnNullResult()
 }

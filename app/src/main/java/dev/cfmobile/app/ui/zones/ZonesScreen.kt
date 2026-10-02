@@ -115,7 +115,7 @@ fun ZonesScreen(
                     LazyColumn(contentPadding = PaddingValues(bottom = 16.dp)) {
                         items(zones, key = { it.id }) { zone ->
                             ZoneRow(zone, onClick = { onZoneClick(zone) })
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                            dev.cfmobile.app.ui.design.RowDivider()
                         }
                     }
                 }

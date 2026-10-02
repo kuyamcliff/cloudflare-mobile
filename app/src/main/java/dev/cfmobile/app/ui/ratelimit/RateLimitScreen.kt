@@ -81,7 +81,7 @@ fun RateLimitScreen(viewModel: RateLimitViewModel, zoneName: String, onBack: () 
                             onToggleEnabled = { viewModel.toggleEnabled(rule) },
                             onDelete = { viewModel.delete(rule) }
                         )
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                        dev.cfmobile.app.ui.design.RowDivider()
                     }
                 }
             }

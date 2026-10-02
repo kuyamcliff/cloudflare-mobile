@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.EmailCatchAll
@@ -24,7 +25,7 @@ class EmailRoutingRepository(private val api: CloudflareApi) {
         safeApiCall { api.getEmailRoutingSettings(zoneId) }
 
     suspend fun listRules(zoneId: String): ApiResult<List<EmailRoutingRule>> =
-        safeApiCall { api.listEmailRoutingRules(zoneId) }
+        safeApiCall { api.listEmailRoutingRules(zoneId) }.emptyListOnNullResult()
 
     suspend fun createForwardRule(
         zoneId: String,
@@ -52,7 +53,7 @@ class EmailRoutingRepository(private val api: CloudflareApi) {
     /** Destination addresses are account-scoped: one verified address can receive mail routed
      *  from any zone on the account. */
     suspend fun listDestinations(accountId: String): ApiResult<List<EmailDestinationAddress>> =
-        safeApiCall { api.listEmailDestinations(accountId) }
+        safeApiCall { api.listEmailDestinations(accountId) }.emptyListOnNullResult()
 
     suspend fun createDestination(accountId: String, email: String): ApiResult<EmailDestinationAddress> =
         safeApiCall { api.createEmailDestination(accountId, EmailDestinationCreate(email)) }

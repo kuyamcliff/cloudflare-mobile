@@ -1,5 +1,7 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnMissingEntrypoint
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.CloudConnectorRule
@@ -11,8 +13,8 @@ import dev.cfmobile.app.data.remote.safeApiCall
 class CloudConnectorRepository(private val api: CloudflareApi) {
 
     suspend fun listRules(zoneId: String): ApiResult<List<CloudConnectorRule>> =
-        safeApiCall { api.listCloudConnectorRules(zoneId) }
+        safeApiCall { api.listCloudConnectorRules(zoneId) }.emptyListOnNullResult().emptyListOnMissingEntrypoint()
 
     suspend fun putRules(zoneId: String, rules: List<CloudConnectorRule>): ApiResult<List<CloudConnectorRule>> =
-        safeApiCall { api.putCloudConnectorRules(zoneId, rules) }
+        safeApiCall { api.putCloudConnectorRules(zoneId, rules) }.emptyListOnNullResult()
 }

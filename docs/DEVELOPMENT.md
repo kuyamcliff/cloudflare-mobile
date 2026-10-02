@@ -30,7 +30,9 @@ python3 tools/openapi/generate_registry.py \
   --previous app/src/main/assets/cf_endpoints.bin
 ```
 
-This rewrites the asset and `docs/API_COVERAGE.md`. Adding a Retrofit endpoint that matches a
+This rewrites the asset and `docs/API_COVERAGE.md`. Besides methods, paths, parameters and
+permissions, each operation carries typed top-level body fields, which the action screen turns
+into forms. Adding a Retrofit endpoint that matches a
 schema operation marks it Native on the next run.
 
 ## Adding a native screen
@@ -47,4 +49,35 @@ schema operation marks it Native on the next run.
 - Robolectric Compose tests that render real screens with real view models.
 
 Test API clients disable retries so each test sees exactly the response it enqueued; the retry
-policy has its own tests. No real tokens are ever used in tests.
+policy has its own tests. The default test run never uses a real token.
+
+### Design screenshots
+
+`DesignScreensTest` renders the shell, command surface, action form and results, zone hub,
+profile, login and a native screen with real view models against a fake Cloudflare, and checks
+what each must show. To review the design, write PNGs in light and dark:
+
+```bash
+CF_SCREENSHOTS_DIR=/tmp/shots ./gradlew testDebugUnitTest --tests '*DesignScreensTest'
+```
+
+### Live end-to-end tests
+
+`e2e/LiveCloudflareE2ETest` runs against the real API through the app's own network stack,
+repositories, command engine and action view model. It is skipped unless a token is in the
+environment; never put one in a file:
+
+```bash
+CF_E2E_TOKEN=... ./gradlew testDebugUnitTest --tests 'dev.cfmobile.app.e2e.*'
+```
+
+It verifies the token and reads its policies, calls every native repository read and fails on
+any response a DTO can't parse, calls every account and zone GET in the schema and opens the
+first item of each list, creates, uses and deletes throwaway resources by typed command
+(KV with values, D1 with SQL, R2, a queue, a tunnel, an IP list, a Turnstile widget, an Access
+service token, and a DNS TXT record that is also edited through a result follow-up), re-saves
+zone settings with their current values, runs Workers AI prompts and plans, and resolves
+commands against live names. Everything it creates is named `cfctl-e2e-*`; leftovers from an
+interrupted run are removed first. It never changes existing DNS records, settings or
+resources. A Markdown report is written to `app/build/e2e/report.md`; see `E2E.md` for the
+latest results.

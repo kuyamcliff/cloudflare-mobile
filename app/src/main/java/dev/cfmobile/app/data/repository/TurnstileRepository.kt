@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.TurnstileRotateResult
@@ -16,7 +17,7 @@ import dev.cfmobile.app.data.remote.safeApiCall
 class TurnstileRepository(private val api: CloudflareApi) {
 
     suspend fun listWidgets(accountId: String): ApiResult<List<TurnstileWidget>> =
-        safeApiCall { api.listTurnstileWidgets(accountId) }
+        safeApiCall { api.listTurnstileWidgets(accountId) }.emptyListOnNullResult()
 
     suspend fun createWidget(
         accountId: String,

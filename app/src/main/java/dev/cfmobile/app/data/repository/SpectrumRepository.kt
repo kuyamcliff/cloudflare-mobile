@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.SpectrumApp
@@ -12,7 +13,7 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class SpectrumRepository(private val api: CloudflareApi) {
 
     suspend fun listApps(zoneId: String): ApiResult<List<SpectrumApp>> =
-        safeApiCall { api.listSpectrumApps(zoneId) }
+        safeApiCall { api.listSpectrumApps(zoneId) }.emptyListOnNullResult()
 
     suspend fun deleteApp(zoneId: String, appId: String): ApiResult<Unit> =
         safeApiCallUnit { api.deleteSpectrumApp(zoneId, appId) }

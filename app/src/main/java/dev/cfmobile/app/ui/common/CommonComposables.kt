@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.filled.Inbox
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -69,6 +71,7 @@ fun FullScreenError(
     var showDetails by remember { androidx.compose.runtime.mutableStateOf(false) }
     Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            dev.cfmobile.app.ui.design.IconTile(androidx.compose.material.icons.Icons.Filled.ErrorOutline, size = 48.dp, tint = MaterialTheme.colorScheme.error)
             Text(
                 text = dev.cfmobile.app.core.errors.ErrorClassifier.headline(error.type),
                 style = MaterialTheme.typography.titleMedium,
@@ -164,13 +167,18 @@ fun formatFreshness(lastUpdatedAtMillis: Long, nowMillis: Long): String {
 
 @Composable
 fun EmptyState(message: String, modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
-        )
+    // Not scrollable itself: callers place this inside lazy lists, where a nested vertical
+    // scroll would be measured with an unbounded height and crash.
+    Box(modifier.fillMaxSize().padding(horizontal = 32.dp, vertical = 64.dp), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            dev.cfmobile.app.ui.design.IconTile(androidx.compose.material.icons.Icons.Filled.Inbox, size = 48.dp)
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
 }

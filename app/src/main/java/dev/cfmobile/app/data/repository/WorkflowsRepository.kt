@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.WorkflowInstanceStatusWrite
@@ -13,10 +14,10 @@ import dev.cfmobile.app.data.remote.safeApiCall
 class WorkflowsRepository(private val api: CloudflareApi) {
 
     suspend fun listWorkflows(accountId: String): ApiResult<List<CfWorkflow>> =
-        safeApiCall { api.listWorkflows(accountId) }
+        safeApiCall { api.listWorkflows(accountId) }.emptyListOnNullResult()
 
     suspend fun listInstances(accountId: String, workflowName: String): ApiResult<List<WorkflowInstance>> =
-        safeApiCall { api.listWorkflowInstances(accountId, workflowName) }
+        safeApiCall { api.listWorkflowInstances(accountId, workflowName) }.emptyListOnNullResult()
 
     /** Starts a new run. Cloudflare generates the instance id. */
     suspend fun triggerInstance(accountId: String, workflowName: String): ApiResult<WorkflowInstance> =

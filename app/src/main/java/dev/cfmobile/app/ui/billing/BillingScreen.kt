@@ -66,7 +66,7 @@ fun BillingScreen(viewModel: BillingViewModel, onBack: () -> Unit) {
                     Text("Manage billing in the dashboard", modifier = Modifier.padding(start = 8.dp))
                 }
             }
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            dev.cfmobile.app.ui.design.RowDivider()
             RefreshableStateContent(
                 state = uiState.subscriptions,
                 isRefreshing = uiState.isRefreshing,
@@ -95,7 +95,7 @@ fun BillingScreen(viewModel: BillingViewModel, onBack: () -> Unit) {
                                     }
                                 }
                             )
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                            dev.cfmobile.app.ui.design.RowDivider()
                         }
                     }
                 }

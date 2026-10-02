@@ -1,5 +1,11 @@
 package dev.cfmobile.app.ui.dns
 
+import androidx.compose.foundation.lazy.itemsIndexed
+import dev.cfmobile.app.ui.design.groupItem
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.filled.Cloud
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -191,8 +197,9 @@ fun DnsScreen(viewModel: DnsViewModel, zoneName: String, onBack: () -> Unit) {
             } else if (records.isEmpty()) {
                 EmptyState("No records match \"$query\".")
             } else {
-                LazyColumn(contentPadding = PaddingValues(bottom = 96.dp)) {
-                    items(records, key = { it.id }) { record ->
+                LazyColumn(contentPadding = PaddingValues(top = 4.dp, bottom = 104.dp)) {
+                    itemsIndexed(records, key = { _, r -> r.id }) { index, record ->
+                        Column(Modifier.groupItem(index, records.size)) {
                         DnsRecordRow(
                             record = record,
                             zoneName = zoneName,
@@ -206,7 +213,8 @@ fun DnsScreen(viewModel: DnsViewModel, zoneName: String, onBack: () -> Unit) {
                             onShowDetail = { detailRecord = record },
                             onDelete = { viewModel.delete(record) }
                         )
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                        if (index < records.size - 1) dev.cfmobile.app.ui.design.RowDivider(inset = 80.dp)
+                        }
                     }
                 }
             }
@@ -271,28 +279,44 @@ private fun DnsRecordRow(
             // (via semantics), so this doesn't need its own separate TalkBack stop.
             Checkbox(checked = isSelected, onCheckedChange = null)
         }
-        AssistChip(onClick = onClick, label = { Text(record.type) })
-        Column(Modifier.weight(1f).padding(start = 4.dp)) {
-            Text(record.name, style = MaterialTheme.typography.bodyLarge, fontFamily = FontFamily.Monospace)
+        Text(
+            record.type,
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = FontFamily.Monospace,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.width(52.dp)
+        )
+        Column(Modifier.weight(1f)) {
+            Text(record.name, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
             Text(
                 recordSummary(record),
                 style = MaterialTheme.typography.bodySmall,
+                fontFamily = FontFamily.Monospace,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )
         }
         if (record.proxied == true) {
-            FilterChip(selected = true, onClick = {}, label = { Text("Proxied", style = MaterialTheme.typography.bodySmall) })
+            Icon(
+                Icons.Filled.Cloud, contentDescription = "Proxied",
+                tint = dev.cfmobile.app.ui.theme.CfTheme.colors.accent,
+                modifier = Modifier.size(20.dp)
+            )
         }
         if (!isSelectionMode) {
-            IconButton(onClick = onShowDetail) {
-                Icon(Icons.Filled.Info, contentDescription = "Record details")
-            }
             if (isDeleting) {
-                CircularProgressIndicator(Modifier.padding(4.dp))
+                CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
             } else {
-                IconButton(onClick = { confirmDelete = true }) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                var menu by remember { mutableStateOf(false) }
+                Box {
+                    IconButton(onClick = { menu = true }) {
+                        Icon(Icons.Filled.MoreVert, contentDescription = "Record actions", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                        DropdownMenuItem(text = { Text("Details") }, onClick = { menu = false; onShowDetail() })
+                        DropdownMenuItem(text = { Text("Delete", color = MaterialTheme.colorScheme.error) }, onClick = { menu = false; confirmDelete = true })
+                    }
                 }
             }
         }
@@ -304,7 +328,7 @@ private fun DnsRecordRow(
             title = { Text("Delete record?") },
             text = { Text("${record.type} record for ${record.name} on $zoneName will be removed immediately.") },
             confirmButton = {
-                TextButton(onClick = { confirmDelete = false; onDelete() }) { Text("Delete") }
+                TextButton(onClick = { confirmDelete = false; onDelete() }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
                 TextButton(onClick = { confirmDelete = false }) { Text("Cancel") }

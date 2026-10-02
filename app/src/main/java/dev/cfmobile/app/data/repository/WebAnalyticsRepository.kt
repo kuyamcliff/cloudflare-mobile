@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.RumSite
@@ -11,7 +12,7 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class WebAnalyticsRepository(private val api: CloudflareApi) {
 
     suspend fun listSites(accountId: String): ApiResult<List<RumSite>> =
-        safeApiCall { api.listRumSites(accountId) }
+        safeApiCall { api.listRumSites(accountId) }.emptyListOnNullResult()
 
     /** `autoInstall` lets Cloudflare inject the beacon for a proxied zone, so nothing has to be
      *  pasted into the site's HTML. */

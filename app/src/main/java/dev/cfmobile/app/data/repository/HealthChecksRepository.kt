@@ -1,5 +1,6 @@
 package dev.cfmobile.app.data.repository
 
+import dev.cfmobile.app.data.remote.emptyListOnNullResult
 import dev.cfmobile.app.data.remote.ApiResult
 import dev.cfmobile.app.data.remote.CloudflareApi
 import dev.cfmobile.app.data.remote.dto.HealthCheck
@@ -12,7 +13,7 @@ import dev.cfmobile.app.data.remote.safeApiCallUnit
 class HealthChecksRepository(private val api: CloudflareApi) {
 
     suspend fun listChecks(zoneId: String): ApiResult<List<HealthCheck>> =
-        safeApiCall { api.listHealthChecks(zoneId) }
+        safeApiCall { api.listHealthChecks(zoneId) }.emptyListOnNullResult()
 
     suspend fun createCheck(
         zoneId: String,

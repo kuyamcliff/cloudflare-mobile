@@ -63,18 +63,7 @@ fun copyToClipboard(context: android.content.Context, label: String, value: Stri
 
 @Composable
 fun SectionHeader(title: String, modifier: Modifier = Modifier, trailing: (@Composable () -> Unit)? = null) {
-    Row(
-        modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 20.dp, bottom = 6.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            title.uppercase(),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f)
-        )
-        trailing?.invoke()
-    }
+    dev.cfmobile.app.ui.design.GroupTitle(title, modifier, action = trailing)
 }
 
 /** Label on the left, value on the right; IDs and technical values in monospace (spec 83). */
@@ -121,30 +110,23 @@ fun NavRow(
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        if (icon != null) {
-            Icon(icon, contentDescription = null, tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge, color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
-            supporting?.let {
-                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+    dev.cfmobile.app.ui.design.ListRow(
+        title = title,
+        subtitle = supporting,
+        icon = icon,
+        enabled = enabled,
+        trailing = badge?.let { b ->
+            {
+                b()
+                if (enabled) Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
             }
-        }
-        badge?.invoke()
-        if (enabled) Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
+        },
+        onClick = onClick
+    )
 }
 
 @Composable
-fun ThinDivider() = HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+fun ThinDivider() = HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
 
 /** Text label plus tint; never color alone (spec 115, 242). */
 @Composable
@@ -154,7 +136,7 @@ fun Badge(label: String, color: Color, modifier: Modifier = Modifier) {
         style = MaterialTheme.typography.labelSmall,
         color = color,
         modifier = modifier
-            .clip(RoundedCornerShape(4.dp))
+            .clip(RoundedCornerShape(6.dp))
             .background(color.copy(alpha = 0.12f))
             .padding(horizontal = 6.dp, vertical = 2.dp)
             .semantics { contentDescription = label }

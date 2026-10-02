@@ -93,7 +93,7 @@ fun R2BucketScreen(bucketName: String, viewModel: R2BucketViewModel, onBack: () 
                 )
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            dev.cfmobile.app.ui.design.RowDivider()
             SectionTitle("Custom domains")
             StateContent(state = uiState.customDomains, onRetry = viewModel::refresh) { domains ->
                 Column(Modifier.fillMaxWidth()) {
@@ -106,13 +106,13 @@ fun R2BucketScreen(bucketName: String, viewModel: R2BucketViewModel, onBack: () 
                                 isDeleting = uiState.deletingDomain == domain.domain,
                                 onDelete = { confirmDeleteDomain = domain }
                             )
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                            dev.cfmobile.app.ui.design.RowDivider()
                         }
                     }
                 }
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            dev.cfmobile.app.ui.design.RowDivider()
             SectionTitle("CORS")
             if (uiState.corsRules.isEmpty()) {
                 EmptySection("No CORS policy - browsers on other origins can't call this bucket directly.")
@@ -133,7 +133,7 @@ fun R2BucketScreen(bucketName: String, viewModel: R2BucketViewModel, onBack: () 
                 ) { Text("Remove CORS policy") }
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            dev.cfmobile.app.ui.design.RowDivider()
             SectionTitle("Lifecycle")
             if (uiState.lifecycleRules.isEmpty()) {
                 EmptySection("No lifecycle rules - objects stay until something deletes them.")

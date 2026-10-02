@@ -95,13 +95,13 @@ fun EmailRoutingScreen(zoneName: String, viewModel: EmailRoutingViewModel, onBac
                     )
                 }
             }
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            dev.cfmobile.app.ui.design.RowDivider()
             if (uiState.tab == EmailRoutingTab.DESTINATIONS) {
                 DestinationsTab(uiState, viewModel)
                 return@Column
             }
             CatchAllRow(uiState, viewModel)
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            dev.cfmobile.app.ui.design.RowDivider()
             RefreshableStateContent(
                 state = uiState.rules,
                 isRefreshing = uiState.isRefreshing,
@@ -124,7 +124,7 @@ fun EmailRoutingScreen(zoneName: String, viewModel: EmailRoutingViewModel, onBac
                                 confirmText = "\"$title\" will be permanently deleted and mail matching it will stop being forwarded. This can't be undone.",
                                 onDelete = { viewModel.delete(rule) }
                             )
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                            dev.cfmobile.app.ui.design.RowDivider()
                         }
                     }
                 }
@@ -162,7 +162,7 @@ private fun DestinationsTab(uiState: EmailRoutingUiState, viewModel: EmailRoutin
                         confirmText = "Any rule forwarding to \"${address.email}\" will stop delivering. This can't be undone.",
                         onDelete = { viewModel.deleteDestination(address) }
                     )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                    dev.cfmobile.app.ui.design.RowDivider()
                 }
             }
         }

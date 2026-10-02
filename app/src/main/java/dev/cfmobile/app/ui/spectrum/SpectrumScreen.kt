@@ -74,7 +74,7 @@ fun SpectrumScreen(zoneName: String, viewModel: SpectrumViewModel, onBack: () ->
                                 confirmText = "\"$title\" will be permanently deleted and traffic to it will stop being proxied. This can't be undone.",
                                 onDelete = { viewModel.delete(app) }
                             )
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                            dev.cfmobile.app.ui.design.RowDivider()
                         }
                     }
                 }

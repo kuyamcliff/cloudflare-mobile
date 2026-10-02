@@ -115,7 +115,7 @@ fun CertificatesScreen(zoneName: String, viewModel: CertificatesViewModel, onBac
                                         }
                                     }
                                 )
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                                dev.cfmobile.app.ui.design.RowDivider()
                             }
                         }
                     }
@@ -144,7 +144,7 @@ fun CertificatesScreen(zoneName: String, viewModel: CertificatesViewModel, onBac
                                     confirmText = "\"${hostname.hostname}\" will stop being served through this zone and its certificate will be removed. This can't be undone.",
                                     onDelete = { viewModel.deleteHostname(hostname) }
                                 )
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                                dev.cfmobile.app.ui.design.RowDivider()
                             }
                         }
                     }
@@ -178,7 +178,7 @@ private fun DnssecTab(uiState: CertificatesUiState, viewModel: CertificatesViewM
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
         }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+        dev.cfmobile.app.ui.design.RowDivider()
         val dnssec = uiState.dnssec
         if (dnssec != null && dnssec.ds != null) {
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

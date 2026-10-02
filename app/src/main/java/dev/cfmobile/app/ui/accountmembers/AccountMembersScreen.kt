@@ -72,7 +72,7 @@ fun AccountMembersScreen(viewModel: AccountMembersViewModel, onBack: () -> Unit)
                 LazyColumn(Modifier.padding(padding), contentPadding = PaddingValues(bottom = 96.dp)) {
                     items(members, key = { it.id }) { member ->
                         MemberRow(member = member, isRemoving = uiState.removingId == member.id, onRemove = { viewModel.remove(member) })
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                        dev.cfmobile.app.ui.design.RowDivider()
                     }
                 }
             }

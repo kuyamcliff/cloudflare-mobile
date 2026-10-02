@@ -87,7 +87,7 @@ fun PerformanceScreen(zoneName: String, viewModel: PerformanceViewModel, onBack:
                 )
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            dev.cfmobile.app.ui.design.RowDivider()
             SectionTitle("Cache")
             uiState.cacheReserve?.let { value ->
                 ToggleRow(
@@ -118,7 +118,7 @@ fun PerformanceScreen(zoneName: String, viewModel: PerformanceViewModel, onBack:
             }
 
             uiState.managedHeaders?.let { headers ->
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                dev.cfmobile.app.ui.design.RowDivider()
                 SectionTitle("Managed Transforms")
                 Text(
                     "Headers Cloudflare can add or remove without you writing a Transform Rule.",
@@ -134,7 +134,7 @@ fun PerformanceScreen(zoneName: String, viewModel: PerformanceViewModel, onBack:
                 }
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            dev.cfmobile.app.ui.design.RowDivider()
             SectionTitle("URL Normalization")
             when (val normalization = uiState.urlNormalization) {
                 is UiState.Loading -> Unit
@@ -164,7 +164,7 @@ fun PerformanceScreen(zoneName: String, viewModel: PerformanceViewModel, onBack:
             }
 
             if (uiState.unavailable.isNotEmpty()) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                dev.cfmobile.app.ui.design.RowDivider()
                 Text(
                     "Not available on this zone: ${uiState.unavailable.joinToString(", ")}. Cloudflare returns these only on the plans that include them.",
                     style = MaterialTheme.typography.bodySmall,

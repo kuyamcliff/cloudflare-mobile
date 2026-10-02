@@ -7,9 +7,14 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import dev.cfmobile.app.ui.design.IconTile
+import dev.cfmobile.app.ui.design.RowDivider
+import dev.cfmobile.app.ui.design.groupItem
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -96,7 +101,11 @@ fun <T> CfListScreen(
         },
         floatingActionButton = {
             if (onCreate != null) {
-                FloatingActionButton(onClick = onCreate) {
+                FloatingActionButton(
+                    onClick = onCreate,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
                     Icon(Icons.Filled.Add, contentDescription = createContentDescription)
                 }
             }
@@ -116,10 +125,12 @@ fun <T> CfListScreen(
                 when {
                     allItems.isEmpty() -> EmptyState(emptyMessage)
                     items.isEmpty() -> EmptyState("Nothing matches \"${query.trim()}\".")
-                    else -> LazyColumn(contentPadding = PaddingValues(bottom = if (onCreate != null) 96.dp else 16.dp)) {
-                        items(items, key = key) { item ->
-                            row(item)
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                    else -> LazyColumn(contentPadding = PaddingValues(top = 8.dp, bottom = if (onCreate != null) 104.dp else 24.dp)) {
+                        itemsIndexed(items, key = { _, item -> key(item) }) { index, item ->
+                            Column(Modifier.groupItem(index, items.size)) {
+                                row(item)
+                                if (index < items.size - 1) RowDivider()
+                            }
                         }
                     }
                 }
@@ -153,11 +164,12 @@ fun DeletableListRow(
         Modifier
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .heightIn(min = 56.dp)
             .padding(16.dp, 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        IconTile(icon)
         Column(Modifier.weight(1f)) {
             Text(
                 title,
@@ -185,7 +197,9 @@ fun DeletableListRow(
             onDismissRequest = { confirmDelete = false },
             title = { Text(confirmTitle) },
             text = { Text(confirmText) },
-            confirmButton = { TextButton(onClick = { confirmDelete = false; onDelete() }) { Text("Delete") } },
+            confirmButton = {
+                TextButton(onClick = { confirmDelete = false; onDelete() }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+            },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } }
         )
     }
@@ -206,11 +220,12 @@ fun ReadOnlyListRow(
         Modifier
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(16.dp, 12.dp),
+            .heightIn(min = 56.dp)
+            .padding(16.dp, 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        IconTile(icon)
         Column(Modifier.weight(1f)) {
             Text(
                 title,
@@ -237,11 +252,11 @@ fun FormActions(
     saveLabel: String = "Create",
     modifier: Modifier = Modifier
 ) {
-    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+    Row(modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
         TextButton(onClick = onCancel) { Text("Cancel") }
-        TextButton(onClick = onSave, enabled = !isSaving) {
-            if (isSaving) CircularProgressIndicator(Modifier.padding(end = 6.dp))
-            Text(saveLabel)
+        androidx.compose.material3.Button(onClick = onSave, enabled = !isSaving, shape = MaterialTheme.shapes.medium) {
+            if (isSaving) CircularProgressIndicator(Modifier.size(16.dp).padding(end = 0.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+            else Text(saveLabel)
         }
     }
 }

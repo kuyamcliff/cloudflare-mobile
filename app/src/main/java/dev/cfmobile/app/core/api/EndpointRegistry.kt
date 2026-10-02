@@ -20,6 +20,21 @@ data class EndpointParam(
     val description: String
 )
 
+/** One top-level request body property, from the schema (spec 315). [type] is a JSON schema
+ *  type, or "any" when the schema allows several (a zone setting's value). */
+data class BodyField(
+    val name: String,
+    val type: String,
+    val required: Boolean,
+    val enumValues: List<String> = emptyList(),
+    val description: String = "",
+    /** Item type when [type] is "array". */
+    val itemType: String? = null,
+    /** Schema default (when [isDefault]) or example, as a JSON scalar. */
+    val example: Any? = null,
+    val isDefault: Boolean = false
+)
+
 enum class EndpointScope { USER, ACCOUNT, ZONE, OTHER }
 
 /** One Cloudflare API operation, from the generated registry (spec 315). */
@@ -41,7 +56,9 @@ data class EndpointDef(
     /** Pretty-printed JSON example body, when the schema provides or implies one. */
     val bodyExample: String?,
     /** True when a native screen calls this exact method and path. */
-    val native: Boolean
+    val native: Boolean,
+    val bodyFields: List<BodyField> = emptyList(),
+    val bodyRequired: Boolean = false
 ) {
     val scope: EndpointScope = when {
         path.startsWith("accounts/{") -> EndpointScope.ACCOUNT
@@ -139,6 +156,8 @@ class EndpointRegistry(
             val params = ArrayList<EndpointParam>()
             var bodyType: String? = null
             var bodyExample: String? = null
+            var bodyFields = emptyList<BodyField>()
+            var bodyRequired = false
             reader.beginObject()
             while (reader.hasNext()) {
                 when (reader.nextName()) {
@@ -163,6 +182,8 @@ class EndpointRegistry(
                             when (reader.nextName()) {
                                 "ct" -> bodyType = reader.nextString()
                                 "ex" -> bodyExample = prettyJson(reader.readJsonValue())
+                                "f" -> bodyFields = readFields(reader)
+                                "r" -> bodyRequired = reader.nextInt() == 1
                                 else -> reader.skipValue()
                             }
                         }
@@ -172,7 +193,34 @@ class EndpointRegistry(
                 }
             }
             reader.endObject()
-            return EndpointDef(id, method, path, summary, description, group, perms, plans, deprecated, params, bodyType, bodyExample, native)
+            return EndpointDef(id, method, path, summary, description, group, perms, plans, deprecated, params, bodyType, bodyExample, native, bodyFields, bodyRequired)
+        }
+
+        private fun readFields(reader: JsonReader): List<BodyField> {
+            val out = ArrayList<BodyField>()
+            reader.beginArray()
+            while (reader.hasNext()) {
+                var name = ""; var type = "string"; var required = false; var enums = emptyList<String>()
+                var desc = ""; var item: String? = null; var example: Any? = null; var isDefault = false
+                reader.beginObject()
+                while (reader.hasNext()) {
+                    when (reader.nextName()) {
+                        "n" -> name = reader.nextString()
+                        "t" -> type = reader.nextString()
+                        "r" -> required = reader.nextInt() == 1
+                        "e" -> enums = readStrings(reader)
+                        "d" -> desc = reader.nextString()
+                        "it" -> item = reader.nextString()
+                        "x" -> example = reader.readJsonValue()
+                        "def" -> isDefault = reader.nextInt() == 1
+                        else -> reader.skipValue()
+                    }
+                }
+                reader.endObject()
+                out += BodyField(name, type, required, enums, desc, item, example, isDefault)
+            }
+            reader.endArray()
+            return out
         }
 
         private fun readParam(reader: JsonReader): EndpointParam {

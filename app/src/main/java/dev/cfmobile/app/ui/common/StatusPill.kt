@@ -26,12 +26,13 @@ fun StatusPill(label: String, color: Color, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(50))
-            .background(color.copy(alpha = 0.15f))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
+            .background(color.copy(alpha = 0.12f))
+            .padding(horizontal = 8.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(0.dp)
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Text(label, style = MaterialTheme.typography.labelLarge, color = color)
+        dev.cfmobile.app.ui.design.StatusDot(color, size = 6.dp)
+        Text(label, style = MaterialTheme.typography.labelMedium, color = color)
     }
 }
 
